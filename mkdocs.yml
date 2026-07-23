@@ -1,0 +1,96 @@
+site_name: Peptide Atlas
+site_description: >-
+  Wissenschaftlich orientierte Wissensdatenbank über Peptide, peptidbasierte
+  Arzneimittel, Rezeptoren, Signalwege und experimentelle Forschungsstoffe.
+site_url: https://peptideatlas.github.io/peptide-atlas/
+site_author: Peptide Atlas
+repo_url: https://github.com/PeptideAtlas/peptide-atlas
+repo_name: PeptideAtlas/peptide-atlas
+edit_uri: edit/main/docs/
+copyright: >-
+  Peptide Atlas dient ausschließlich der wissenschaftlichen Information und
+  ersetzt keine medizinische Beratung, Diagnose oder Therapieempfehlung.
+  Siehe <a href="haftungshinweis/">vollständigen Haftungshinweis</a>.
+
+theme:
+  name: material
+  language: de
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/weather-sunny
+        name: Zu dunklem Design wechseln
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/weather-night
+        name: Zu hellem Design wechseln
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - navigation.footer
+    - navigation.tracking
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.action.edit
+    - content.code.copy
+    - content.tabs.link
+    - toc.follow
+  icon:
+    repo: fontawesome/brands/github
+
+plugins:
+  - search:
+      lang: de
+  - tags
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+      toc_depth: 3
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.critic
+  - pymdownx.caret
+  - pymdownx.mark
+  - pymdownx.tilde
+
+extra:
+  generator: false
+
+nav:
+  - Start: index.md
+  - Grundlagen:
+      - Was sind Peptide?: 00_grundlagen/was_sind_peptide.md
+      - Evidenzsystem: 00_grundlagen/evidenzsystem.md
+      - Redaktionsstandard: 00_grundlagen/redaktionsstandard.md
+  - Wirkstoffe: 01_wirkstoffe/index.md
+  - Biologie:
+      - Übersicht: 02_biologie/index.md
+      - Rezeptoren: 02_biologie/rezeptoren.md
+  - Indikationen: 03_indikationen/index.md
+  - Studien: 04_studien/index.md
+  - Vergleiche: 05_vergleiche/index.md
+  - Medien: 06_medien/index.md
+  - Glossar: 07_glossar/index.md
+  - Tags: tags.md
+  - Projekt:
+      - Roadmap: roadmap.md
+      - Haftungshinweis: haftungshinweis.md
