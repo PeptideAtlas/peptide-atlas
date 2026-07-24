@@ -28,6 +28,11 @@ verweist auf ein Objekt (`entity_id`) und auf Claims (`claim_ids`) — er dupliz
 Der **Dateiname muss exakt mit dem Feld `id` in der Datei uebereinstimmen** (ohne `.yaml`). Kopiere am besten ein
 bestehendes Beispiel aus `data/examples/` als Ausgangspunkt.
 
+**`schema_version`**: In Phase 3 ist ausschließlich `"1.0.0"` gueltig — jeder andere Wert (auch ein anderes,
+syntaktisch gueltiges SemVer) wird abgelehnt. **Datumsfelder** (`created_at`, `updated_at`, `last_reviewed_at`
+usw.) muessen echte Kalenderdaten sein; `2026-02-31` oder `2026-13-01` sehen zwar aus wie `YYYY-MM-DD`, werden
+aber vom Validator zurueckgewiesen, weil es sie nicht gibt.
+
 ## Wie erstelle ich eine ID?
 
 IDs sind stabil, ASCII-lowercase-kebab-case und werden nie geaendert oder wiederverwendet. Erzeuge sie nicht von
@@ -53,8 +58,9 @@ python tools/new_id.py source
 ## Wie lege ich eine Quelle an?
 
 Jede Quelle ist eine eigene Datei unter `data/sources/`, unabhaengig davon, welche Studien oder Claims sie
-belegt. Bevor du eine neue Quelle anlegst, pruefe, ob sie nicht schon existiert (z. B. per PMID/DOI-Suche in
-`data/sources/`). Wichtige Felder:
+belegt. Bevor du eine neue Quelle anlegst, **pruefe, ob sie nicht schon existiert**: der Validator erkennt
+Duplikate automatisch anhand normalisierter DOI/PMID/PMCID/ISBN (Fehler) und identischer kanonischer URL
+(Warnung) — verlasse dich aber nicht allein darauf, sondern suche vorher in `data/sources/`. Wichtige Felder:
 
 - `source_type`: Art der Quelle, siehe `data/vocabularies/source_types.yaml`. **Haendlerseiten**
   (`merchant_page`) und **persoenliche Berichte** (`personal_report`) sind zulaessig, muessen aber klar so
@@ -63,6 +69,10 @@ belegt. Bevor du eine neue Quelle anlegst, pruefe, ob sie nicht schon existiert 
 - `retraction_status`: `not_retracted`, solange nichts anderes bekannt ist. Wird eine Quelle spaeter
   zurueckgezogen, aktualisiere dieses Feld — der Validator warnt oder blockiert dann automatisch aktive Claims,
   die ausschliesslich auf dieser Quelle beruhen.
+- `created_at`, `updated_at`, `review`: wie bei Entitaeten und Claims. Eine Quelle im Status `active` benoetigt
+  `review.last_reviewed_at` und mindestens einen Reviewer.
+- `identifiers.doi/pmid/pmcid/isbn`: wo vorhanden immer angeben — sie sind die Grundlage der automatischen
+  Duplikaterkennung (DOI z. B. unabhaengig von Groß-/Kleinschreibung und `https://doi.org/`-Praefix erkannt).
 
 ## Wie lege ich einen Claim an?
 
@@ -76,19 +86,44 @@ an Rezeptor Y" ist ein Claim; „Substanz X: Uebersicht" ist ein Artikel mit meh
    `value_type: number`) oder ein mehrsprachiger Text (`value: {de: ...}`, `value_type: localized_text`).
    Verwende **genau eine** dieser drei Varianten.
 4. `evidence_category`: die Art der Evidenz (siehe
-   [Evidenzsystem](../docs/00_grundlagen/evidenzsystem.md)) — **nicht** dasselbe wie `certainty`.
-5. `certainty`: wie sicher/vertrauenswuerdig die Aussage insgesamt ist, mit `certainty_rationale` als kurzer
-   Begruendung (ausser bei `not_assessed`).
+   [Evidenzsystem](../docs/00_grundlagen/evidenzsystem.md)) — **nicht** dasselbe wie `certainty`. Muss zu den
+   tatsaechlich verknuepften Quellentypen passen (siehe unten) — der Validator lehnt z. B. `clinical_evidence`
+   ab, wenn die einzige Quelle eine Haendlerseite ist.
+5. `certainty`: wie sicher/vertrauenswuerdig die Aussage insgesamt ist. **Bei jedem Wert außer `not_assessed`
+   ist `certainty_rationale` ein Pflichtfeld und muss ein nicht leerer Text sein** — `null` oder `""` werden
+   vom Schema abgelehnt.
 6. `evidence[]`: die Quellen, die diesen Claim stuetzen, relativieren oder nur Kontext liefern
-   (`direction: supports/contradicts/mixed/context_only`).
+   (`direction: supports/contradicts/mixed/context_only`). Ein **aktiver** Claim braucht mindestens einen Link
+   mit `supports` oder `mixed` — sonst stuetzt nichts die Aussage tatsaechlich.
+
+### Quellenpflicht-Ausnahmen (`source_requirement: exempt`)
+
+Nur fuer rein administrative Claims zulaessig: **ausschliesslich** `claim_type: identity` oder
+`claim_type: classification` duerfen `source_requirement: exempt` verwenden, und auch dann nur mit einer
+ausgefuellten Begruendung in `source_exemption_reason` (nicht leer, nicht `null`). Medizinisch relevante
+Claimtypen — `mechanism`, `receptor_activity`, `pathway_activity`, `pharmacokinetics`, `efficacy`, `safety`,
+`adverse_event`, `regulatory`, `study_result`, `association`, `comparison` — koennen **niemals** ausgenommen
+werden; sie brauchen immer mindestens eine Quelle. Der Validator weist jeden Versuch, diese Claimtypen
+auszunehmen, mit einem Fehler zurueck.
 
 ### Haendlerangaben und persoenliche Erfahrung
 
 Verwende `evidence_category: merchant_claim`, wenn eine Aussage ausschliesslich auf einer Haendler-/
 Herstellerangabe beruht, und `evidence_category: personal_experience` fuer Einzelberichte/Erfahrungsberichte
-ausserhalb systematischer Datenerhebung. Beide sind zulaessige, ehrliche Kennzeichnungen — sie duerfen aber
-niemals der alleinige Beleg fuer einen **aktiven** Wirksamkeitsanspruch sein und niemals mit `certainty: high`
-kombiniert werden. Der Validator lehnt das ab.
+ausserhalb systematischer Datenerhebung. Beide sind zulaessige, ehrliche Kennzeichnungen — sie duerfen aber:
+
+- niemals der alleinige Beleg fuer einen **aktiven, medizinisch relevanten** Claim sein (auch nicht unter einer
+  anderen, "besseren" `evidence_category` versteckt: beruht ein Claim ausschließlich auf einer Haendlerseite,
+  muss er auch als `merchant_claim` klassifiziert sein — unabhaengig von `certainty`);
+- niemals mit `certainty: high` kombiniert werden.
+
+Der Validator lehnt beides ab.
+
+**Ausdruecklich attribuierte Aussagen** ("Haendler X behauptet Y", "Person Z berichtet Y") sind trotzdem
+dokumentierbar, ohne daraus eine wissenschaftliche Wirksamkeits-/Sicherheits-/Mechanismusaussage zu machen:
+modelliere sie als Claim mit `claim_type: other` und Praedikat `claimed_by` (Haendler-/Herstellerangabe) oder
+`reported_by` (persoenlicher Bericht). Ein solcher Claim dokumentiert nur, dass die Behauptung existiert und von
+wem sie stammt — er darf nicht `claim_type: efficacy`/`safety`/`mechanism` usw. tragen.
 
 ## Wie verbinde ich einen Claim mit einem Artikel?
 

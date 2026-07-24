@@ -138,6 +138,17 @@ niemals alleiniger aktiver Wirksamkeitsnachweis sein; `certainty: high` ist ausg
 Evidenz eine Haendlerseite oder ein persoenlicher Bericht ist; eine praeklinische Studie bleibt praeklinische
 Evidenz, auch wenn sie methodisch gut ist — sie wird nicht zu klinischer Wirksamkeit umformuliert.
 
+### Attribuierte Aussagen
+
+„Haendler X behauptet Y" oder „Person Z berichtet Y" sind selbst dokumentationswuerdige Tatsachen — dass eine
+Behauptung existiert und von wem sie stammt —, ohne dass Peptide Atlas sie sich als wissenschaftliche Aussage zu
+eigen macht. Dafuer existieren die Praedikate `claimed_by` (Haendler-/Herstellerangabe) und `reported_by`
+(persoenlicher Bericht), siehe `data/vocabularies/predicates.yaml`. Ein solcher Claim traegt `claim_type: other`
+(nicht `efficacy`/`safety`/`mechanism` usw.) und darf seine `evidence_category` (`merchant_claim` bzw.
+`personal_experience`) behalten, auch im Status `active` — die claim_type-Beschraenkung aus dem vorigen Absatz
+gilt nur fuer medizinisch relevante Claimtypen (siehe `MEDICALLY_RELEVANT_CLAIM_TYPES` in
+`tools/validate_data.py`), zu denen `other` bewusst nicht gehoert.
+
 ### `evidenzstufe` ist Legacy
 
 Das Frontmatter-Feld `evidenzstufe` (A–E) wird als **veraltet** gekennzeichnet (siehe ADR-0018). Es wird fuer
@@ -167,24 +178,49 @@ build/               generiert, nicht committed (siehe .gitignore)
 Warnungen blockieren den Build nicht):
 
 - **Schemaebene**: gueltiges YAML (ausschliesslich `yaml.safe_load`), JSON-Schema-Konformitaet, Pflichtfelder,
-  Enums, Datumsformate, `oneOf` fuer Claim-Objektvarianten, `schema_version`.
+  Enums, `oneOf` fuer Claim-Objektvarianten. `schema_version` akzeptiert in Phase 3 ausschliesslich `"1.0.0"`
+  (jeder andere Wert wird abgelehnt, auch syntaktisch gueltiges SemVer). Datumsfelder werden doppelt geprueft:
+  ein Regex-Pattern fuer die `YYYY-MM-DD`-Syntax **und** ein aktivierter `jsonschema.FormatChecker` (`format:
+  date`, basiert auf `datetime.date.fromisoformat`), der auch tatsaechlich existierende Kalenderdaten verlangt
+  — `2026-02-31` oder `2026-13-01` bestehen die Syntaxpruefung, werden aber vom FormatChecker zurueckgewiesen.
 - **Dateiebene**: Dateiname == `id`, globale ID-Eindeutigkeit ueber alle Objektarten hinweg, keine leeren
-  Platzhalterdateien ausserhalb `data/examples/`, keine unerwuenschten Binaerdateien unter `data/`.
+  Platzhalterdateien ausserhalb `data/examples/`, keine unerwuenschten Binaerdateien unter `data/`. Quellen
+  werden zusaetzlich ueber normalisierte externe Kennungen dedupliziert: identischer DOI (Groß-/Kleinschreibung
+  und `doi.org`-URL-Form egal), PMID, PMCID oder ISBN unter zwei verschiedenen Source-IDs ist ein **Fehler**;
+  eine identische kanonische URL (Schema/Host lowercase, ohne trailing slash) ist eine **Warnung**, da
+  Redirects/Mirrors legitim unterschiedliche URLs fuer dieselbe Quelle erzeugen koennen.
 - **Referenzebene**: `subject_id`, `object.entity_id`, `evidence[].source_id`, `evidence[].study_id`,
   `study.source_ids`, `study.sponsor_ids` muessen auf existierende Objekte zeigen; `predicate` muss in
   `data/vocabularies/predicates.yaml` stehen.
-- **Evidenzebene**: aktive medizinisch relevante Claims (Mechanismus, Wirksamkeit, Sicherheit, Nebenwirkung,
-  Pharmakokinetik, Rezeptor-/Signalwegaktivitaet, regulatorischer Status, Studienergebnis, krankheitsbezogene
-  Assoziation) benoetigen mindestens eine Quelle, ausser bei explizitem `source_requirement: exempt` mit
-  Begruendung; `merchant_claim`/`personal_experience` nicht als alleinige aktive Evidenzkategorie;
-  zurueckgezogene Quellen als alleinige aktive Evidenz sind ein Fehler, `expression_of_concern`/`corrected` eine
-  Warnung; `certainty: high` ist mit ausschliesslich Haendler-/Erfahrungsevidenz unzulaessig.
+- **Evidenzebene**:
+    - Aktive medizinisch relevante Claims (`mechanism`, `receptor_activity`, `pathway_activity`,
+      `pharmacokinetics`, `efficacy`, `safety`, `adverse_event`, `regulatory`, `study_result`, `association`,
+      `comparison`) benoetigen mindestens eine Quelle. `source_requirement: exempt` ist fuer sie **strukturell
+      ausgeschlossen** — nur `claim_type: identity`/`classification` duerfen ausnehmen, und auch dann nur mit
+      nicht leerem `source_exemption_reason` (vom Schema erzwungen).
+    - `certainty_rationale` muss ein nicht leerer String sein, sobald `certainty` nicht `not_assessed` ist —
+      `null` und `""` werden vom Schema abgelehnt.
+    - Beruht ein Claim ausschließlich auf `merchant_page`- bzw. `personal_report`-Quellen, muss seine
+      `evidence_category` entsprechend `merchant_claim`/`personal_experience` sein (unabhaengig vom Status) —
+      eine „bessere" Kategorie kann eine schwache Quellenlage nicht kaschieren.
+    - Ein **aktiver, medizinisch relevanter** Claim darf **unabhaengig von `certainty`** nicht ausschließlich
+      auf `merchant_page`/`personal_report`-Quellen beruhen, und `merchant_claim`/`personal_experience` duerfen
+      einen solchen Claim nicht aktiv stuetzen — attribuierte Aussagen („Haendler X behauptet Y") werden
+      stattdessen separat modelliert (`claim_type: other`, Praedikat `claimed_by`/`reported_by`).
+    - Zurueckgezogene Quellen als alleinige aktive Evidenz sind ein Fehler; mindestens eine zurueckgezogene
+      Quelle **neben** weiteren, gueltigen Quellen ist eine Warnung; `expression_of_concern`/`corrected` ist
+      ebenfalls eine Warnung.
+    - `certainty: high` ist mit ausschliesslich Haendler-/Erfahrungsevidenz unzulaessig.
+    - Ein aktiver Claim braucht mindestens einen Evidenzlink mit `direction: supports` oder `mixed` — bestehen
+      alle Links nur aus `contradicts`/`context_only`, stuetzt nichts die Aussage tatsaechlich.
 - **Reviewebene**: `status: active` erfordert `review.last_reviewed_at` und mindestens einen Reviewer (fuer
-  Entitaeten und Claims). Eine einfache Datums-Heuristik warnt, wenn `updated_at` nach `review.last_reviewed_at`
-  liegt (siehe „Grenzen der Phase").
+  Entitaeten, Quellen **und** Claims). Eine einfache Datums-Heuristik warnt, wenn `updated_at` nach
+  `review.last_reviewed_at` liegt (siehe „Grenzen der Phase").
 - **Artikelintegration**: Frontmatter unter `docs/**` (ausser `docs/project/**` sowie der Startseite und der
-  automatischen Tag-Uebersicht) wird gegen `article_frontmatter.schema.json` geprueft; referenzierte
-  `entity_id`/`claim_ids` muessen existieren; `evidenzstufe` erzeugt die oben beschriebene Warnung.
+  automatischen Tag-Uebersicht) wird gegen `article_frontmatter.schema.json` geprueft; fehlt das Frontmatter bei
+  einem sonstigen Content-Artikel vollstaendig, ist das ein **Fehler**, kein stillschweigend uebersprungener
+  Fall; referenzierte `entity_id`/`claim_ids` muessen existieren; `evidenzstufe` erzeugt die oben beschriebene
+  Warnung.
 
 Fehler werden dateibezogen und lesbar ausgegeben (`ERROR <Datei>` / `<Pfad>: <Meldung>`), nicht als roher
 Python-Traceback.
@@ -223,6 +259,17 @@ Frontmatter.
   (`subject_id` oder `object.entity_id` muss `entity_id` entsprechen); eine abweichende, aber warnungsfrei
   bleibende Verbindung ist moeglich und erfordert redaktionelle Aufmerksamkeit.
 - `medicinal_product` (konkretes Markenprodukt/Fertigarzneimittel) ist beschrieben, aber nicht implementiert.
+- **Bekannte technische Schuld — Vokabular-/Schema-Duplikation:** Kontrollierte Werte (Evidenzkategorien,
+  Sicherheitsstufen, Studiendesigns, Editorial-Status, Quellentypen, Entitaetstypen, Substanzklassen) sind
+  aktuell **an zwei Stellen** gepflegt: als Enum in `schemas/*.json` (fuer die JSON-Schema-Validierung) und als
+  kanonisches Vokabular mit Anzeigenamen in `data/vocabularies/*.yaml`. Eine vollstaendige Umstellung, bei der
+  die Schemas ihre Enums zur Laufzeit aus den YAML-Vokabularen generieren, war fuer diesen Haertungs-Commit
+  unverhaeltnismaeßig. Stattdessen verhindert `tests/test_vocabulary_consistency.py` ein stilles
+  Auseinanderlaufen: der Test vergleicht jedes doppelt gepflegte Enum gegen sein Vokabular und schlaegt fehl,
+  sobald ein Wert nur auf einer Seite existiert. `predicate` ist davon nicht betroffen, da `claim.schema.json`
+  dafuer nur ein Regex-Pattern nutzt und `data/vocabularies/predicates.yaml` bereits die alleinige Quelle der
+  Wahrheit ist (geprueft durch den Validator, nicht durch das Schema). Echte Konsolidierung bleibt fuer eine
+  spaetere Phase vorgemerkt, siehe [Future Roadmap](Future_Roadmap.md).
 
 ## Migrationshinweise
 

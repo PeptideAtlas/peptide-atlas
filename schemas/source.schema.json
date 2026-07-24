@@ -42,7 +42,10 @@
       "enum": ["not_retracted", "retracted", "expression_of_concern", "corrected", "unknown"]
     },
     "retrieved_at": { "$ref": "common.schema.json#/$defs/date_or_null" },
-    "status": { "$ref": "common.schema.json#/$defs/editorial_status" }
+    "status": { "$ref": "common.schema.json#/$defs/editorial_status" },
+    "created_at": { "$ref": "common.schema.json#/$defs/date" },
+    "updated_at": { "$ref": "common.schema.json#/$defs/date" },
+    "review": { "$ref": "common.schema.json#/$defs/review_block" }
   },
   "additionalProperties": false,
   "required": [
@@ -54,6 +57,9 @@
     "peer_review_status",
     "publication_status",
     "retraction_status",
-    "status"
+    "status",
+    "created_at",
+    "updated_at",
+    "review"
   ]
 }

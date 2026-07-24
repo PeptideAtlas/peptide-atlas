@@ -1,0 +1,21 @@
+schema_version: "1.0.0"
+id: source-url-b
+source_type: reference_database
+title: URL Duplicate B (same canonical URL -- warning only, not an error)
+authors: []
+journal: null
+publication_year: null
+publication_date: null
+identifiers: { doi: null, pmid: null, pmcid: null, isbn: null }
+url: "https://example.org/article"
+language: en
+peer_review_status: not_applicable
+publication_status: published
+retraction_status: not_retracted
+retrieved_at: null
+status: draft
+created_at: "2026-01-01"
+updated_at: "2026-01-01"
+review:
+  last_reviewed_at: null
+  reviewers: []

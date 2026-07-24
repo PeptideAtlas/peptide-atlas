@@ -49,6 +49,11 @@ from _datalib import (  # noqa: E402
     iter_source_files,
     load_all_vocabularies,
     load_yaml_file,
+    normalize_doi,
+    normalize_isbn,
+    normalize_pmcid,
+    normalize_pmid,
+    normalize_url,
     relative,
 )
 
@@ -62,6 +67,10 @@ UNWANTED_BINARY_SUFFIXES = {
     ".png", ".jpg", ".jpeg", ".gif", ".pdf", ".doc", ".docx", ".xls", ".xlsx",
 }
 
+# Claimtypen, die eine wissenschaftlich substanzielle, medizinisch relevante Aussage
+# treffen. Diese duerfen im Status 'active' niemals ohne Quelle sein (source_requirement:
+# exempt ist fuer sie ausgeschlossen, siehe EXEMPTABLE_CLAIM_TYPES) und duerfen als
+# alleinige Evidenzkategorie nicht merchant_claim/personal_experience tragen.
 MEDICALLY_RELEVANT_CLAIM_TYPES = {
     "mechanism",
     "receptor_activity",
@@ -73,10 +82,19 @@ MEDICALLY_RELEVANT_CLAIM_TYPES = {
     "regulatory",
     "study_result",
     "association",
+    "comparison",
 }
+
+# Einzige Claimtypen, fuer die source_requirement: exempt ueberhaupt zulaessig ist --
+# rein administrative/identifizierende Aussagen ohne eigene medizinische Substanz.
+EXEMPTABLE_CLAIM_TYPES = {"identity", "classification"}
 
 WEAK_EVIDENCE_CATEGORIES = {"merchant_claim", "personal_experience"}
 WEAK_SOURCE_TYPES = {"merchant_page", "personal_report"}
+EVIDENCE_CATEGORY_BY_SOLE_SOURCE_TYPE = {
+    "merchant_page": "merchant_claim",
+    "personal_report": "personal_experience",
+}
 
 
 @dataclass
@@ -124,10 +142,13 @@ def jsonschema_error_path(error: jsonschema.exceptions.ValidationError) -> str:
     return "$" + "".join(f"[{p}]" if isinstance(p, int) else f".{p}" for p in parts) if parts else "$"
 
 
+_FORMAT_CHECKER = jsonschema.FormatChecker()
+
+
 def validate_against_schema(report: Report, file_rel: str, data: Any, schema_id: str, registry, schemas) -> None:
     schema = schemas[schema_id]
     validator_cls = jsonschema.validators.validator_for(schema)
-    validator = validator_cls(schema, registry=registry)
+    validator = validator_cls(schema, registry=registry, format_checker=_FORMAT_CHECKER)
     for error in sorted(validator.iter_errors(data), key=lambda e: list(e.absolute_path)):
         report.error(file_rel, jsonschema_error_path(error), error.message)
 
@@ -192,6 +213,14 @@ def load_dataset(root: Path, report: Report, registry, schemas, vocabularies, en
         register(obj, file_rel)
         entities[obj.id] = obj
 
+    # Normalisierte-Identifikator -> Source-ID, fuer Duplikaterkennung ueber alle Quellen
+    # dieses Datensets hinweg (siehe normalize_* in _datalib.py).
+    seen_doi: dict[str, str] = {}
+    seen_pmid: dict[str, str] = {}
+    seen_pmcid: dict[str, str] = {}
+    seen_isbn: dict[str, str] = {}
+    seen_url: dict[str, str] = {}
+
     for path in iter_source_files(root):
         file_rel = relative(path)
         try:
@@ -211,11 +240,50 @@ def load_dataset(root: Path, report: Report, registry, schemas, vocabularies, en
         obj_id = data.get("id")
         if obj_id != stem:
             report.error(file_rel, "$.id", f"id '{obj_id}' does not match filename '{stem}'")
+        source_key = obj_id or stem
 
         validate_against_schema(report, file_rel, data, "source.schema.json", registry, schemas)
 
         if data.get("source_type") not in vocabularies["source_types"].values:
             report.error(file_rel, "$.source_type", f"unknown source_type '{data.get('source_type')}'")
+
+        identifiers = data.get("identifiers") or {}
+
+        def check_duplicate_identifier(
+            raw_value, normalizer, seen: dict[str, str], field_path: str, label: str
+        ) -> None:
+            if not raw_value:
+                return
+            try:
+                normalized = normalizer(raw_value)
+            except ValueError:
+                return
+            existing = seen.get(normalized)
+            if existing is not None and existing != source_key:
+                report.error(
+                    file_rel, field_path,
+                    f"duplicate {label} (normalized '{normalized}') already used by source '{existing}'",
+                )
+            else:
+                seen[normalized] = source_key
+
+        check_duplicate_identifier(identifiers.get("doi"), normalize_doi, seen_doi, "$.identifiers.doi", "DOI")
+        check_duplicate_identifier(identifiers.get("pmid"), normalize_pmid, seen_pmid, "$.identifiers.pmid", "PMID")
+        check_duplicate_identifier(identifiers.get("pmcid"), normalize_pmcid, seen_pmcid, "$.identifiers.pmcid", "PMCID")
+        check_duplicate_identifier(identifiers.get("isbn"), normalize_isbn, seen_isbn, "$.identifiers.isbn", "ISBN")
+
+        url = data.get("url")
+        if url:
+            normalized_url = normalize_url(url)
+            existing_url = seen_url.get(normalized_url)
+            if existing_url is not None and existing_url != source_key:
+                report.warning(
+                    file_rel, "$.url",
+                    f"canonical URL (normalized '{normalized_url}') also used by source '{existing_url}' "
+                    "-- verify these are not the same source under two IDs",
+                )
+            else:
+                seen_url[normalized_url] = source_key
 
         obj = LoadedObject(id=obj_id or stem, kind="source", entity_type=None, path=path, data=data)
         register(obj, file_rel)
@@ -315,6 +383,22 @@ def check_evidence_rules(
         source_requirement = data.get("source_requirement", "required")
 
         resolved_sources = [sources[link["source_id"]].data for link in evidence if link.get("source_id") in sources]
+        resolved_source_types = {s.get("source_type") for s in resolved_sources}
+
+        # --- 1. Quellen-Ausnahmen absichern -------------------------------------------------
+        if source_requirement == "exempt":
+            if claim_type in MEDICALLY_RELEVANT_CLAIM_TYPES:
+                report.error(
+                    file_rel, "$.source_requirement",
+                    f"claim_type '{claim_type}' is medically relevant and can never use "
+                    "source_requirement: exempt -- a source is always required",
+                )
+            elif claim_type not in EXEMPTABLE_CLAIM_TYPES:
+                report.error(
+                    file_rel, "$.source_requirement",
+                    f"source_requirement: exempt is only allowed for claim_type in "
+                    f"{sorted(EXEMPTABLE_CLAIM_TYPES)}, got '{claim_type}'",
+                )
 
         if status == "active" and claim_type in MEDICALLY_RELEVANT_CLAIM_TYPES:
             if not evidence and source_requirement != "exempt":
@@ -324,24 +408,66 @@ def check_evidence_rules(
                     "(set source_requirement: exempt with source_exemption_reason for administrative exceptions)",
                 )
 
-        if status == "active" and evidence_category == "merchant_claim":
+        # --- 3. Evidenzkategorie und Quellentyp konsistent validieren ------------------------
+        if resolved_source_types and resolved_source_types == {"merchant_page"} and evidence_category != "merchant_claim":
             report.error(
                 file_rel, "$.evidence_category",
-                "merchant_claim must not be the sole active evidence category for a published claim",
+                "claim relies exclusively on merchant_page sources but is not classified as "
+                "evidence_category: merchant_claim",
             )
-        if status == "active" and evidence_category == "personal_experience":
+        if resolved_source_types and resolved_source_types == {"personal_report"} and evidence_category != "personal_experience":
             report.error(
                 file_rel, "$.evidence_category",
-                "personal_experience must not be the sole active evidence category for a published claim",
+                "claim relies exclusively on personal_report sources but is not classified as "
+                "evidence_category: personal_experience",
             )
 
+        if status == "active" and claim_type in MEDICALLY_RELEVANT_CLAIM_TYPES:
+            if evidence_category == "merchant_claim":
+                report.error(
+                    file_rel, "$.evidence_category",
+                    f"merchant_claim must not back an active, medically relevant claim_type "
+                    f"('{claim_type}') -- model attributed merchant statements separately "
+                    "(claim_type: other, predicate: claimed_by) instead of as a scientific claim",
+                )
+            if evidence_category == "personal_experience":
+                report.error(
+                    file_rel, "$.evidence_category",
+                    f"personal_experience must not back an active, medically relevant claim_type "
+                    f"('{claim_type}') -- model attributed personal reports separately "
+                    "(claim_type: other, predicate: reported_by) instead of as a scientific claim",
+                )
+            if resolved_sources and all(s.get("source_type") in WEAK_SOURCE_TYPES for s in resolved_sources):
+                report.error(
+                    file_rel, "$.evidence",
+                    "active, medically relevant claim relies exclusively on merchant_page/personal_report "
+                    "source types, regardless of the assigned evidence_category or certainty",
+                )
+
+        # --- 10. Zusaetzliche Evidenzintegritaet ---------------------------------------------
+        if status == "active" and evidence:
+            directions = {link.get("direction") for link in evidence}
+            if not (directions & {"supports", "mixed"}):
+                report.error(
+                    file_rel, "$.evidence",
+                    "active claim's evidence contains no link with direction 'supports' or 'mixed' "
+                    "(only contradicts/context_only) -- nothing actually backs this claim",
+                )
+
         if status == "active" and resolved_sources:
-            if all(s.get("retraction_status") == "retracted" for s in resolved_sources):
+            retraction_statuses = [s.get("retraction_status") for s in resolved_sources]
+            if all(rs == "retracted" for rs in retraction_statuses):
                 report.error(
                     file_rel, "$.evidence",
                     "active claim relies exclusively on retracted source(s)",
                 )
-            elif any(s.get("retraction_status") in {"expression_of_concern", "corrected"} for s in resolved_sources):
+            elif any(rs == "retracted" for rs in retraction_statuses):
+                report.warning(
+                    file_rel, "$.evidence",
+                    "active claim uses at least one retracted source alongside other, non-retracted "
+                    "sources -- verify the retracted source does not undermine the claim",
+                )
+            elif any(rs in {"expression_of_concern", "corrected"} for rs in retraction_statuses):
                 report.warning(
                     file_rel, "$.evidence",
                     "claim references a source with retraction_status expression_of_concern/corrected",
@@ -378,6 +504,17 @@ def check_evidence_rules(
     for entity in entities.values():
         file_rel = relative(entity.path)
         data = entity.data
+        if data.get("status") == "active":
+            review = data.get("review") or {}
+            if not review.get("last_reviewed_at"):
+                report.error(file_rel, "$.review.last_reviewed_at", "status 'active' requires review.last_reviewed_at")
+            if not review.get("reviewers"):
+                report.error(file_rel, "$.review.reviewers", "status 'active' requires at least one reviewer")
+
+    # --- 6. Reviewmetadaten fuer Quellen -----------------------------------------------------
+    for source in sources.values():
+        file_rel = relative(source.path)
+        data = source.data
         if data.get("status") == "active":
             review = data.get("review") or {}
             if not review.get("last_reviewed_at"):
@@ -436,6 +573,11 @@ def check_articles(
             report.error(file_rel, "", str(exc))
             continue
         if frontmatter is None:
+            report.error(
+                file_rel, "",
+                "content article is missing YAML frontmatter (expected a '---' delimited block with at "
+                "least title/description/tags/status)",
+            )
             continue
 
         validate_against_schema(report, file_rel, frontmatter, "article_frontmatter.schema.json", registry, schemas)

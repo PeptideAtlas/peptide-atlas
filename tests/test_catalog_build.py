@@ -18,7 +18,7 @@ def test_catalog_contains_all_object_kinds():
     assert catalog["schema_version"] == "1.0.0"
     assert catalog["generated_at"] == FIXED_TIMESTAMP
     assert catalog["counts"]["sources"] == 1
-    assert catalog["counts"]["claims"] == 2
+    assert catalog["counts"]["claims"] == 3
     assert catalog["counts"]["substances"] == 1
     assert catalog["counts"]["receptors"] == 1
     assert catalog["counts"]["studies"] == 1

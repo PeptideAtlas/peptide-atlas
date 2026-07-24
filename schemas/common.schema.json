@@ -6,17 +6,19 @@
   "$defs": {
     "schema_version": {
       "type": "string",
-      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
-      "description": "Semantische Versionsnummer des Schemas, z. B. 1.0.0."
+      "const": "1.0.0",
+      "description": "Phase 3 akzeptiert ausschliesslich schema_version 1.0.0. Andere Werte (auch syntaktisch gueltiges SemVer wie 2.0.0) werden abgelehnt, bis ein dokumentierter Migrationspfad fuer eine neue Schema-Version existiert (siehe Decision Log)."
     },
     "date": {
       "type": "string",
       "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
-      "description": "ISO-8601-Datum (YYYY-MM-DD)."
+      "format": "date",
+      "description": "ISO-8601-Kalenderdatum (YYYY-MM-DD). Das pattern prueft die Syntax, 'format: date' (mit aktiviertem FormatChecker, siehe tools/validate_data.py) prueft zusaetzlich, dass es sich um ein tatsaechlich existierendes Kalenderdatum handelt (z. B. wird 2026-02-31 abgelehnt)."
     },
     "date_or_null": {
       "type": ["string", "null"],
-      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+      "format": "date"
     },
     "language_code": {
       "type": "string",

@@ -8,9 +8,11 @@ Vermeidung doppelter Lade-/Registry-Logik zwischen diesen Skripten.
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterator
+from urllib.parse import urlsplit, urlunsplit
 
 import yaml
 from referencing import Registry, Resource
@@ -150,6 +152,48 @@ def load_all_vocabularies() -> dict[str, Vocabulary]:
         "evidence_directions",
     ]
     return {name: load_vocabulary(name) for name in names}
+
+
+def normalize_doi(value: str) -> str:
+    """Kanonische, verlustarme DOI-Normalisierung fuer Duplikaterkennung.
+
+    Anders als tools/new_id.py::normalize_doi (das einen ID-Slug erzeugt) wird hier NICHT
+    jedes Sonderzeichen durch '-' ersetzt, da das unterschiedliche DOIs faelschlich
+    gleichsetzen wuerde (z. B. '10.1000/A.B' vs. '10.1000/A-B'). Nur Groß-/Kleinschreibung
+    und die URL-Form werden vereinheitlicht.
+    """
+    text = value.strip()
+    text = re.sub(r"^https?://(dx\.)?doi\.org/", "", text, flags=re.IGNORECASE)
+    return text.lower()
+
+
+def normalize_pmid(value: str) -> str:
+    digits = re.sub(r"\D", "", value)
+    return digits.lstrip("0") or "0"
+
+
+def normalize_pmcid(value: str) -> str:
+    text = value.strip().upper()
+    text = re.sub(r"^PMC", "", text)
+    digits = re.sub(r"\D", "", text)
+    return f"PMC{digits.lstrip('0') or '0'}"
+
+
+def normalize_isbn(value: str) -> str:
+    text = re.sub(r"[\s-]", "", value.strip())
+    return text.upper()
+
+
+def normalize_url(value: str) -> str:
+    """Kanonisiert eine URL fuer den Duplikatvergleich: Schema/Host lowercase, kein
+    trailing slash, kein Fragment. Nur als Warnungsgrundlage gedacht (Redirects/Mirrors
+    koennen unterschiedliche, aber inhaltlich identische URLs erzeugen -- daher keine
+    aggressivere Normalisierung wie Query-Sortierung)."""
+    parts = urlsplit(value.strip())
+    scheme = parts.scheme.lower()
+    netloc = parts.netloc.lower()
+    path = parts.path.rstrip("/") or "/"
+    return urlunsplit((scheme, netloc, path, parts.query, ""))
 
 
 def build_schema_registry() -> tuple[Registry, dict[str, dict]]:

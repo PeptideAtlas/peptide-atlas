@@ -1,0 +1,23 @@
+schema_version: "1.0.0"
+id: claim-b1000000-0000-4000-8000-000000000001
+claim_type: efficacy
+subject_id: substance-test
+predicate: studied_for
+object:
+  value: { de: Test }
+  value_type: localized_text
+statement:
+  de: Ein Wirksamkeits-Claim, der versucht, sich per source_requirement exempt von der Quellenpflicht zu befreien.
+qualifiers: {}
+evidence_category: theoretical_hypothesis
+certainty: not_assessed
+certainty_rationale: null
+evidence: []
+source_requirement: exempt
+source_exemption_reason: Versuchte Umgehung der Quellenpflicht fuer einen medizinisch relevanten Claimtyp.
+status: draft
+created_at: "2026-01-01"
+updated_at: "2026-01-01"
+review:
+  last_reviewed_at: null
+  reviewers: []

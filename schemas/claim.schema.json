@@ -72,7 +72,10 @@
     "qualifiers": { "type": "object", "default": {} },
     "evidence_category": { "$ref": "common.schema.json#/$defs/evidence_category" },
     "certainty": { "$ref": "common.schema.json#/$defs/certainty_level" },
-    "certainty_rationale": { "type": ["string", "null"], "minLength": 1 },
+    "certainty_rationale": {
+      "type": ["string", "null"],
+      "description": "Muss ein nicht leerer String sein, ausser certainty ist 'not_assessed' (dann optional/null)."
+    },
     "evidence": {
       "type": "array",
       "items": { "$ref": "common.schema.json#/$defs/evidence_link" },
@@ -83,7 +86,10 @@
       "enum": ["required", "exempt"],
       "default": "required"
     },
-    "source_exemption_reason": { "type": ["string", "null"] },
+    "source_exemption_reason": {
+      "type": ["string", "null"],
+      "description": "Muss ein nicht leerer String sein, wenn source_requirement 'exempt' ist. Siehe auch die Whitelist erlaubter claim_type-Werte fuer 'exempt' im Validator (tools/validate_data.py) -- medizinisch relevante Claimtypen duerfen nie ausgenommen werden."
+    },
     "status": { "$ref": "common.schema.json#/$defs/editorial_status" },
     "created_at": { "$ref": "common.schema.json#/$defs/date" },
     "updated_at": { "$ref": "common.schema.json#/$defs/date" },
@@ -112,14 +118,20 @@
         "properties": { "certainty": { "not": { "const": "not_assessed" } } },
         "required": ["certainty"]
       },
-      "then": { "required": ["certainty_rationale"] }
+      "then": {
+        "properties": { "certainty_rationale": { "type": "string", "minLength": 1 } },
+        "required": ["certainty_rationale"]
+      }
     },
     {
       "if": {
         "properties": { "source_requirement": { "const": "exempt" } },
         "required": ["source_requirement"]
       },
-      "then": { "required": ["source_exemption_reason"] }
+      "then": {
+        "properties": { "source_exemption_reason": { "type": "string", "minLength": 1 } },
+        "required": ["source_exemption_reason"]
+      }
     }
   ]
 }

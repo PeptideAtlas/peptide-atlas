@@ -1,0 +1,15 @@
+schema_version: "1.0.0"
+id: substance-test
+entity_type: substance
+canonical_name: Test Substance
+labels:
+  de: Testsubstanz
+description:
+  de: Testdaten -- created_at und updated_at sind syntaktisch YYYY-MM-DD, aber keine existierenden Kalenderdaten.
+status: draft
+created_at: "2026-02-31"
+updated_at: "2026-13-01"
+review:
+  last_reviewed_at: null
+  reviewers: []
+substance_classes: [peptide]

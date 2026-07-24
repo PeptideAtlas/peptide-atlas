@@ -88,3 +88,22 @@ values:
     labels:
       de: veröffentlicht als
       en: published as
+  - value: claimed_by
+    labels:
+      de: wird behauptet von
+      en: claimed by
+    usage_note_de: >
+      Fuer ausdruecklich attribuierte, nicht selbst uebernommene Aussagen ("Haendler X behauptet Y").
+      Der Claim dokumentiert nur, dass die Behauptung existiert und von wem sie stammt -- er macht sie
+      nicht zu einer eigenen wissenschaftlichen Wirksamkeits-, Sicherheits- oder Mechanismusaussage.
+      Passender claim_type ist in der Regel 'other' (nicht 'efficacy'/'safety'/'mechanism' usw.), die
+      evidence_category bleibt entsprechend 'merchant_claim' oder 'personal_experience'. Siehe
+      docs/project/Phase_3_Scientific_Data_Architecture.md, Abschnitt "Attribuierte Aussagen".
+  - value: reported_by
+    labels:
+      de: wird berichtet von
+      en: reported by
+    usage_note_de: >
+      Wie claimed_by, aber fuer berichtete Beobachtungen/Erfahrungen statt kommerzieller Behauptungen
+      (z. B. "Person X berichtet Y"). Ebenfalls kein eigenstaendiger wissenschaftlicher Wirksamkeits-
+      oder Sicherheitsclaim.
