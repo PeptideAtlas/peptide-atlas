@@ -30,6 +30,7 @@ research/
 ├── search_runs/     Protokollierte, tatsächlich ausgeführte Suchläufe (search-run-<uuid4>.yaml)
 ├── screening/       Ein-/Ausschlussentscheidungen pro Kandidat (screening-record-<uuid4>.yaml)
 ├── extractions/     Beobachtungen und vorläufige Kandidatenclaims (extraction-record-<uuid4>.yaml)
+├── promotions/      Verknüpfung Kandidatenclaim → kanonischer Claim (promotion-record-<uuid4>.yaml)
 ├── vocabularies/    kontrollierte Vokabulare (Datenbanken, Statuswerte, Ausschlussgründe, ...)
 ├── examples/        ausschließlich fiktive Platzhalterdaten, eigener Namensraum (wie data/examples/)
 └── raw/             lokaler, NICHT versionierter Arbeitsbereich fuer Exporte/Volltexte (siehe raw/README.md)
@@ -43,6 +44,7 @@ research/
 | Suchlauf | `research/search_runs/` | `search-run-<uuid4>` | `schemas/research_search_run.schema.json` |
 | Screening-Datensatz | `research/screening/` | `screening-record-<uuid4>` | `schemas/research_screening_record.schema.json` |
 | Extraktionsdatensatz | `research/extractions/` | `extraction-record-<uuid4>` | `schemas/research_extraction_record.schema.json` |
+| Promotion-Datensatz | `research/promotions/` | `promotion-record-<uuid4>` | `schemas/research_promotion_record.schema.json` |
 
 Wie bei `data/**` muss der Dateiname exakt der `id` entsprechen (ohne `.yaml`).
 
@@ -50,12 +52,17 @@ Wie bei `data/**` muss der Dateiname exakt der `id` entsprechen (ohne `.yaml`).
 
 ```bash
 python tools/validate_research.py --verbose
+python tools/check_research_immutability.py
 ```
 
-Läuft **getrennt** vom bestehenden `tools/validate_data.py`, prüft aber Querverweise auf die kanonische
-Datenebene (`canonical_source_id` muss unter `data/sources/**`, `canonical_study_id` unter
-`data/entities/studies/**` existieren, sofern gesetzt). Beide Validatoren laufen in CI
-(siehe `.github/workflows/ci.yml`).
+`validate_research.py` läuft **getrennt** vom bestehenden `tools/validate_data.py`, prüft aber Querverweise auf
+die kanonische Datenebene (`canonical_source_id` muss unter `data/sources/**`, `canonical_study_id` unter
+`data/entities/studies/**`, `canonical_claim_id` unter `data/claims/**` existieren, sofern gesetzt) sowie
+Protokollkonsistenz (Version/ID, Freigabestatus, protokollübergreifende Referenzen), Identifier-Deduplizierung,
+Screening-Workflow (Dual-Reviewer, Adjudikation, Volltextregeln, `decision_history`) und die Claim-Promotion-
+Kette. `check_research_immutability.py` prüft zusätzlich, dass bereits committete `search_run`-Dateien nicht
+rückwirkend verändert werden (nur `status`/`updated_at`/`review`/`notes` dürfen sich ändern). Alle drei
+Validatoren laufen in CI (siehe `.github/workflows/ci.yml`).
 
 ## Kurzfassung des Workflows
 
@@ -66,7 +73,10 @@ Datenebene (`canonical_source_id` muss unter `data/sources/**`, `canonical_study
    Titel-/Abstract- und Volltext-Screening bis zu einer Entscheidung (`include`/`exclude`/`duplicate`/...).
 4. Eingeschlossene Kandidaten werden in einem **Extraktionsdatensatz** (`extractions/`) mit kurzen Paraphrasen
    und präzisen Fundstellen erfasst — inklusive vorläufiger, ausdrücklich ungeprüfter Kandidatenclaims.
-5. Erst nach zweiter Prüfung (`extraction_status: verified`) und wissenschaftlichem Review werden Informationen
+5. Ein **Promotion-Datensatz** (`promotions/`) macht optional den Fortschritt eines einzelnen Kandidatenclaims
+   in Richtung eines kanonischen Claims maschinenlesbar nachvollziehbar (`promotion_status: proposed` → … →
+   `promoted`).
+6. Erst nach zweiter Prüfung (`extraction_status: verified`) und wissenschaftlichem Review werden Informationen
    **manuell** als Quelle, Studie oder Claim unter `data/**` angelegt — dieser Schritt ist in Phase 4A bewusst
    **nicht automatisiert**.
 

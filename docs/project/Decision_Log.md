@@ -47,6 +47,10 @@ Kurze, strukturierte Architecture Decision Records (ADRs): Kontext, Entscheidung
 | ADR-0033 | `research/**` als separate Provenienz- und Arbeitsdatenebene neben `data/**` | Entschieden (Phase 4A) | Rechercheverlauf, Kandidaten, Screening und Extraktion sind wichtig für Auditierbarkeit, aber nicht identisch mit kanonischem Wissen. Ausführliches ADR siehe Abschnitt „Ausführliche ADRs" unten. |
 | ADR-0034 | Studie und Publikation bleiben getrennte Objekte; mehrere Publikationen dürfen nicht als mehrere Studien gezählt werden | Entschieden (Phase 4A) | Setzt die bereits in [Data Model](Data_Model.md) angelegte Trennung für die Recherche-Ebene konsequent fort. Ausführliches ADR siehe unten. |
 | ADR-0035 | Automatisierte Extraktion und KI dürfen keine aktiven kanonischen Claims freigeben | Entschieden (Phase 4A) | Kernregel des [Evidence Curation Workflow](Evidence_Curation_Workflow.md): kein Werkzeug in Phase 4A schreibt `status: active` in `data/claims/**`. Ausführliches ADR siehe unten. |
+| ADR-0036 | Protokoll- und Referenzkonsistenz strukturell erzwungen (Version/ID, Suchlauf-Freigabestatus, protokollübergreifende Ketten, `discovery_only`) | Entschieden (Phase 4A, Review-Härtung) | `tools/validate_research.py` erzwingt jetzt: `protocol.version` muss dem `-vN`-Suffix der `id` entsprechen; ein `search_run` darf nur gegen ein Protokoll mit Status `approved`/`superseded` ausgeführt werden; `screening_record`/`search_run` sowie `extraction_record`/`screening_record` müssen jeweils dieselbe `protocol_id` tragen; widersprechende `canonical_source_id` zwischen Screening und Extraktion ist ein Fehler. `google_scholar`/`manufacturer_registry` sind jetzt schema-seitig (nicht mehr nur redaktionell) auf `role: discovery_only` beschränkt. Ausführliches ADR siehe unten. |
+| ADR-0037 | Vollständige Screening-Historie (`decision_history`) und maschinenlesbare Claim-Promotion-Kette (`promotion_record`) | Entschieden (Phase 4A, Review-Härtung) | Löst zwei bislang nur behauptete, aber nicht durchgesetzte Aussagen der Phase-4A-Dokumentation strukturell ein. Ausführliches ADR siehe unten. |
+| ADR-0038 | Eigenständiges `search_run_status`-Vokabular; CI-Check gegen rückwirkende Suchlauf-Änderungen (mit dokumentierter Grenze) | Entschieden (Phase 4A, Review-Härtung) | `research_search_run.status` nutzt nicht mehr `editorial_status` (`draft`/`in_review`/`active`/`withdrawn`), sondern ein eigenes Vokabular (`executed`/`superseded`/`withdrawn`), das zum Ereignischarakter eines Suchlaufs passt. `tools/check_research_immutability.py` prüft in CI zusätzlich, dass bereits committete `research/search_runs/**`-Dateien nur in `status`/`updated_at`/`review`/`notes` verändert werden. Ausführliches ADR siehe unten. |
+| ADR-0039 | Echte Identifier-Deduplizierung und strukturelle Zwei-Personen-Kontrolle (Dual-Reviewer, Adjudikation, Extraktionsverifikation) | Entschieden (Phase 4A, Review-Härtung) | Die in der Dokumentation seit Phase 4A behauptete Identifier-Normalisierung und Zweitprüfung war bislang nicht tatsächlich implementiert. `tools/validate_research.py` erkennt jetzt normalisierte DOI/PMID/PMCID/NCT-ID-Kollisionen innerhalb desselben Protokolls, erzwingt `second_review` in `screening_policy.dual_reviewer_stages`, Reviewer-Unabhängigkeit, eine kontrollierte Konfliktlösung (Adjudikation durch eine dritte Person oder `decision: uncertain`) sowie `verified_by != extracted_by`, sofern `extraction_policy.verification_required: true`. Ausführliches ADR siehe unten. |
 
 ## Ausführliche ADRs
 
@@ -180,6 +184,181 @@ Kurze, strukturierte Architecture Decision Records (ADRs): Kontext, Entscheidung
   Redaktion, ist aber angesichts der medizinischen Tragweite aktiver Claims bewusst in Kauf genommen.
 - **Migrationsstrategie:** Nicht zutreffend — die Regel gilt von Anfang an für jeden neu erstellten
   Extraktionsdatensatz.
+
+### ADR-0036: Protokoll- und Referenzkonsistenz strukturell erzwungen
+
+- **Status:** Entschieden
+- **Datum:** 2026-07-25
+- **Kontext:** Der ursprüngliche Phase-4A-Validator prüfte nur, dass referenzierte IDs (`protocol_id`,
+  `search_run_ids`, ...) überhaupt existieren, nicht aber, ob die referenzierten Objekte inhaltlich
+  zusammenpassen. Dadurch konnte ein `search_run` gegen ein noch gar nicht freigegebenes (`draft`)
+  Protokoll ausgeführt werden, ein `screening_record` Suchläufe verschiedener Protokollversionen
+  mischen, oder eine Extraktion eine andere `protocol_id` tragen als das zugehörige Screening — ohne
+  dass der Validator das bemerkte. Ebenso war `discovery_only` für `google_scholar`/
+  `manufacturer_registry` nur redaktionell vorgeschrieben (Abschnitt 5 des Scientific Research
+  Protocol), nicht strukturell.
+- **Entscheidung:** `tools/validate_research.py` prüft jetzt zusätzlich: (1) `protocol.version` muss
+  exakt dem `-vN`-Suffix der `id` entsprechen; (2) ein `search_run` darf nur auf ein Protokoll mit
+  Status `approved` oder `superseded` zeigen; (3) jeder in `screening_record.search_run_ids`
+  referenzierte Suchlauf muss dieselbe `protocol_id` tragen wie das Screening selbst; (4) ein
+  `extraction_record` muss dieselbe `protocol_id` tragen wie das referenzierte Screening; (5) tragen
+  Screening und Extraktion beide eine `canonical_source_id`, müssen diese übereinstimmen. Zusätzlich
+  erzwingt `schemas/research_protocol.schema.json` per `if`/`then` je Array-Element, dass
+  `database: google_scholar`/`manufacturer_registry` ausschließlich mit `role: discovery_only`
+  kombiniert werden darf.
+- **Alternativen:**
+    1. *Nur redaktionelle Konvention, keine strukturelle Prüfung* — verworfen: genau dieser Zustand
+       bestand bereits und wurde im Review als Lücke identifiziert.
+    2. *Protokollstatus zur Ausführungszeit historisch statt aktuell prüfen* (d. h. "war das Protokoll
+       zum Zeitpunkt von `executed_at` freigegeben?") — verworfen für Phase 4A: erfordert eine
+       Versionierungshistorie pro Protokollversion, die aktuell nicht vorliegt; die einfachere Prüfung
+       "Status zum Validierungszeitpunkt" genügt, solange Protokolle nach Freigabe nicht mehr in
+       `draft` zurückversetzt werden (redaktionelle Konvention, siehe `amendment_policy`).
+    3. *Vollständige Cross-Referenz-Konsistenzprüfung wie beschrieben* — **gewählt**.
+- **Konsequenzen:** Ein Suchlauf gegen ein unfertiges Protokoll oder eine versehentlich vermischte
+  Protokollkette wird jetzt als Fehler erkannt statt still akzeptiert. Erfordert etwas zusätzliche
+  Sorgfalt beim Anlegen von Testdaten (Protokolle müssen für zugehörige Suchläufe `approved` sein) —
+  entsprechend wurden alle bestehenden Test-Fixtures angepasst.
+- **Migrationsstrategie:** Nicht zutreffend für Produktivdaten (das Retatrutid-Protokoll bleibt
+  `draft` und hat keine Suchläufe). Bestehende Test-Fixtures und `research/examples/**` wurden im
+  selben Commit angepasst.
+
+### ADR-0037: Vollständige Screening-Historie (`decision_history`) und maschinenlesbare Claim-Promotion-Kette (`promotion_record`)
+
+- **Status:** Entschieden
+- **Datum:** 2026-07-25
+- **Kontext:** Der [Evidence Curation Workflow](Evidence_Curation_Workflow.md) behauptete bereits vor
+  diesem Commit, die „vollständige Screening-Historie bleibt in der Datei erhalten (keine
+  Überschreibung)" — tatsächlich speicherte `research_screening_record.schema.json` nur den letzten
+  Zustand; ein früherer Titel-/Abstract-Entscheid war nach einem Volltext-Entscheid nicht mehr
+  rekonstruierbar. Ebenso behauptete das Scientific Research Protocol eine durchgängige Kette von
+  `search_run` bis zum kanonischen Claim, ohne dass zwischen einem verifizierten Kandidatenclaim
+  (`extraction_record.candidate_claims[]`) und einer später manuell angelegten
+  `data/claims/*.yaml`-Datei irgendeine maschinenlesbare Verknüpfung existierte.
+- **Entscheidung:** (1) `research_screening_record.schema.json` erhält ein Pflichtfeld
+  `decision_history[]`: ein Append-only-Protokoll aller Screening-Zustände (Stufe, Entscheidung,
+  Grund, verantwortliche Person, Zeitpunkt, ggf. Zweitprüfung). Die bestehenden Top-Level-Felder
+  (`decision`, `decision_stage`, ...) bleiben als validierte **Projektion** des letzten
+  `decision_history`-Eintrags erhalten (bewusste Denormalisierung für einfache Abfragen, siehe
+  Abschnitt „Alternativen"). Der Validator prüft lückenlose `sequence`, dass Stufen nicht rückwärts
+  laufen und dass die Projektion konsistent bleibt. (2) Ein neues fünftes Research-Objekt
+  `promotion_record` (`schemas/research_promotion_record.schema.json`, `research/promotions/`)
+  verbindet `extraction_record_id` + `candidate_working_id` mit einer späteren
+  `canonical_claim_id` unter `data/claims/**`. `promotion_status: approved_for_creation`/`promoted`
+  erfordern dokumentierte Reviewer und Begründung und dürfen — wie schon für `data/claims/**` in
+  ADR-0035 festgelegt — nie automatisiert durch Automatisierung/KI gesetzt werden.
+- **Alternativen (Screening-Historie):**
+    1. *Top-Level-Felder als einzige Quelle, keine Historie* — verworfen: genau das war der bisherige,
+       im Review beanstandete Zustand.
+    2. *Separates, unveränderliches Screening-Event-Objekt statt eines Arrays im selben Datensatz* —
+       erwogen, aber verworfen: ein Screening-Datensatz ist konzeptionell "ein Kandidat, eine sich
+       entwickelnde Bewertung" — ein separates Event-Objekt pro Zustandsübergang würde denselben
+       Kandidaten künstlich über mehrere Dateien verteilen und die bestehende 1-Datei-pro-Kandidat-
+       Struktur (analog ADR-0017) aufbrechen, ohne einen zusätzlichen Sicherheitsgewinn gegenüber
+       einem geprüften Append-only-Array in derselben Datei.
+    3. *`decision_history[]` als Pflichtarray mit Top-Level-Feldern als geprüfte Projektion* —
+       **gewählt**.
+- **Alternativen (Claim-Promotion):**
+    1. *Keine explizite Verknüpfung, Nachvollziehbarkeit nur über redaktionelle Sorgfalt/Commit-
+       Beschreibungen* — verworfen: bei einem Zielbild von 100.000 Quellen nicht mehr auditierbar
+       (siehe Scientific Research Protocol, Abschnitt 33).
+    2. *`data/claims/*.yaml` erhält rückwirkend ein Feld mit Verweis auf den Recherche-Ursprung* —
+       verworfen: vermischt die kanonische Wissensebene mit Provenienzdaten (widerspricht ADR-0033).
+    3. *Eigenständiges `promotion_record`-Objekt in `research/**`* — **gewählt**.
+- **Konsequenzen:** Die im Evidence Curation Workflow beschriebene Historien- und Kettenaussage ist
+  jetzt strukturell wahr, nicht nur behauptet. Etwas höherer Pflegeaufwand beim manuellen Anlegen
+  eines Screening-Datensatzes (ein Historieneintrag statt nur Top-Level-Felder) und ein zusätzliches
+  Schema/Vokabular (`promotion_statuses.yaml`). `research/promotions/**` bleibt wie alle
+  `research/**`-Objekte außerhalb von `build/catalog.json`/`build/graph.json` (ADR-0033).
+- **Migrationsstrategie:** Alle bestehenden Screening-Datensätze (Produktivbeispiele und
+  Test-Fixtures) wurden im selben Commit um einen `decision_history`-Eintrag ergänzt, der ihren
+  bisherigen einzigen Zustand als `sequence: 1` abbildet — keine inhaltliche Änderung.
+
+### ADR-0038: Eigenständiges `search_run_status`-Vokabular; CI-Check gegen rückwirkende Suchlauf-Änderungen
+
+- **Status:** Entschieden
+- **Datum:** 2026-07-25
+- **Kontext:** `research_search_run.status` nutzte bislang `common.schema.json#/$defs/editorial_status`
+  (`draft`/`in_review`/`active`/`withdrawn`) — ein Vokabular für redaktionelle Dokumente mit
+  Entwurfs-/Freigabezyklus. Ein Suchlauf ist aber kein redaktionelles Dokument, sondern das Protokoll
+  eines bereits ausgeführten, laut Schema-Beschreibung „unveränderlichen" Ereignisses; ein Suchlauf
+  wird nie als „Entwurf" angelegt. Diese Unveränderlichkeit war zudem bislang nur eine Behauptung in
+  der Schema-Beschreibung, nicht technisch durchgesetzt — ein bereits gemergter Suchlauf hätte in
+  einem späteren Pull Request unbemerkt nachträglich verändert werden können.
+- **Entscheidung:** Ein neues, eigenständiges Vokabular `search_run_status`
+  (`executed`/`superseded`/`withdrawn`, `research/vocabularies/search_run_statuses.yaml`) ersetzt
+  `editorial_status` für `research_search_run.status`. Zusätzlich prüft ein neues CI-Werkzeug
+  (`tools/check_research_immutability.py`, Schritt in `.github/workflows/ci.yml`) bei jedem Pull
+  Request, ob eine bereits gegenüber dem Zielbranch committete `research/search_runs/**`-Datei
+  gelöscht, umbenannt oder in einem anderen Feld als `status`/`updated_at`/`review`/`notes` verändert
+  wurde.
+- **Alternativen:**
+    1. *`editorial_status` beibehalten* — verworfen: semantisch unpassend (kein Entwurfszustand für
+       ein bereits ausgeführtes Ereignis) und vermischt zwei unterschiedliche Lebenszyklus-Konzepte.
+    2. *Unveränderlichkeit ausschließlich redaktionell/durch Dokumentation durchsetzen* — verworfen:
+       genau das war der bisherige, unzureichende Zustand.
+    3. *Serverseitige Branch Protection allein* — ergänzend sinnvoll (siehe ADR-0010), aber kein
+       Ersatz für eine inhaltliche Prüfung, welche Felder sich geändert haben.
+    4. *Eigenes Vokabular plus CI-Diff-Check mit dokumentierter Grenze* — **gewählt**.
+- **Konsequenzen:** Klarere Semantik für `research_search_run.status`. Der Immutability-Check ist
+  bewusst **kein** vollständiger Schutz: er vergleicht nur gegen den Merge-Base mit einem Basis-Ref
+  und wird übersprungen (nicht hart abgelehnt), wenn dieser Ref nicht auflösbar ist (z. B. lokale
+  Pushes ohne PR-Kontext) — siehe Docstring von `tools/check_research_immutability.py` und Abschnitt
+  34 des Scientific Research Protocol. Er ersetzt keine Branch Protection auf `main` (weiterhin nur
+  als ADR-0010 vorgeschlagen, nicht umgesetzt).
+- **Migrationsstrategie:** Alle bestehenden `search_run`-Datensätze (Produktivbeispiele,
+  Test-Fixtures) wurden von `active`/`draft` auf `executed` migriert — reine Statuswert-Umbenennung,
+  keine inhaltliche Änderung der Ausführungsfelder.
+
+### ADR-0039: Echte Identifier-Deduplizierung und strukturelle Zwei-Personen-Kontrolle
+
+- **Status:** Entschieden
+- **Datum:** 2026-07-25
+- **Kontext:** Das Scientific Research Protocol (Abschnitt 8) und der Evidence Curation Workflow
+  beschrieben bereits vor diesem Commit eine Identifier-Normalisierung zur Duplikaterkennung sowie
+  eine verpflichtende Zweitprüfung bei Volltext-Screening und Extraktion — beides war jedoch nicht
+  tatsächlich im Validator implementiert. Zwei Screening-Datensätze mit identischem DOI (nur in
+  unterschiedlicher Schreibweise) konnten unbemerkt beide als eigenständige, aktive Kandidaten
+  bestehen bleiben; eine fehlende oder von derselben Person stammende Zweitprüfung wurde nicht
+  erkannt; ein Widerspruch zwischen Erst- und Zweitprüfung (`decision_confirmed: false`) hatte keine
+  vorgeschriebene Auflösung.
+- **Entscheidung:** (1) `tools/_researchlib.py` ergänzt einen `normalize_nct_id`-Normalisierer
+  (analog zu den bestehenden DOI/PMID/PMCID/ISBN/URL-Normalisierern aus `tools/_datalib.py`, die
+  hier wiederverwendet werden). `tools/validate_research.py` erkennt normalisierte
+  DOI/PMID/PMCID/NCT-ID/ISBN-Kollisionen zwischen aktiven (nicht als `duplicate` markierten)
+  Screening-Datensätzen **innerhalb desselben Protokolls** als Fehler; URL-Kollisionen bleiben eine
+  Warnung (Redirects/Mirrors, analog zur bestehenden Quellen-Deduplizierung in ADR-0026). Kollisionen
+  über verschiedene Protokolle hinweg sind ausdrücklich erlaubt (dieselbe Publikation kann in
+  mehreren Reviews vorkommen). (2) `screening_policy.dual_reviewer_stages` wird jetzt erzwungen: eine
+  finale `include`/`exclude`-Entscheidung auf einer solchen Stufe benötigt `second_review`, dessen
+  `reviewed_by` von `screened_by` abweichen muss. `second_review.adjudication` (neues Feld) löst
+  einen Widerspruch (`decision_confirmed: false`) durch eine von beiden vorherigen Personen
+  unabhängige dritte Person auf; ohne Adjudikation muss die Entscheidung `uncertain` bleiben. Ein
+  finaler Einschluss auf `full_text`/`final`-Stufe erfordert `full_text_status: obtained`. (3)
+  `verified_by != extracted_by` wird erzwungen, sofern `extraction_policy.verification_required:
+  true` gesetzt ist — bewusst nicht unbedingt, siehe Konsequenzen.
+- **Alternativen:**
+    1. *Deduplizierung/Zweitprüfung weiterhin nur redaktionell vorschreiben* — verworfen: identische
+       Lücke wie in ADR-0026 (Quellenebene) bereits einmal geschlossen; auf der Recherche-Ebene aber
+       noch offen.
+    2. *Identifier-Kollisionen auch über verschiedene Protokolle hinweg als Fehler behandeln* —
+       verworfen: dieselbe Publikation kann legitim in mehreren, unabhängigen Recherche-Vorhaben
+       auftauchen; eine protokollübergreifende Fehlermeldung würde falsch-positive Befunde erzeugen.
+    3. *`verified_by != extracted_by` immer erzwingen, unabhängig von `verification_required`* —
+       erwogen, aber verworfen: das Protokoll legt bewusst pro Vorhaben fest, ob eine unabhängige
+       Zweitprüfung verpflichtend ist (`extraction_policy.verification_required`); eine unbedingte
+       Erzwingung würde diese protokollseitige Entscheidung entwerten.
+    4. *Vollstaendige, protokollabhaengige Deduplizierung, Dual-Review- und Adjudikationslogik wie
+       beschrieben* — **gewählt**.
+- **Konsequenzen:** Screening-Daten mit unentdeckten Duplikaten oder unzureichender Zweitprüfung
+  werden jetzt zuverlässig zurückgewiesen statt still akzeptiert. Erfordert bei protokollseitig
+  vorgeschriebener Zweitprüfung zwingend zwei unterschiedliche Personenkürzel in den Testdaten.
+  Dokumentiertes, bewusst nicht erzwungenes Verhalten: ist `extraction_policy.verification_required`
+  `false`, wird `verified_by == extracted_by` nicht beanstandet (siehe Scientific Research Protocol,
+  Abschnitt 27a).
+- **Migrationsstrategie:** Nicht zutreffend für Produktivdaten (noch keine realen Screening-/
+  Extraktionsdatensätze). Bestehende Test-Fixtures wurden im selben Commit angepasst bzw. um
+  gezielte neue Negativ-/Positivszenarien ergänzt.
 
 ## Format für neue Einträge
 

@@ -45,7 +45,7 @@ Das Protokoll definiert für jeden Bereich mindestens eine explizite Forschungsf
 
 | Bereich | Forschungsfrage (verkürzt) |
 |---|---|
-| Identität und Nomenklatur | Kanonischer Name, Entwicklungsbezeichnungen, Schreibvarianten; chemische/biologische Klassifikation. |
+| Identität und Nomenklatur | Existiert ein bestätigter INN oder anderer offizieller kanonischer Name — und falls ja, welcher? (Die Frage setzt die Existenz eines INN nicht voraus.) Zusätzlich: Entwicklungsbezeichnungen, Schreibvarianten, chemische/biologische Klassifikation. |
 | Geschichte und Entwicklung | Sponsor/Entwickler, zeitliche Abfolge der Forschungsphasen. |
 | Wirkmechanismus | Beteiligte Rezeptoren (GIP, GLP-1, Glucagon), Aktivitätsform, nachgelagerte Signalwege; Abgrenzung gesicherte Erkenntnis vs. theoretische Interpretation. |
 | Pharmakokinetik | Absorption, Tmax, Verteilung, Metabolismus, Eliminationshalbwertszeit, Dosisproportionalität, populationsbezogene Unterschiede — nur mit Primärquelle. |

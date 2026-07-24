@@ -65,7 +65,10 @@ Nicht jede Datenbank hat denselben Stellenwert. `planned_information_sources[].r
 - **`supplementary`** — ergänzend, ersetzt aber keine Primärquelle (Crossref, Cochrane Library).
 - **`discovery_only`** — nur zum *Finden* von Kandidaten geeignet, niemals eigenständiger Wirksamkeitsnachweis
   (Google Scholar, Herstellerregister — siehe `data/vocabularies/source_types.yaml` zur Abgrenzung
-  Händler-/Herstellerangabe von wissenschaftlicher Evidenz).
+  Händler-/Herstellerangabe von wissenschaftlicher Evidenz). Diese Zuordnung ist nicht nur redaktionelle
+  Konvention: `schemas/research_protocol.schema.json` lehnt `database: google_scholar`/
+  `manufacturer_registry` mit `role: primary`/`supplementary` strukturell ab (siehe ADR-0036 im
+  [Decision Log](Decision_Log.md)).
 
 ## 6. Suchstrategie
 
@@ -79,8 +82,18 @@ dokumentiert (Abschnitt 7), da sie sich zwischen PubMed, ClinicalTrials.gov usw.
 Jeder tatsächlich ausgeführte Suchlauf wird als eigener `search_run`-Datensatz erfasst (Schema:
 `schemas/research_search_run.schema.json`): exakter Suchstring (`exact_query`), Datenbank **und** Oberfläche
 getrennt (`database`/`interface`), Zeitpunkt mit Uhrzeit (`executed_at`), Trefferzahl (`result_count`, muss
-$\geq 0$ sein). Ein Suchlauf wird **nie nachträglich verändert** — eine Korrektur oder Wiederholung erhält eine
-neue ID. Das macht jede Recherche reproduzierbar: Jeder kann exakt nachvollziehen, was wann gesucht wurde.
+$\geq 0$ sein). Ein Suchlauf darf nur gegen ein Protokoll ausgeführt werden, dessen Status zum Zeitpunkt der
+Validierung `approved` oder `superseded` ist — gegen ein noch nicht freigegebenes (`draft`) Protokoll wird kein
+Suchlauf angelegt (`tools/validate_research.py`, siehe ADR-0036 im [Decision Log](Decision_Log.md)).
+
+Ein Suchlauf wird **nie nachträglich verändert** — eine Korrektur oder Wiederholung erhält eine neue ID. Das
+macht jede Recherche reproduzierbar: Jeder kann exakt nachvollziehen, was wann gesucht wurde. `status`
+(`research/vocabularies/search_run_statuses.yaml`: `executed`/`superseded`/`withdrawn`) ist ein eigenständiges
+Vokabular, bewusst getrennt von `editorial_status` — ein Suchlauf hat keinen Entwurfszustand, er wird erst als
+Datei angelegt, nachdem er tatsächlich ausgeführt wurde (siehe ADR-0038). `tools/check_research_immutability.py`
+prüft in CI zusätzlich, dass eine bereits gegenüber dem Zielbranch committete `search_run`-Datei nur in
+`status`/`updated_at`/`review`/`notes` verändert wird — mit der dokumentierten Grenze, dass dieser Check nur
+greift, wenn der Basis-Ref auflösbar ist, und keine serverseitige Branch Protection ersetzt (Abschnitt 34).
 
 ## 8. Deduplizierung
 
@@ -91,6 +104,29 @@ erkannt, wird der redundante Kandidat als `decision: duplicate` mit `duplicate_o
 „Hauptdatensatz" markiert (siehe [Evidence Curation Workflow](Evidence_Curation_Workflow.md)). Siehe auch
 Abschnitt 16 zur Vermeidung von Doppelzählungen bei mehreren Publikationen derselben Studie.
 
+Diese Regel ist nicht nur redaktionell, sondern wird von `tools/validate_research.py` tatsächlich durchgesetzt:
+DOI/PMID/PMCID/NCT-ID/ISBN werden je Kandidat normalisiert (`tools/_researchlib.py`, wiederverwendet aus
+`tools/_datalib.py` bzw. neu ergänzt für NCT-IDs — `NCT01234567`, `nct01234567` und `NCT 01234567` gelten als
+identisch). Teilen sich zwei Screening-Datensätze **innerhalb desselben Protokolls** mindestens einen
+normalisierten Identifikator und sind beide nicht als `duplicate` markiert, ist das ein Validierungsfehler.
+Identifikator-Kollisionen **über verschiedene Protokolle hinweg** sind ausdrücklich erlaubt, da dieselbe
+Publikation legitim in mehreren unabhängigen Recherche-Vorhaben auftauchen kann. Eine übereinstimmende
+normalisierte URL löst nur eine Warnung aus, keinen Fehler — Redirects und Spiegelseiten können legitim
+unterschiedliche, aber inhaltlich identische URLs erzeugen (analog zur Quellen-Deduplizierung, ADR-0026). Siehe
+ADR-0039 im [Decision Log](Decision_Log.md).
+
+## 9a. Vollständige Screening-Historie
+
+Ein `screening_record` speichert nicht nur den aktuellen Zustand, sondern die vollständige Abfolge aller
+Entscheidungen in `decision_history[]`: je Eintrag Stufe, Entscheidung, Grund, verantwortliche Person, Zeitpunkt
+und ggf. Zweitprüfung. Ein neuer Zustand wird als neuer Eintrag **angehängt**, nie durch Überschreiben eines
+früheren Eintrags ersetzt — so bleibt nachvollziehbar, dass ein Kandidat z. B. im Titel-/Abstract-Screening
+zunächst `include` war, bevor er im Volltext-Screening doch ausgeschlossen wurde. Die bestehenden
+Top-Level-Felder (`decision`, `decision_stage`, `decision_reason`, `screened_by`, `screened_at`,
+`second_review`) bleiben aus Gründen der einfachen Abfragbarkeit erhalten, sind aber eine vom Validator
+geprüfte **Projektion** des letzten `decision_history`-Eintrags — beide Darstellungen dürfen nie auseinanderlaufen
+(siehe ADR-0037 im [Decision Log](Decision_Log.md)).
+
 ## 9. Titel-/Abstract-Screening
 
 Die erste inhaltliche Sichtungsstufe (`decision_stage: title_abstract`): anhand von Titel und Kurzfassung wird
@@ -100,9 +136,25 @@ entschieden, ob ein Kandidat prinzipiell zu den Forschungsfragen passt. Bereits 
 ## 10. Volltext-Screening
 
 Die zweite Stufe (`decision_stage: full_text`): erst nach Lektüre des vollständigen Textes wird final über
-Einschluss oder Ausschluss entschieden. Diese Stufe verlangt in der Regel eine zweite, unabhängige Prüfung
-(`second_review`, siehe Abschnitt 27) — insbesondere für Kandidaten, die später medizinisch relevante Claims
-stützen sollen.
+Einschluss oder Ausschluss entschieden. Ist diese Stufe (oder `final`) in `screening_policy.dual_reviewer_stages`
+des Protokolls aufgeführt, ist eine zweite, unabhängige Prüfung (`second_review`, siehe Abschnitt 27) für eine
+finale `include`/`exclude`-Entscheidung **verpflichtend** und wird vom Validator erzwungen — `second_review.
+reviewed_by` muss sich zudem von `screened_by` unterscheiden (Reviewer-Unabhängigkeit). Ein finaler Einschluss
+auf dieser oder der `final`-Stufe erfordert außerdem `full_text_status: obtained`; ohne vorliegenden Volltext
+bleibt die Entscheidung `awaiting_full_text`, `uncertain` oder — mit kontrolliertem Grund — `exclude`.
+
+## 10a. Widerspruchsauflösung durch Adjudikation
+
+Bestätigt die Zweitprüfung die Erstentscheidung nicht (`second_review.decision_confirmed: false`), darf der
+Kandidat nicht unverändert als final eingeschlossen oder ausgeschlossen weitergeführt werden. Zwei Wege sind
+zulässig: (1) die Entscheidung bleibt `decision: uncertain`, bis der Widerspruch geklärt ist, oder (2) eine
+**dritte, von beiden vorherigen Personen unabhängige** Person löst den Widerspruch über
+`second_review.adjudication` auf (`resolved_by`, `resolved_at`, `final_decision`, `rationale`).
+`adjudication.resolved_by` darf weder `screened_by` noch `second_review.reviewed_by` entsprechen, und
+`adjudication.final_decision` muss mit der Top-Level-`decision` übereinstimmen — beides wird vom Validator
+geprüft (`tools/validate_research.py`, siehe ADR-0039 im [Decision Log](Decision_Log.md)). Ein Datensatz mit
+ungelöstem Widerspruch (`decision_confirmed: false` ohne Adjudikation und ohne `decision: uncertain`) ist ein
+Validierungsfehler.
 
 ## 11. Ein- und Ausschlusskriterien
 
@@ -243,6 +295,16 @@ zu einem **getrennt dokumentierten Zeitpunkt** (`verified_at`) die Extraktion be
 Person, die extrahiert hat (`extracted_by`). Diskrepanzen zwischen Erst- und Zweitprüfung werden in
 `discrepancies[]` festgehalten, nicht stillschweigend geglättet.
 
+## 27a. Protokollabhängige Durchsetzung der Verifikationsunabhängigkeit
+
+`verified_by != extracted_by` wird von `tools/validate_research.py` erzwungen, **sofern** das referenzierte
+Protokoll `extraction_policy.verification_required: true` setzt. Setzt ein Protokoll diese Pflicht nicht
+(`verification_required: false`), wird `verified_by == extracted_by` bei `extraction_status: verified` bewusst
+**nicht** beanstandet — ein dokumentiertes, protokollabhängiges Verhalten (siehe ADR-0039 im
+[Decision Log](Decision_Log.md)). Jedes künftige Protokoll sollte `verification_required: true` setzen, sofern
+seine Ergebnisse in medizinisch relevante Claims einfließen sollen; `false` ist nur für rein technische oder
+nicht-medizinische Recherchevorhaben vorgesehen.
+
 ## 28. Erstellung atomarer Claims
 
 Ein **atomarer Claim** ist eine einzeln prüfbare Aussage (siehe
@@ -260,6 +322,15 @@ angelegt. Dieser Schritt ist in Phase 4A **bewusst nicht automatisiert**: kein W
 eine `data/claims/*.yaml`-Datei aus einem `candidate_claims`-Eintrag. Voraussetzung für die Promotion eines
 medizinisch relevanten Claims ist ein zweiter Review oder eine dokumentierte unabhängige Kontrollprüfung (siehe
 Abschnitt 13 des ursprünglichen Auftrags sowie [Evidence Curation Workflow](Evidence_Curation_Workflow.md)).
+
+Diese Kette ist seit ADR-0037 maschinenlesbar: ein `promotion_record` (Schema:
+`schemas/research_promotion_record.schema.json`, `research/promotions/`) verweist auf `extraction_record_id`
+(muss `extraction_status: verified` sein) und `candidate_working_id` (muss im referenzierten Extraktionsdatensatz
+vorkommen) und trägt `promotion_status`. Nur die Zustände `approved_for_creation` und `promoted` erfordern
+dokumentierte Reviewer und eine `decision_rationale` — und dürfen, wie jede Aktivierung eines kanonischen Claims,
+**nie** automatisiert durch Automatisierung/KI gesetzt werden (ADR-0035). `promoted` erfordert eine gesetzte
+`canonical_claim_id`, die tatsächlich unter `data/claims/**` existiert; `rejected` darf keine tragen. Pro
+Kandidat ist höchstens ein aktiver (nicht `rejected`/`withdrawn`) `promotion_record` gleichzeitig zulässig.
 
 ## 30. Aktualisierungen und Rechercheanläufe
 
@@ -306,3 +377,18 @@ welchem Suchlauf er stammt, wer ihn wann geprüft hat, und welche konkrete Texts
   Unterstützung durch `identifier_priority` — keine automatische Studienzusammenführung.
 - `tools/validate_research.py` prüft Struktur, Referenzen und Workflow-Regeln, aber nicht inhaltliche
   Richtigkeit — die fachliche Prüfung bleibt Aufgabe der wissenschaftlichen Redaktion.
+- Die Identifier-Deduplizierung (Abschnitt 8) erkennt nur **exakte** Kollisionen normalisierter DOI/PMID/
+  PMCID/NCT-ID/ISBN. Sie erkennt keine fuzzy-übereinstimmenden Titel, keine Duplikate ohne gemeinsamen
+  stabilen Identifikator und keine semantische Ähnlichkeit — solche Fälle bleiben ein redaktioneller Prozess.
+- `tools/check_research_immutability.py` (ADR-0038) vergleicht nur den Nettounterschied zum Merge-Base mit
+  einem einzelnen Basis-Ref und wird übersprungen, wenn dieser nicht auflösbar ist (z. B. ein lokaler Push
+  ohne Pull-Request-Kontext) — er erkennt keine Manipulation, die bereits vor diesem Vergleichszeitpunkt auf
+  dem Zielbranch selbst stattgefunden hat, und ersetzt keine serverseitige Branch Protection (ADR-0010, weiterhin
+  nicht umgesetzt).
+- Die Screening-Historie (`decision_history`, Abschnitt 9a) ist ein geprüftes, aber weiterhin manuell zu
+  pflegendes Append-only-Array in derselben Datei — kein unveränderliches, separates Event-Log mit eigener
+  Zugriffskontrolle.
+- Ein `promotion_record` (Abschnitt 29) macht die Kette bis zum kanonischen Claim maschinenlesbar
+  nachvollziehbar, ersetzt aber nicht die inhaltliche wissenschaftliche Prüfung, ob der kanonische Claim den
+  Kandidatenclaim tatsächlich korrekt wiedergibt — diese Prüfung bleibt Aufgabe der wissenschaftlichen
+  Redaktion beim Review von `promotion_status: approved_for_creation`.
