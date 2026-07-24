@@ -1,0 +1,241 @@
+schema_version: "1.0.0"
+id: research-protocol-retatrutide-v1
+title: Rechercheprotokoll Retatrutid (Pilotvorhaben)
+subject:
+  working_name: Retatrutide
+  notes:
+    de: >
+      Arbeitsname fuer das Pilotvorhaben. Kanonischer Name, Entwicklungsbezeichnungen und
+      Schreibvarianten muessen vor Verwendung in einem kanonischen Identitaets-Claim durch
+      eine belastbare Quelle bestaetigt werden (siehe research_questions, Thema 'identity').
+      Dieses Dokument enthaelt ausdruecklich KEINE realen Studienergebnisse, Wirksamkeits-
+      zahlen, Sicherheitsraten oder Pharmakokinetikwerte -- nur die geplante Suchstrategie
+      und die Bewertungsregeln.
+status: draft
+version: 1
+objectives:
+  - de: >
+      Eine reproduzierbare, auditierbare Recherchegrundlage fuer Retatrutid als erstes
+      vollstaendiges Pilotobjekt von Peptide Atlas schaffen, ohne in dieser Phase bereits
+      Quellen, Studien oder Claims zu veroeffentlichen.
+  - de: >
+      Alle acht Forschungsbereiche (Identitaet, Geschichte, Mechanismus, Pharmakokinetik,
+      klinische Forschung, Sicherheit, praeklinische Forschung, regulatorischer Status)
+      getrennt und nachvollziehbar adressieren.
+research_questions:
+  - id: rq-identity-1
+    topic: identity
+    question:
+      de: >
+        Wie lautet der kanonische (INN-)Name, und welche Entwicklungsbezeichnungen und
+        Schreibvarianten sind in belastbaren Quellen dokumentiert?
+  - id: rq-identity-2
+    topic: identity
+    question:
+      de: >
+        Welcher chemischen/biologischen Klassifikation (siehe substance_classes in
+        schemas/substance.schema.json) ist die Substanz zuzuordnen?
+  - id: rq-history-1
+    topic: history
+    question:
+      de: >
+        Wie stellt sich die Entwicklungsgeschichte dar (Sponsor/Entwickler, zeitliche
+        Abfolge der wichtigsten Forschungsphasen)?
+  - id: rq-mechanism-1
+    topic: mechanism
+    question:
+      de: >
+        An welchen Rezeptoren wirkt die Substanz (GIP-Rezeptor, GLP-1-Rezeptor,
+        Glucagon-Rezeptor), in welcher Aktivitaetsform (z. B. Agonismus), und welche
+        nachgelagerten Signalwege sind beteiligt?
+  - id: rq-mechanism-2
+    topic: mechanism
+    question:
+      de: >
+        Welche mechanistischen Aussagen sind gesicherte Erkenntnis, und welche bleiben
+        theoretische Interpretation/Extrapolation?
+  - id: rq-pharmacokinetics-1
+    topic: pharmacokinetics
+    question:
+      de: >
+        Wie stellen sich Absorption, Zeit bis zur maximalen Konzentration, Verteilung,
+        Metabolismus, Eliminationshalbwertszeit, Dosisproportionalitaet und
+        populationsbezogene Unterschiede in Primaerquellen dar?
+  - id: rq-clinical-1
+    topic: clinical
+    question:
+      de: >
+        Welche klinischen Studien existieren, getrennt nach Phase, Population,
+        Studiendesign, Intervention, Vergleichsgruppe, Studiendauer, primaerem und
+        sekundaeren Endpunkten, Analysepopulation, veroeffentlichtem Ergebnis und
+        Registerstatus?
+  - id: rq-safety-1
+    topic: safety
+    question:
+      de: >
+        Welche unerwuenschten Ereignisse, schwerwiegenden unerwuenschten Ereignisse,
+        Therapieabbrueche, dosisbezogene Vertraeglichkeitsdaten und Sicherheitssignale
+        sind dokumentiert, und welche Langzeitdaten fehlen noch?
+  - id: rq-preclinical-1
+    topic: preclinical
+    question:
+      de: >
+        Welche In-vitro- und Tiermodelle (Spezies, Dosis, Endpunkt) liegen vor, und wie
+        wird ihre Uebertragbarkeit auf den Menschen sowie ihre methodischen Grenzen
+        eingeordnet?
+  - id: rq-regulatory-1
+    topic: regulatory
+    question:
+      de: >
+        Welcher regulatorische Status ist ausschliesslich durch offizielle Dokumente
+        (FDA, EMA oder andere zustaendige Behoerden) belegt? ClinicalTrials.gov-Eintraege
+        oder Herstellerangaben werden dabei nicht mit einer behoerdlichen Zulassung
+        verwechselt.
+scope:
+  description:
+    de: >
+      Planung der Recherchestrategie fuer Retatrutid als Pilotobjekt. Enthaelt keine realen
+      Suchergebnisse, Quellen, Studien oder Claims -- diese entstehen erst in Phase 4B nach
+      wissenschaftlichem Review dieses Protokolls. Unbekannte oder unzureichend untersuchte
+      Aspekte werden ausdruecklich mit der Formulierung 'Derzeit gibt es keine ausreichenden
+      wissenschaftlichen Daten.' gekennzeichnet, sobald die eigentliche Recherche beginnt.
+  in_scope:
+    - Identitaet und Nomenklatur
+    - Entwicklungsgeschichte
+    - Wirkmechanismus
+    - Pharmakokinetik
+    - Klinische Forschung (alle Phasen)
+    - Sicherheit
+    - Praeklinische Forschung
+    - Regulatorischer Status (FDA, EMA, weitere zustaendige Behoerden)
+  out_of_scope:
+    - Dosierungsempfehlungen oder Selbstanwendungsprotokolle
+    - Personalisierte Therapieempfehlungen
+    - Veroeffentlichung realer Studienergebnisse oder Claims in diesem Protokoll selbst
+planned_information_sources:
+  - database: pubmed
+    role: primary
+    notes: PubMed/MEDLINE als primaere Quelle fuer peer-reviewte Publikationen.
+  - database: clinicaltrials_gov
+    role: primary
+    notes: Registereintraege, keine behoerdliche Zulassung.
+  - database: fda
+    role: primary
+    notes: Massgeblich fuer den US-regulatorischen Status.
+  - database: ema
+    role: primary
+    notes: Massgeblich fuer den EU-regulatorischen Status.
+  - database: who_ictrp
+    role: primary
+    notes: Ergaenzende internationale Studienregister.
+  - database: crossref
+    role: supplementary
+    notes: Metadaten-/Zitationsabgleich.
+  - database: cochrane_library
+    role: supplementary
+    notes: Systematische Reviews nur zur Orientierung und Primärquellen-Identifikation.
+  - database: google_scholar
+    role: discovery_only
+    notes: Nur ergaenzende Zitationssuche, kein eigenstaendiger Wirksamkeitsnachweis.
+  - database: manufacturer_registry
+    role: discovery_only
+    notes: Ausschliesslich fuer ausdruecklich attribuierte Entwicklungsinformationen.
+planned_search_concepts:
+  - retatrutide
+  - "Entwicklungsbezeichnungen/Aliasnamen (zunaechst als zu verifizieren markiert, z. B. LY3437943)"
+  - triple agonist
+  - GIP receptor
+  - GLP-1 receptor
+  - glucagon receptor
+  - obesity
+  - overweight
+  - type 2 diabetes
+  - pharmacokinetics
+  - safety
+  - adverse events
+  - randomized trial
+  - phase 1
+  - phase 2
+  - phase 3
+eligibility:
+  inclusion_criteria:
+    - Primaerstudien mit direktem Bezug zu Retatrutid
+    - Offizielle Studienregistereintraege (z. B. ClinicalTrials.gov, WHO ICTRP)
+    - Offizielle regulatorische Dokumente (FDA, EMA, weitere zustaendige Behoerden)
+    - Peer-reviewte pharmakologische Untersuchungen
+    - Relevante praeklinische Primaerstudien
+    - Systematische Reviews nur als Orientierung und zur Identifikation von Primaerquellen
+    - Korrekturen, Errata und Retraction Notices zu bereits eingeschlossenen Quellen
+    - >
+      Gesondert zu behandeln (nicht automatisch wie eine peer-reviewte Primaerstudie zu
+      gewichten): Hersteller-Pressemitteilungen, Konferenzabstracts, Preprints, narrative
+      Reviews, Sekundaeranalysen, Post-hoc-Analysen, Subgruppenanalysen sowie nicht
+      vollstaendig verfuegbare Quellen.
+  exclusion_criteria:
+    - Haendlerseiten als alleiniger Wirksamkeitsnachweis
+    - Social-Media-Beitraege
+    - Forenbeitraege
+    - Persoenliche Erfahrungsberichte als allgemeiner Wirksamkeitsnachweis
+    - Werbeseiten
+    - Nicht nachvollziehbare Zusammenfassungen ohne Pruefung der Primaerquelle
+    - KI-generierte Texte ohne Primaerquellenpruefung
+    - Suchmaschinen-Snippets
+    - Presseartikel ohne Pruefung der Primaerquelle
+deduplication_policy:
+  description:
+    de: >
+      Prioritaet stabiler externer Identifikatoren zur Erkennung von Mehrfachpublikationen
+      derselben Studie (Registereintrag und Fachartikel koennen dieselbe Studie
+      beschreiben, siehe Scientific Research Protocol, Abschnitt Studien-/Publikationsmodell).
+  identifier_priority: [nct_id, doi, pmid, pmcid]
+  manual_review_required: true
+screening_policy:
+  description:
+    de: >
+      Dreistufiges Screening: Deduplizierung, Titel-/Abstract-Screening, Volltext-Screening,
+      jeweils mit dokumentierter Entscheidung und Begruendung.
+  stages: [deduplication, title_abstract, full_text, final]
+  dual_reviewer_stages: [full_text, final]
+extraction_policy:
+  description:
+    de: >
+      Getrennte Extraktion je Forschungsbereich (Identitaet, Geschichte, Mechanismus,
+      Pharmakokinetik, klinische Forschung, Sicherheit, praeklinische Forschung,
+      regulatorischer Status) mit kurzen Paraphrasen und praeziser Fundstelle je Beobachtung.
+  verification_required: true
+  fields_to_extract:
+    - identity
+    - history
+    - mechanism
+    - pharmacokinetics
+    - clinical
+    - safety
+    - preclinical
+    - regulatory
+evidence_appraisal_policy:
+  description:
+    de: >
+      Bewertung erfolgt claim-basiert nach dem bestehenden Evidenzmodell (evidence_category
+      getrennt von certainty, siehe docs/00_grundlagen/evidenzsystem.md). Eine methodisch
+      gute praeklinische Studie bleibt praeklinische Evidenz und wird nicht zu klinischer
+      Wirksamkeit umformuliert. ClinicalTrials.gov-Eintraege oder Herstellerangaben werden
+      nicht mit einer behoerdlichen Zulassung verwechselt.
+claim_promotion_policy:
+  description:
+    de: >
+      Kein Kandidatenclaim wird automatisch zu einem aktiven kanonischen Claim. Fuer aktive,
+      medizinisch relevante Claims ist ein zweiter Review oder eine dokumentierte
+      unabhaengige Kontrollpruefung vorzusehen (siehe Evidence Curation Workflow).
+  requires_second_review: true
+amendment_policy:
+  description:
+    de: >
+      Aenderungen an diesem Protokoll (z. B. ergaenzte Suchbegriffe, angepasste
+      Ein-/Ausschlusskriterien) werden als neue Version angelegt (research-protocol-retatrutide-v2.yaml
+      usw.), nicht als stille Ueberschreibung dieser Datei.
+created_at: "2026-07-24"
+updated_at: "2026-07-24"
+review:
+  last_reviewed_at: null
+  reviewers: []
+  approval_decision: null
