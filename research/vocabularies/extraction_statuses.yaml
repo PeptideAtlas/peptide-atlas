@@ -1,0 +1,14 @@
+# Kontrolliertes Vokabular: extraction_status (research_extraction_record)
+schema_version: "1.0.0"
+values:
+  - value: draft
+    labels: { de: Entwurf, en: Draft }
+  - value: awaiting_verification
+    labels: { de: Verifikation ausstehend, en: Awaiting Verification }
+  - value: verified
+    labels: { de: Verifiziert, en: Verified }
+    note_de: Benötigt verified_by und verified_at.
+  - value: rejected
+    labels: { de: Verworfen, en: Rejected }
+  - value: superseded
+    labels: { de: Abgelöst, en: Superseded }

@@ -1,0 +1,13 @@
+# Kontrolliertes Vokabular: full_text_status (research_screening_record)
+schema_version: "1.0.0"
+values:
+  - value: not_applicable
+    labels: { de: Nicht zutreffend, en: Not Applicable }
+  - value: not_yet_obtained
+    labels: { de: Noch nicht beschafft, en: Not Yet Obtained }
+  - value: obtained
+    labels: { de: Beschafft, en: Obtained }
+  - value: restricted_access
+    labels: { de: Eingeschränkter Zugang, en: Restricted Access }
+  - value: unavailable
+    labels: { de: Nicht verfügbar, en: Unavailable }

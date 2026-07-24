@@ -31,9 +31,7 @@ import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
-import jsonschema
 import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -42,11 +40,14 @@ from _datalib import (  # noqa: E402
     DOCS_DIR,
     ENTITY_TYPE_TO_SCHEMA_ID,
     DataFileError,
+    Issue,
+    Report,
     build_schema_registry,
     iter_claim_files,
     iter_entity_files,
     iter_example_entity_files,
     iter_source_files,
+    jsonschema_error_path,
     load_all_vocabularies,
     load_yaml_file,
     normalize_doi,
@@ -55,6 +56,7 @@ from _datalib import (  # noqa: E402
     normalize_pmid,
     normalize_url,
     relative,
+    validate_against_schema,
 )
 
 # Rein navigatorische Seiten ohne redaktionellen Artikel-Workflow (siehe Quality
@@ -98,59 +100,12 @@ EVIDENCE_CATEGORY_BY_SOLE_SOURCE_TYPE = {
 
 
 @dataclass
-class Issue:
-    level: str  # "ERROR" | "WARNING"
-    file: str
-    path: str
-    message: str
-
-    def format(self) -> str:
-        location = f"{self.file}\n  {self.path}: " if self.path else f"{self.file}\n  "
-        return f"{self.level} {location}{self.message}"
-
-
-class Report:
-    def __init__(self) -> None:
-        self.issues: list[Issue] = []
-
-    def error(self, file: str, path: str, message: str) -> None:
-        self.issues.append(Issue("ERROR", file, path, message))
-
-    def warning(self, file: str, path: str, message: str) -> None:
-        self.issues.append(Issue("WARNING", file, path, message))
-
-    @property
-    def error_count(self) -> int:
-        return sum(1 for issue in self.issues if issue.level == "ERROR")
-
-    @property
-    def warning_count(self) -> int:
-        return sum(1 for issue in self.issues if issue.level == "WARNING")
-
-
-@dataclass
 class LoadedObject:
     id: str
     kind: str  # "entity" | "source" | "claim"
     entity_type: str | None
     path: Path
     data: dict
-
-
-def jsonschema_error_path(error: jsonschema.exceptions.ValidationError) -> str:
-    parts = [str(p) for p in error.absolute_path]
-    return "$" + "".join(f"[{p}]" if isinstance(p, int) else f".{p}" for p in parts) if parts else "$"
-
-
-_FORMAT_CHECKER = jsonschema.FormatChecker()
-
-
-def validate_against_schema(report: Report, file_rel: str, data: Any, schema_id: str, registry, schemas) -> None:
-    schema = schemas[schema_id]
-    validator_cls = jsonschema.validators.validator_for(schema)
-    validator = validator_cls(schema, registry=registry, format_checker=_FORMAT_CHECKER)
-    for error in sorted(validator.iter_errors(data), key=lambda e: list(e.absolute_path)):
-        report.error(file_rel, jsonschema_error_path(error), error.message)
 
 
 def load_dataset(root: Path, report: Report, registry, schemas, vocabularies, entity_iterator=iter_entity_files) -> tuple[

@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "research_screening_record.schema.json",
+  "title": "Research Screening Record",
+  "description": "Ein gefundener Kandidat und seine Ein-/Ausschlussentscheidung. Repraesentiert NICHT automatisch eine kanonische Quelle -- canonical_source_id bleibt null, bis ein Source-Objekt unter data/sources/** tatsaechlich angelegt wurde.",
+  "type": "object",
+  "properties": {
+    "schema_version": { "$ref": "common.schema.json#/$defs/schema_version" },
+    "id": {
+      "type": "string",
+      "pattern": "^screening-record-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$"
+    },
+    "protocol_id": {
+      "type": "string",
+      "pattern": "^research-protocol-[a-z0-9]+(-[a-z0-9]+)*-v[0-9]+$"
+    },
+    "search_run_ids": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "pattern": "^search-run-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$" }
+    },
+    "candidate_identifiers": {
+      "type": "object",
+      "properties": {
+        "doi": { "type": ["string", "null"] },
+        "pmid": { "type": ["string", "null"] },
+        "pmcid": { "type": ["string", "null"] },
+        "nct_id": { "type": ["string", "null"] },
+        "isbn": { "type": ["string", "null"] },
+        "url": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false,
+      "required": ["doi", "pmid", "pmcid", "nct_id", "isbn", "url"]
+    },
+    "candidate_title": { "type": "string", "minLength": 1 },
+    "candidate_source_type": { "$ref": "common.schema.json#/$defs/source_type" },
+    "decision": { "$ref": "common.schema.json#/$defs/screening_decision" },
+    "decision_stage": { "$ref": "common.schema.json#/$defs/screening_stage" },
+    "decision_reason": {
+      "anyOf": [
+        { "$ref": "common.schema.json#/$defs/exclusion_reason" },
+        { "type": "null" }
+      ],
+      "description": "Pflicht (nicht null) wenn decision 'exclude' ist, sonst ueblicherweise null."
+    },
+    "duplicate_of": {
+      "type": ["string", "null"],
+      "pattern": "^screening-record-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$",
+      "description": "Pflicht (nicht null) wenn decision 'duplicate' ist. Darf nicht auf den eigenen Datensatz zeigen (Selbstreferenz) und keine Zyklen bilden -- vom Validator geprueft."
+    },
+    "full_text_status": { "$ref": "common.schema.json#/$defs/full_text_status" },
+    "screened_by": { "type": "string", "minLength": 1 },
+    "screened_at": { "$ref": "common.schema.json#/$defs/date" },
+    "second_review": {
+      "type": ["object", "null"],
+      "properties": {
+        "reviewed_by": { "type": "string", "minLength": 1 },
+        "reviewed_at": { "$ref": "common.schema.json#/$defs/date" },
+        "decision_confirmed": { "type": "boolean" },
+        "notes": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false,
+      "required": ["reviewed_by", "reviewed_at", "decision_confirmed", "notes"]
+    },
+    "canonical_source_id": {
+      "type": ["string", "null"],
+      "pattern": "^source-[a-z0-9]+(-[a-z0-9]+)*$",
+      "description": "Bleibt null, bis ein entsprechendes Source-Objekt unter data/sources/** existiert (vom Validator geprueft)."
+    },
+    "created_at": { "$ref": "common.schema.json#/$defs/date" },
+    "updated_at": { "$ref": "common.schema.json#/$defs/date" }
+  },
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "protocol_id",
+    "search_run_ids",
+    "candidate_identifiers",
+    "candidate_title",
+    "candidate_source_type",
+    "decision",
+    "decision_stage",
+    "decision_reason",
+    "duplicate_of",
+    "full_text_status",
+    "screened_by",
+    "screened_at",
+    "second_review",
+    "canonical_source_id",
+    "created_at",
+    "updated_at"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": { "decision": { "const": "exclude" } },
+        "required": ["decision"]
+      },
+      "then": {
+        "properties": { "decision_reason": { "$ref": "common.schema.json#/$defs/exclusion_reason" } },
+        "required": ["decision_reason"]
+      }
+    },
+    {
+      "if": {
+        "properties": { "decision": { "const": "duplicate" } },
+        "required": ["decision"]
+      },
+      "then": {
+        "properties": { "duplicate_of": { "type": "string", "minLength": 1 } },
+        "required": ["duplicate_of"]
+      }
+    },
+    {
+      "if": {
+        "properties": { "decision": { "not": { "const": "duplicate" } } },
+        "required": ["decision"]
+      },
+      "then": {
+        "properties": { "duplicate_of": { "type": "null" } }
+      }
+    }
+  ]
+}

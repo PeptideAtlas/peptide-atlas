@@ -1,0 +1,17 @@
+# Kontrolliertes Vokabular: decision (research_screening_record)
+schema_version: "1.0.0"
+values:
+  - value: pending
+    labels: { de: Ausstehend, en: Pending }
+  - value: include
+    labels: { de: Eingeschlossen, en: Include }
+  - value: exclude
+    labels: { de: Ausgeschlossen, en: Exclude }
+    note_de: Benötigt decision_reason.
+  - value: duplicate
+    labels: { de: Duplikat, en: Duplicate }
+    note_de: Benötigt duplicate_of.
+  - value: awaiting_full_text
+    labels: { de: Volltext ausstehend, en: Awaiting Full Text }
+  - value: uncertain
+    labels: { de: Unklar, en: Uncertain }

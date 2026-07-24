@@ -1,0 +1,11 @@
+# Kontrolliertes Vokabular: decision_stage (research_screening_record) / screening_policy.stages (research_protocol)
+schema_version: "1.0.0"
+values:
+  - value: deduplication
+    labels: { de: Deduplizierung, en: Deduplication }
+  - value: title_abstract
+    labels: { de: Titel-/Abstract-Screening, en: Title/Abstract Screening }
+  - value: full_text
+    labels: { de: Volltext-Screening, en: Full-Text Screening }
+  - value: final
+    labels: { de: Abschließende Entscheidung, en: Final Decision }

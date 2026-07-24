@@ -20,6 +20,33 @@
       "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
       "format": "date"
     },
+    "date_time": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601-Zeitstempel (Datum und Uhrzeit, z. B. '2026-07-24T14:30:00Z'). Fuer Ereignisse, bei denen die Uhrzeit nachvollziehbar sein muss (z. B. Ausfuehrungszeitpunkt eines Suchlaufs), reicht ein reines Kalenderdatum nicht aus."
+    },
+    "claim_type": {
+      "type": "string",
+      "enum": [
+        "identity",
+        "classification",
+        "structure",
+        "mechanism",
+        "receptor_activity",
+        "pathway_activity",
+        "pharmacokinetics",
+        "efficacy",
+        "safety",
+        "adverse_event",
+        "regulatory",
+        "study_result",
+        "association",
+        "comparison",
+        "historical",
+        "other"
+      ],
+      "description": "Geteilt zwischen claim.schema.json (kanonische Claims) und research_extraction_record.schema.json (candidate_claims) -- dieselbe Klassifikation, damit ein Kandidatenclaim spaeter ohne Umbenennung in einen kanonischen Claim ueberfuehrt werden kann."
+    },
     "language_code": {
       "type": "string",
       "pattern": "^[a-z]{2}$",
@@ -160,6 +187,75 @@
         "section": { "type": ["string", "null"] }
       },
       "additionalProperties": false
+    },
+    "research_database": {
+      "type": "string",
+      "enum": [
+        "pubmed",
+        "clinicaltrials_gov",
+        "ema",
+        "fda",
+        "who_ictrp",
+        "crossref",
+        "cochrane_library",
+        "google_scholar",
+        "manufacturer_registry",
+        "other"
+      ],
+      "description": "Kontrolliertes Vokabular fuer Recherche-Datenbanken, siehe research/vocabularies/research_databases.yaml. google_scholar/manufacturer_registry sind ergaenzende Discovery-Werkzeuge, keine eigenstaendigen Wirksamkeitsnachweise."
+    },
+    "screening_stage": {
+      "type": "string",
+      "enum": ["deduplication", "title_abstract", "full_text", "final"]
+    },
+    "screening_decision": {
+      "type": "string",
+      "enum": ["pending", "include", "exclude", "duplicate", "awaiting_full_text", "uncertain"]
+    },
+    "exclusion_reason": {
+      "type": "string",
+      "enum": [
+        "wrong_substance",
+        "wrong_population",
+        "wrong_intervention",
+        "wrong_outcome",
+        "wrong_study_type",
+        "not_primary_source",
+        "duplicate_record",
+        "insufficient_information",
+        "unavailable_full_text",
+        "not_scientific",
+        "marketing_content",
+        "superseded_record",
+        "other"
+      ]
+    },
+    "full_text_status": {
+      "type": "string",
+      "enum": ["not_applicable", "not_yet_obtained", "obtained", "restricted_access", "unavailable"]
+    },
+    "extraction_status": {
+      "type": "string",
+      "enum": ["draft", "awaiting_verification", "verified", "rejected", "superseded"]
+    },
+    "short_paraphrase": {
+      "type": "object",
+      "description": "Wie localized_text, aber mit harter Laengengrenze je Sprache -- erzwingt eine kurze Paraphrase statt einer laengeren woertlichen Textuebernahme (siehe Scientific Research Protocol, Abschnitt Urheberrecht).",
+      "patternProperties": {
+        "^[a-z]{2}$": { "type": "string", "minLength": 1, "maxLength": 600 }
+      },
+      "additionalProperties": false,
+      "required": ["de"]
+    },
+    "observation_entry": {
+      "type": "object",
+      "description": "Eine einzelne, kurz paraphrasierte Beobachtung mit praeziser Fundstelle -- kein Freitextfeld ohne Struktur.",
+      "properties": {
+        "summary": { "$ref": "#/$defs/short_paraphrase" },
+        "locator": { "$ref": "#/$defs/locator" }
+      },
+      "additionalProperties": false,
+      "required": ["summary", "locator"]
     },
     "evidence_link": {
       "type": "object",
