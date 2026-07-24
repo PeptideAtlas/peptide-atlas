@@ -1,0 +1,19 @@
+schema_version: "1.0.0"
+id: search-run-70000000-0000-4000-8000-000000000001
+protocol_id: research-protocol-test-substance-v1
+database: pubmed
+interface: PubMed web interface
+executed_at: "2026-01-01T10:00:00Z"
+executed_by: reviewer-1
+exact_query: '"test substance"[Title/Abstract]'
+filters: {}
+date_range: { from: null, to: null }
+result_count: -1
+export_reference: null
+notes: null
+status: draft
+created_at: "2026-01-01"
+updated_at: "2026-01-01"
+review:
+  last_reviewed_at: null
+  reviewers: []

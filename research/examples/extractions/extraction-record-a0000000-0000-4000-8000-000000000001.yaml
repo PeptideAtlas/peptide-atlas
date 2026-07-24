@@ -1,0 +1,53 @@
+# Diese Daten sind ausschliesslich technische Platzhalter und keine medizinischen Aussagen.
+schema_version: "1.0.0"
+id: extraction-record-a0000000-0000-4000-8000-000000000001
+protocol_id: research-protocol-placeholder-substance-v1
+screening_record_id: screening-record-a0000000-0000-4000-8000-000000000001
+canonical_source_id: null
+canonical_study_id: null
+extraction_status: verified
+source_locator:
+  page: "3"
+  table: null
+  figure: null
+  section: "Methods"
+bibliographic_observations:
+  - summary:
+      de: Platzhalterpublikation mit fiktivem Erscheinungsjahr und fiktiven Autor:innen.
+    locator: { page: "1", table: null, figure: null, section: null }
+study_observations:
+  - summary:
+      de: Beschreibt eine fiktive praeklinische Untersuchung an einem Platzhaltermodell.
+    locator: { page: "2", table: null, figure: null, section: "Methods" }
+population_observations: []
+intervention_observations: []
+comparator_observations: []
+outcome_observations:
+  - summary:
+      de: Fiktives Ergebnis, ausschliesslich zur Illustration der Extraktionsstruktur.
+    locator: { page: "4", table: "2", figure: null, section: "Results" }
+safety_observations: []
+pharmacokinetic_observations: []
+mechanistic_observations:
+  - summary:
+      de: Fiktive Bindungsbeobachtung an einem Platzhalterrezeptor.
+    locator: { page: "3", table: null, figure: "1", section: "Results" }
+limitations_observed:
+  - summary:
+      de: Fiktive methodische Einschraenkung, nur zur Illustration.
+    locator: { page: "6", table: null, figure: null, section: "Discussion" }
+candidate_claims:
+  - working_id: candidate-binds-placeholder-receptor
+    claim_type_candidate: mechanism
+    predicate_candidate: interacts_with
+    statement_candidate:
+      de: Vorlaeufige, ungeprüfte Beobachtung, dass die Platzhaltersubstanz mit dem Platzhalterrezeptor interagiert.
+    locator: { page: "3", table: null, figure: "1", section: "Results" }
+    is_provisional: true
+extracted_by: reviewer-1
+extracted_at: "2026-07-24"
+verified_by: reviewer-2
+verified_at: "2026-07-24"
+discrepancies: []
+created_at: "2026-07-24"
+updated_at: "2026-07-24"

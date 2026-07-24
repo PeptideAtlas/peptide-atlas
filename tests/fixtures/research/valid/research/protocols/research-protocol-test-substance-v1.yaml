@@ -1,0 +1,59 @@
+schema_version: "1.0.0"
+id: research-protocol-test-substance-v1
+title: Test Research Protocol
+subject:
+  working_name: Test Substance
+version: 1
+status: approved
+objectives:
+  - de: Testdaten fuer die Research-Validator-Testsuite.
+research_questions:
+  - id: rq-1
+    topic: identity
+    question:
+      de: Testfrage zur Identitaet.
+scope:
+  description:
+    de: Testumfang.
+  in_scope: [Test]
+  out_of_scope: []
+planned_information_sources:
+  - database: pubmed
+    role: primary
+    notes: null
+planned_search_concepts:
+  - test substance
+eligibility:
+  inclusion_criteria: [Testkriterium]
+  exclusion_criteria: [Testausschlusskriterium]
+deduplication_policy:
+  description:
+    de: Testregel.
+  identifier_priority: [doi]
+  manual_review_required: true
+screening_policy:
+  description:
+    de: Testregel.
+  stages: [title_abstract]
+  dual_reviewer_stages: []
+extraction_policy:
+  description:
+    de: Testregel.
+  verification_required: true
+  fields_to_extract: [identity]
+evidence_appraisal_policy:
+  description:
+    de: Testregel.
+claim_promotion_policy:
+  description:
+    de: Testregel.
+  requires_second_review: true
+amendment_policy:
+  description:
+    de: Testregel.
+created_at: "2026-01-01"
+updated_at: "2026-01-01"
+review:
+  last_reviewed_at: "2026-01-01"
+  reviewers: ["reviewer-1"]
+  approval_decision: Freigegeben fuer Testzwecke.
