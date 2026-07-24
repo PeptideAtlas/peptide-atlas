@@ -7,7 +7,16 @@ values:
     labels: { de: Verifikation ausstehend, en: Awaiting Verification }
   - value: verified
     labels: { de: Verifiziert, en: Verified }
-    note_de: Benötigt verified_by und verified_at.
+    note_de: >
+      Benötigt verified_by und verified_at. verified_by muss sich von extracted_by unterscheiden --
+      "verified" bedeutet in Peptide Atlas immer durch eine andere Person geprüft, unabhängig von
+      protokollspezifischen Einstellungen (siehe ADR-0040 im Decision Log).
+  - value: self_checked
+    labels: { de: Selbst durchgesehen, en: Self-Checked }
+    note_de: >
+      Ehrlicher Zustand für rein technische Ein-Personen-Durchsicht ohne unabhängige Zweitprüfung
+      (z. B. Strukturtest, Platzhalterdaten). Erlaubt keine Promotion in data/claims/** — ein
+      promotion_record darf sich nur auf eine Extraktion mit extraction_status: verified beziehen.
   - value: rejected
     labels: { de: Verworfen, en: Rejected }
   - value: superseded

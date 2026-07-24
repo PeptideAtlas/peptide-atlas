@@ -236,7 +236,8 @@
     },
     "extraction_status": {
       "type": "string",
-      "enum": ["draft", "awaiting_verification", "verified", "rejected", "superseded"]
+      "enum": ["draft", "awaiting_verification", "verified", "self_checked", "rejected", "superseded"],
+      "description": "'verified' bedeutet immer durch eine ANDERE Person geprueft (verified_by != extracted_by wird unbedingt erzwungen, siehe ADR-0040). 'self_checked' ist der ehrliche Zustand fuer rein technische Ein-Personen-Durchsicht ohne unabhaengige Zweitpruefung -- eine so extrahierte Beobachtung ist NIE promotion-faehig (siehe research_promotion_record.schema.json)."
     },
     "search_run_status": {
       "type": "string",

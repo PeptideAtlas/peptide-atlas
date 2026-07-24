@@ -34,8 +34,8 @@ deduplication_policy:
 screening_policy:
   description:
     de: Testregel.
-  stages: [title_abstract]
-  dual_reviewer_stages: []
+  stages: [deduplication, title_abstract, full_text, final]
+  dual_reviewer_stages: [final]
 extraction_policy:
   description:
     de: Testregel.

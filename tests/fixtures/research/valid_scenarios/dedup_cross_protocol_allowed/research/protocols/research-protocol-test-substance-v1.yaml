@@ -39,10 +39,12 @@ screening_policy:
   description:
     de: Test.
   stages:
+  - deduplication
   - title_abstract
   - full_text
+  - final
   dual_reviewer_stages:
-  - full_text
+  - final
 extraction_policy:
   description:
     de: Test.

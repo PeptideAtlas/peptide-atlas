@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "research_screening_record.schema.json",
   "title": "Research Screening Record",
-  "description": "Ein gefundener Kandidat und seine Ein-/Ausschlussentscheidung. Repraesentiert NICHT automatisch eine kanonische Quelle -- canonical_source_id bleibt null, bis ein Source-Objekt unter data/sources/** tatsaechlich angelegt wurde. Die Top-Level-Felder (decision, decision_stage, decision_reason, screened_by, screened_at, second_review) sind eine validierte Projektion des letzten decision_history-Eintrags (siehe tools/validate_research.py) -- bewusste Denormalisierung fuer einfache Abfragen, die vollstaendige Historie bleibt in decision_history[] erhalten.",
+  "description": "Ein gefundener Kandidat und seine Ein-/Ausschlussentscheidung. Repraesentiert NICHT automatisch eine kanonische Quelle -- canonical_source_id bleibt null, bis ein Source-Objekt unter data/sources/** tatsaechlich angelegt wurde. Die Top-Level-Felder (decision, decision_stage, decision_reason, full_text_status, screened_by, screened_at, second_review) sind eine validierte Projektion des letzten decision_history-Eintrags (siehe tools/validate_research.py) -- bewusste Denormalisierung fuer einfache Abfragen, die vollstaendige Historie bleibt in decision_history[] erhalten. WICHTIG: dieses Array ist ein manuell editierbares Feld innerhalb derselben Datei, KEIN unveraendliches, separates Event-Log -- append-only ist redaktionelle Konvention, nicht durch Dateisystem-/Speicherzugriffskontrolle erzwungen (siehe Scientific Research Protocol, Abschnitt 9a). decision_stage: 'final' ist die einzige terminale, extraktionsfaehige Stufe -- 'full_text' dokumentiert die Volltextbewertung, entscheidet aber noch nicht abschliessend (siehe Abschnitt 9b).",
   "type": "object",
   "$defs": {
     "second_review_block": {
@@ -12,11 +12,8 @@
         "reviewed_at": { "$ref": "common.schema.json#/$defs/date" },
         "decision_confirmed": { "type": "boolean" },
         "reviewer_decision": {
-          "anyOf": [
-            { "$ref": "common.schema.json#/$defs/screening_decision" },
-            { "type": "null" }
-          ],
-          "description": "Die eigenstaendige Entscheidung der Zweitpruefung, getrennt von decision_confirmed (das nur bestaetigt/widerspricht der Erstentscheidung)."
+          "$ref": "common.schema.json#/$defs/screening_decision",
+          "description": "Die eigenstaendige, explizite Entscheidung der Zweitpruefung -- Pflichtfeld (nicht null) sobald second_review ueberhaupt vorhanden ist. decision_confirmed ist eine vom Validator geprueft abgeleitete Projektion von (reviewer_decision == Erstentscheidung), kein frei editierbares Zusatzfeld."
         },
         "adjudication": {
           "type": ["object", "null"],
@@ -106,10 +103,17 @@
           },
           "decided_by": { "type": "string", "minLength": 1 },
           "decided_at": { "$ref": "common.schema.json#/$defs/date" },
+          "full_text_status": {
+            "$ref": "common.schema.json#/$defs/full_text_status",
+            "description": "Zustand des Volltextzugriffs zum Zeitpunkt dieses Historieneintrags -- Teil der Projektion, siehe research_screening_record.schema.json Top-Level-Beschreibung."
+          },
           "second_review": { "$ref": "#/$defs/second_review_block" }
         },
         "additionalProperties": false,
-        "required": ["sequence", "stage", "decision", "decision_reason", "decided_by", "decided_at", "second_review"]
+        "required": [
+          "sequence", "stage", "decision", "decision_reason", "decided_by", "decided_at",
+          "full_text_status", "second_review"
+        ]
       }
     },
     "canonical_source_id": {

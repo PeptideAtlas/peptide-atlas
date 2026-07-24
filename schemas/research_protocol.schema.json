@@ -154,7 +154,10 @@
       "type": "object",
       "properties": {
         "description": { "$ref": "common.schema.json#/$defs/localized_text" },
-        "verification_required": { "type": "boolean" },
+        "verification_required": {
+          "type": "boolean",
+          "description": "Redaktionelle Absichtserklaerung, ob dieses Protokoll eine Extraktionsverifikation vorsieht. Seit ADR-0040 rein informationell: verified_by != extracted_by wird vom Validator bei extraction_status: verified IMMER erzwungen, unabhaengig von diesem Feld (siehe Scientific Research Protocol, Abschnitt 27a)."
+        },
         "fields_to_extract": {
           "type": "array",
           "minItems": 1,

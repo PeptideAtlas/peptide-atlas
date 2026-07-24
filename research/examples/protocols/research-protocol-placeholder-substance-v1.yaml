@@ -49,8 +49,8 @@ deduplication_policy:
 screening_policy:
   description:
     de: Zweistufiges Platzhalter-Screening.
-  stages: [deduplication, title_abstract, full_text]
-  dual_reviewer_stages: [full_text]
+  stages: [deduplication, title_abstract, full_text, final]
+  dual_reviewer_stages: [final]
 extraction_policy:
   description:
     de: Platzhalter-Extraktionsregel.

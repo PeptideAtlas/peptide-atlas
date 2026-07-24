@@ -54,7 +54,7 @@ INVALID_SCENARIOS = {
     "duplicate_without_target": "is not of type 'string'",
     "self_referencing_duplicate": "cannot mark itself as duplicate_of",
     "cyclical_duplicate": "cyclical duplicate_of chain detected",
-    "extraction_for_non_included_candidate": "extraction is only allowed for included candidates",
+    "extraction_for_non_included_candidate": "not extraction-eligible: decision is 'exclude'",
     "verified_without_verifier": "is not of type 'string'",
     "approved_without_review": "should be non-empty",
     "missing_canonical_source": "does not exist under data/sources/**",
@@ -90,7 +90,6 @@ INVALID_SCENARIOS = {
     "extraction_for_unconfirmed_screening": "must stay 'uncertain'",
     "final_include_without_full_text": "requires full_text_status",
     # Extraktionsverifikation.
-    "verifier_equals_extractor": "verified_by must differ",
     # Screening-Historie.
     "decision_history_missing": "is a required property",
     "decision_history_mismatch": "does not match the top-level fields",
@@ -106,6 +105,37 @@ INVALID_SCENARIOS = {
     "unsafe_export_reference": "must be a relative path",
     "invalid_date_order": "out of order",
     "duplicate_research_question_id": "duplicate value",
+    # Round 3 -- Punkt 1: terminale Extraktionsfaehigkeit.
+    "extraction_from_title_abstract_include": "not the terminal stage 'final'",
+    "extraction_from_nonterminal_full_text_include": "not the terminal stage 'final'",
+    "extraction_without_obtained_full_text": "not 'obtained'",
+    "extraction_with_unresolved_review_conflict": "conflict is not resolved via a valid adjudication",
+    # Round 3 -- Punkt 2: strukturierte, wechselseitig konsistente Zweitentscheidung.
+    "second_review_missing_reviewer_decision": "is not of type 'string'",
+    "second_review_confirmed_but_decisions_differ": "decision_confirmed (True) is inconsistent",
+    "second_review_not_confirmed_but_decisions_equal": "decision_confirmed (False) is inconsistent",
+    "second_review_conflict_without_adjudication": "must stay 'uncertain'",
+    "adjudicator_equals_first_reviewer": "must be a third person",
+    "adjudicator_equals_second_reviewer": "must be a third person",
+    "final_decision_differs_from_adjudication": "must match this entry's decision",
+    # Round 3 -- Punkt 4: duplicate_of nur innerhalb desselben Protokolls.
+    "duplicate_of_cross_protocol": "belongs to a different protocol",
+    "duplicate_of_cycle": "cyclical duplicate_of chain detected",
+    "duplicate_of_missing_target": "references missing screening record",
+    "duplicate_of_self": "cannot mark itself as duplicate_of",
+    "duplicate_chain_cross_protocol": "which belongs to a different protocol",
+    # Round 3 -- Punkt 5: claim_promotion_policy.requires_second_review.
+    "promotion_policy_requires_two_reviewers": "requires at least two distinct, non-empty reviewers",
+    "promotion_single_reviewer_when_two_required": "requires at least two distinct, non-empty reviewers",
+    "promotion_duplicate_reviewers": "requires at least two distinct, non-empty reviewers",
+    # Round 3 -- Punkt 6: Bedeutung von extraction_status: verified.
+    "verified_same_as_extractor": "requires verified_by to differ from extracted_by",
+    "self_verified_extraction_cannot_be_promoted": "got 'self_checked'",
+    # Round 3 -- Punkt 7: screened_at gegen JEDEN referenzierten Suchlauf.
+    "screened_at_before_later_search_run": "referenced search run 'search-run-40000000-0000-4000-8000-000000000002'",
+    # Round 3 -- Punkt 8: search_run.database muss geplant sein.
+    "search_run_database_not_planned": "is not among protocol",
+    "duplicate_planned_database_entry": "duplicate value 'pubmed'",
 }
 
 
@@ -148,6 +178,71 @@ def test_valid_scenario_reports_no_errors(scenario: str):
     report = _run(VALID_SCENARIOS_ROOT / scenario)
     messages = "\n".join(issue.format() for issue in report.issues)
     assert report.error_count == 0, f"scenario '{scenario}': unexpected errors:\n{messages}"
+
+
+# Praezise Pfad-/Datei-Assertions fuer die kritischsten Round-3-Regeln (Punkt 10 im Reviewauftrag):
+# statt nur "irgendein Fehler mit diesem Teilstring", wird hier zusaetzlich die betroffene Datei
+# UND der genaue JSON-Pfad geprueft -- verhindert, dass ein Test versehentlich gruen ist, weil eine
+# unabhaengige Regel zuerst (an anderer Stelle) fehlschlaegt.
+PRECISE_INVALID_SCENARIOS = {
+    "extraction_from_title_abstract_include": (
+        "research/extractions/extraction-record-60000000-0000-4000-8000-000000000001.yaml",
+        "$.screening_record_id",
+    ),
+    "extraction_with_unresolved_review_conflict": (
+        "research/extractions/extraction-record-60000000-0000-4000-8000-000000000001.yaml",
+        "$.screening_record_id",
+    ),
+    "second_review_confirmed_but_decisions_differ": (
+        "research/screening/screening-record-50000000-0000-4000-8000-000000000001.yaml",
+        "$.decision_history[0].second_review.decision_confirmed",
+    ),
+    "adjudicator_equals_first_reviewer": (
+        "research/screening/screening-record-50000000-0000-4000-8000-000000000001.yaml",
+        "$.decision_history[0].second_review.adjudication.resolved_by",
+    ),
+    "duplicate_of_cross_protocol": (
+        "research/screening/screening-record-50000000-0000-4000-8000-000000000002.yaml",
+        "$.duplicate_of",
+    ),
+    "promotion_single_reviewer_when_two_required": (
+        "research/promotions/promotion-record-70000000-0000-4000-8000-000000000001.yaml",
+        "$.review.reviewers",
+    ),
+    "verified_same_as_extractor": (
+        "research/extractions/extraction-record-60000000-0000-4000-8000-000000000001.yaml",
+        "$.verified_by",
+    ),
+    "screened_at_before_later_search_run": (
+        "research/screening/screening-record-50000000-0000-4000-8000-000000000001.yaml",
+        "$.screened_at",
+    ),
+    "search_run_database_not_planned": (
+        "research/search_runs/search-run-40000000-0000-4000-8000-000000000001.yaml",
+        "$.database",
+    ),
+}
+
+
+@pytest.mark.parametrize("scenario", sorted(PRECISE_INVALID_SCENARIOS))
+def test_invalid_scenario_reports_expected_error_at_precise_location(scenario: str):
+    scenario_dir = INVALID_ROOT / scenario
+    report = _run(scenario_dir)
+    expected_file_suffix, expected_path = PRECISE_INVALID_SCENARIOS[scenario]
+    expected_substring = INVALID_SCENARIOS[scenario]
+
+    matching = [
+        issue for issue in report.issues
+        if issue.level == "ERROR"
+        and issue.file.endswith(expected_file_suffix)
+        and issue.path == expected_path
+        and expected_substring in issue.message
+    ]
+    assert matching, (
+        f"scenario '{scenario}': expected an ERROR in '...{expected_file_suffix}' at path "
+        f"'{expected_path}' containing {expected_substring!r}, got:\n"
+        + "\n".join(f"{i.file} {i.path}: {i.message}" for i in report.issues if i.level == "ERROR")
+    )
 
 
 def test_exit_code_zero_only_when_no_errors():
