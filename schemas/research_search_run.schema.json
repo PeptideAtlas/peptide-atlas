@@ -50,7 +50,7 @@
       "description": "Verweis/Beschreibung eines etwaigen lokalen Exports unter research/raw/ (Pfadhinweis, NICHT die Datei selbst)."
     },
     "notes": { "type": ["string", "null"] },
-    "status": { "$ref": "common.schema.json#/$defs/editorial_status" },
+    "status": { "$ref": "common.schema.json#/$defs/search_run_status" },
     "created_at": { "$ref": "common.schema.json#/$defs/date" },
     "updated_at": { "$ref": "common.schema.json#/$defs/date" },
     "review": { "$ref": "common.schema.json#/$defs/review_block" }

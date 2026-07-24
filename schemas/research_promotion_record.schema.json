@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "research_promotion_record.schema.json",
+  "title": "Research Promotion Record",
+  "description": "Macht die Kette von einem verifizierten Kandidatenclaim (extraction_record.candidate_claims[]) zu einem spaeter angelegten kanonischen Claim unter data/claims/** maschinenlesbar (siehe ADR-0037). Ein promotion_record selbst ist KEIN kanonisches Wissensobjekt und erzeugt NIE selbststaendig einen Claim -- approved_for_creation/promoted duerfen laut Scientific Research Protocol nie automatisiert durch Automatisierung/KI gesetzt werden, sondern erfordern eine dokumentierte menschliche wissenschaftliche Entscheidung.",
+  "type": "object",
+  "properties": {
+    "schema_version": { "$ref": "common.schema.json#/$defs/schema_version" },
+    "id": {
+      "type": "string",
+      "pattern": "^promotion-record-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$"
+    },
+    "protocol_id": {
+      "type": "string",
+      "pattern": "^research-protocol-[a-z0-9]+(-[a-z0-9]+)*-v[0-9]+$"
+    },
+    "extraction_record_id": {
+      "type": "string",
+      "pattern": "^extraction-record-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$",
+      "description": "Muss auf einen extraction_record mit extraction_status: verified verweisen (vom Validator geprueft)."
+    },
+    "candidate_working_id": {
+      "type": "string",
+      "pattern": "^candidate-[a-z0-9]+(-[a-z0-9]+)*$",
+      "description": "Muss einem candidate_claims[].working_id im referenzierten extraction_record entsprechen (vom Validator geprueft)."
+    },
+    "promotion_status": { "$ref": "common.schema.json#/$defs/promotion_status" },
+    "review": { "$ref": "common.schema.json#/$defs/review_block" },
+    "canonical_claim_id": {
+      "type": ["string", "null"],
+      "pattern": "^claim-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$",
+      "description": "Darf erst gesetzt werden, wenn das Claim-Objekt unter data/claims/** tatsaechlich existiert (vom Validator geprueft). Pflicht (nicht null) bei promotion_status 'promoted', muss null sein bei 'rejected'."
+    },
+    "decision_rationale": {
+      "type": ["string", "null"],
+      "description": "Dokumentierte wissenschaftliche Begruendung. Pflicht (nicht leer) sobald promotion_status 'approved_for_creation' oder 'promoted' ist."
+    },
+    "created_at": { "$ref": "common.schema.json#/$defs/date" },
+    "updated_at": { "$ref": "common.schema.json#/$defs/date" }
+  },
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "protocol_id",
+    "extraction_record_id",
+    "candidate_working_id",
+    "promotion_status",
+    "review",
+    "canonical_claim_id",
+    "decision_rationale",
+    "created_at",
+    "updated_at"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": { "promotion_status": { "const": "rejected" } },
+        "required": ["promotion_status"]
+      },
+      "then": {
+        "properties": { "canonical_claim_id": { "type": "null" } }
+      }
+    },
+    {
+      "if": {
+        "properties": { "promotion_status": { "const": "promoted" } },
+        "required": ["promotion_status"]
+      },
+      "then": {
+        "properties": { "canonical_claim_id": { "type": "string", "minLength": 1 } },
+        "required": ["canonical_claim_id"]
+      }
+    },
+    {
+      "if": {
+        "properties": { "promotion_status": { "enum": ["approved_for_creation", "promoted"] } },
+        "required": ["promotion_status"]
+      },
+      "then": {
+        "properties": {
+          "decision_rationale": { "type": "string", "minLength": 1 },
+          "review": {
+            "type": "object",
+            "properties": {
+              "last_reviewed_at": { "type": "string" },
+              "reviewers": { "type": "array", "minItems": 1 }
+            },
+            "required": ["last_reviewed_at", "reviewers"]
+          }
+        },
+        "required": ["decision_rationale", "review"]
+      }
+    }
+  ]
+}

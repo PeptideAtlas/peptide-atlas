@@ -1,0 +1,16 @@
+# Diese Daten sind ausschliesslich technische Platzhalter und keine medizinischen Aussagen.
+schema_version: "1.0.0"
+id: promotion-record-b0000000-0000-4000-8000-000000000001
+protocol_id: research-protocol-placeholder-substance-v1
+extraction_record_id: extraction-record-a0000000-0000-4000-8000-000000000001
+candidate_working_id: candidate-binds-placeholder-receptor
+promotion_status: rejected
+review:
+  last_reviewed_at: "2026-07-24"
+  reviewers: ["reviewer-2"]
+canonical_claim_id: null
+decision_rationale: >
+  Platzhalterbeispiel: eine erste Pruefung ergab, dass die Fundstelle allein nicht ausreicht, um einen
+  kanonischen mechanism-Claim zu stuetzen. Rein technische Illustration, keine echte Bewertung.
+created_at: "2026-07-24"
+updated_at: "2026-07-24"

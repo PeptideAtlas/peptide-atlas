@@ -9,9 +9,20 @@ unabhaengig voneinander bleiben (siehe Scientific Research Protocol).
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
-from _datalib import REPO_ROOT, Vocabulary, iter_yaml_files, load_yaml_file  # noqa: F401
+from _datalib import (  # noqa: F401
+    REPO_ROOT,
+    Vocabulary,
+    iter_yaml_files,
+    load_yaml_file,
+    normalize_doi,
+    normalize_isbn,
+    normalize_pmcid,
+    normalize_pmid,
+    normalize_url,
+)
 
 RESEARCH_DIR = REPO_ROOT / "research"
 RESEARCH_VOCAB_DIR = RESEARCH_DIR / "vocabularies"
@@ -21,6 +32,7 @@ RESEARCH_KIND_TO_FOLDER = {
     "search_run": "search_runs",
     "screening_record": "screening",
     "extraction_record": "extractions",
+    "promotion_record": "promotions",
 }
 
 RESEARCH_KIND_TO_SCHEMA_ID = {
@@ -28,6 +40,7 @@ RESEARCH_KIND_TO_SCHEMA_ID = {
     "search_run": "research_search_run.schema.json",
     "screening_record": "research_screening_record.schema.json",
     "extraction_record": "research_extraction_record.schema.json",
+    "promotion_record": "research_promotion_record.schema.json",
 }
 
 RESEARCH_KIND_TO_ID_PREFIX = {
@@ -35,6 +48,7 @@ RESEARCH_KIND_TO_ID_PREFIX = {
     "search_run": "search-run-",
     "screening_record": "screening-record-",
     "extraction_record": "extraction-record-",
+    "promotion_record": "promotion-record-",
 }
 
 RESEARCH_VOCABULARY_NAMES = [
@@ -46,7 +60,47 @@ RESEARCH_VOCABULARY_NAMES = [
     "full_text_statuses",
     "extraction_statuses",
     "review_decisions",
+    "search_run_statuses",
+    "promotion_statuses",
 ]
+
+# Kanonische Reihenfolge der Screening-Stufen, fuer Monotonie-Pruefungen in decision_history
+# (siehe validate_research.py). Nicht identisch mit der Vokabular-Datei -- dort ist die
+# Reihenfolge nicht semantisch (jede Enum-Menge), hier schon.
+SCREENING_STAGE_ORDER = ["deduplication", "title_abstract", "full_text", "final"]
+
+# Screening-Entscheidungen, die einen "aktiven" (noch nicht ausgeschiedenen) Kandidaten
+# markieren -- fuer die Identifier-Deduplizierungspruefung (siehe validate_research.py).
+ACTIVE_SCREENING_DECISIONS = {"include", "pending", "awaiting_full_text", "uncertain"}
+
+# Identifier-Felder in candidate_identifiers, die fuer die Deduplizierung normalisiert werden --
+# Reihenfolge irrelevant hier (im Gegensatz zu deduplication_policy.identifier_priority im
+# Protokoll, das nur die redaktionelle Prioritaet bei der Studienzuordnung betrifft).
+DEDUPLICATION_IDENTIFIER_FIELDS = ("doi", "pmid", "pmcid", "nct_id", "isbn")
+
+
+def normalize_nct_id(value: str) -> str:
+    """Kanonisiert eine ClinicalTrials.gov-NCT-ID fuer die Duplikaterkennung.
+
+    'NCT01234567', 'nct01234567' und 'NCT 01234567' ergeben denselben Wert. Fuehrende
+    Nullen innerhalb der Nummer werden -- anders als bei PMID -- NICHT entfernt, da NCT-IDs
+    eine feste Ziffernanzahl mit bedeutungstragenden fuehrenden Nullen haben.
+    """
+    text = re.sub(r"\s+", "", value.strip()).upper()
+    if not text.startswith("NCT"):
+        text = f"NCT{text}"
+    digits = re.sub(r"\D", "", text)
+    return f"NCT{digits}"
+
+
+NORMALIZERS = {
+    "doi": normalize_doi,
+    "pmid": normalize_pmid,
+    "pmcid": normalize_pmcid,
+    "nct_id": normalize_nct_id,
+    "isbn": normalize_isbn,
+    "url": normalize_url,
+}
 
 
 def iter_research_files(root: Path, kind: str):

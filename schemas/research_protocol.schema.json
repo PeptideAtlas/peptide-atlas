@@ -88,7 +88,20 @@
           "notes": { "type": ["string", "null"] }
         },
         "additionalProperties": false,
-        "required": ["database", "role", "notes"]
+        "required": ["database", "role", "notes"],
+        "allOf": [
+          {
+            "if": {
+              "properties": { "database": { "enum": ["google_scholar", "manufacturer_registry"] } },
+              "required": ["database"]
+            },
+            "then": {
+              "properties": { "role": { "const": "discovery_only" } },
+              "required": ["role"]
+            },
+            "description": "google_scholar und manufacturer_registry sind strukturell auf role: discovery_only beschraenkt -- sie duerfen nie als primary/supplementary eingestuft werden (siehe Scientific Research Protocol, Abschnitt 5)."
+          }
+        ]
       }
     },
     "planned_search_concepts": {

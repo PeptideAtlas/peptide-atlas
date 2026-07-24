@@ -4,8 +4,8 @@
 Laeuft GETRENNT vom kanonischen Datenvalidator (tools/validate_data.py) -- research/**
 ist Provenienz- und Arbeitsebene, kein kanonisches Wissen (siehe ADR-0033 im Decision Log)
 und fliesst nicht in build/catalog.json oder build/graph.json ein. Dieser Validator prueft
-aber Querverweise auf die kanonische Datenebene, wo Research-Datensaetze `canonical_source_id`
-oder `canonical_study_id` gesetzt haben.
+aber Querverweise auf die kanonische Datenebene, wo Research-Datensaetze `canonical_source_id`,
+`canonical_study_id` oder `canonical_claim_id` gesetzt haben.
 
 Prueft:
 
@@ -13,11 +13,32 @@ Prueft:
   Pflichtfelder, Enums, echte Kalenderdaten (aktivierter FormatChecker), schema_version,
   Dateiname == id.
 - Referenzebene: protocol_id, search_run_ids, duplicate_of, canonical_source_id (gegen
-  data/sources/**), canonical_study_id (gegen data/entities/studies/**).
-- Workflowebene: Ausschluss braucht Grund, Duplikat braucht Ziel (beides zusaetzlich
-  schema-seitig erzwungen), keine Selbstreferenz/Zyklen bei duplicate_of, Extraktion nur
-  fuer eingeschlossene Screening-Datensaetze, approved/verified brauchen Review/Verifikation
-  (schema-seitig erzwungen).
+  data/sources/**), canonical_study_id (gegen data/entities/studies/**), canonical_claim_id
+  (gegen data/claims/**).
+- Protokollkonsistenz: ein search_run darf nur auf ein Protokoll mit Status approved/superseded
+  zeigen; screening_record/search_run und extraction_record/screening_record muessen jeweils
+  dieselbe protocol_id tragen; widersprechende canonical_source_id zwischen Screening und
+  Extraktion ist ein Fehler; protocol.version muss dem -vN-Suffix der id entsprechen.
+- Deduplizierung: normalisierte DOI/PMID/PMCID/NCT-ID/ISBN duerfen innerhalb desselben Protokolls
+  nicht auf zwei gleichzeitig "aktiven" (nicht als duplicate markierten) Screening-Datensaetzen
+  liegen; normalisierte URL-Kollisionen sind nur eine Warnung (Redirects/Mirrors sind legitim).
+  Kollisionen ueber verschiedene Protokolle hinweg sind erlaubt.
+- Screening-Workflow: Dual-Reviewer-Pflicht (screening_policy.dual_reviewer_stages),
+  Reviewer-Unabhaengigkeit, Konfliktloesung bei second_review.decision_confirmed: false
+  (entweder decision: uncertain oder vollstaendige, unabhaengige Adjudikation), Volltextregeln
+  (kein finaler Einschluss ohne full_text_status: obtained), vollstaendige, in sich konsistente
+  decision_history (lueckenlose sequence, keine Rueckwaertsbewegung, Projektion auf Top-Level-Felder).
+- Extraktionsverifikation: verified_by != extracted_by, sofern das referenzierte Protokoll
+  extraction_policy.verification_required: true setzt (sonst bewusst nicht erzwungen, siehe
+  Abschnitt 27a des Scientific Research Protocol).
+- Claim-Promotion: extraction_record_id muss existieren und verified sein, candidate_working_id
+  muss im Extraktionsdatensatz vorkommen, protocol_id muss uebereinstimmen, canonical_claim_id
+  muss (falls gesetzt) unter data/claims/** existieren, kein Kandidat darf mehr als eine aktive
+  (nicht rejected/withdrawn) Promotion gleichzeitig haben.
+- Sonstige Konsistenz: Eindeutigkeit innerhalb von Arrays (IDs, Kennungen, Stufen), Datumsreihenfolge
+  (created_at <= updated_at, date_range, screened_at nicht vor dem Suchlauf, Review-/Adjudikations-
+  daten nicht vor der Erstentscheidung), sichere export_reference (kein absoluter Pfad, kein '..',
+  keine URL, nur unter research/raw/).
 - Dateiebene: keine unerwuenschten Binaerdateien in versionierten research/-Verzeichnissen
   (research/raw/** wird uebersprungen), research/examples/** bildet einen eigenen, in sich
   geschlossenen Namensraum (wie data/examples/).
@@ -29,6 +50,7 @@ Netzwerkzugriffe.
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -39,6 +61,7 @@ from _datalib import (  # noqa: E402
     DataFileError,
     Report,
     build_schema_registry,
+    iter_claim_files,
     iter_entity_files,
     iter_source_files,
     load_yaml_file,
@@ -46,10 +69,15 @@ from _datalib import (  # noqa: E402
     validate_against_schema,
 )
 from _researchlib import (  # noqa: E402
+    ACTIVE_SCREENING_DECISIONS,
+    DEDUPLICATION_IDENTIFIER_FIELDS,
+    NORMALIZERS,
     RESEARCH_DIR,
     RESEARCH_KIND_TO_SCHEMA_ID,
+    SCREENING_STAGE_ORDER,
     iter_research_files,
     load_all_research_vocabularies,
+    normalize_url,
 )
 
 UNWANTED_BINARY_SUFFIXES = {
@@ -58,7 +86,9 @@ UNWANTED_BINARY_SUFFIXES = {
     ".ris", ".bib", ".csv",
 }
 
-RESEARCH_KINDS = ("protocol", "search_run", "screening_record", "extraction_record")
+RESEARCH_KINDS = ("protocol", "search_run", "screening_record", "extraction_record", "promotion_record")
+
+ALLOWED_SEARCH_RUN_PROTOCOL_STATUSES = {"approved", "superseded"}
 
 
 @dataclass
@@ -113,8 +143,8 @@ def load_research_dataset(
     return objects
 
 
-def load_canonical_reference_sets(data_root: Path) -> tuple[set[str], set[str]]:
-    """Laedt nur die IDs aus data/sources/** und data/entities/studies/**, fuer
+def load_canonical_reference_sets(data_root: Path) -> tuple[set[str], set[str], set[str]]:
+    """Laedt nur die IDs aus data/sources/**, data/entities/studies/** und data/claims/**, fuer
     Querverweispruefungen. Validiert diese Objekte NICHT selbst -- das ist Aufgabe von
     tools/validate_data.py."""
     source_ids: set[str] = set()
@@ -137,7 +167,16 @@ def load_canonical_reference_sets(data_root: Path) -> tuple[set[str], set[str]]:
         if isinstance(data, dict) and data.get("id"):
             study_ids.add(data["id"])
 
-    return source_ids, study_ids
+    claim_ids: set[str] = set()
+    for path in iter_claim_files(data_root):
+        try:
+            data = load_yaml_file(path)
+        except DataFileError:
+            continue
+        if isinstance(data, dict) and data.get("id"):
+            claim_ids.add(data["id"])
+
+    return source_ids, study_ids, claim_ids
 
 
 def check_research_references(
@@ -158,13 +197,34 @@ def check_research_references(
             if protocol_id and protocol_id not in protocols:
                 report.error(file_rel, "$.protocol_id", f"references missing protocol: {protocol_id}")
 
+    for obj in search_runs.values():
+        file_rel = relative(obj.path)
+        protocol = protocols.get(obj.data.get("protocol_id"))
+        if protocol is not None:
+            status = protocol.data.get("status")
+            if status not in ALLOWED_SEARCH_RUN_PROTOCOL_STATUSES:
+                report.error(
+                    file_rel, "$.protocol_id",
+                    f"search run references protocol '{protocol.id}' with status '{status}' -- a search run "
+                    f"may only be executed against a protocol whose status is one of "
+                    f"{sorted(ALLOWED_SEARCH_RUN_PROTOCOL_STATUSES)} at validation time",
+                )
+
     for obj in screening.values():
         file_rel = relative(obj.path)
         data = obj.data
 
         for search_run_id in data.get("search_run_ids") or []:
-            if search_run_id not in search_runs:
+            search_run = search_runs.get(search_run_id)
+            if search_run is None:
                 report.error(file_rel, "$.search_run_ids", f"references missing search run: {search_run_id}")
+            elif search_run.data.get("protocol_id") != data.get("protocol_id"):
+                report.error(
+                    file_rel, "$.search_run_ids",
+                    f"search run '{search_run_id}' belongs to protocol '{search_run.data.get('protocol_id')}', "
+                    f"not this screening record's protocol '{data.get('protocol_id')}' -- a screening record "
+                    "must not mix search runs from different protocol versions",
+                )
 
         duplicate_of = data.get("duplicate_of")
         if duplicate_of:
@@ -205,13 +265,28 @@ def check_research_references(
         screening_obj = screening.get(screening_id)
         if screening_id and screening_obj is None:
             report.error(file_rel, "$.screening_record_id", f"references missing screening record: {screening_id}")
-        elif screening_obj is not None and screening_obj.data.get("decision") != "include":
-            report.error(
-                file_rel, "$.screening_record_id",
-                f"extraction record created for screening record '{screening_id}' whose decision is "
-                f"'{screening_obj.data.get('decision')}', not 'include' -- extraction is only allowed for "
-                "included candidates",
-            )
+        elif screening_obj is not None:
+            if screening_obj.data.get("decision") != "include":
+                report.error(
+                    file_rel, "$.screening_record_id",
+                    f"extraction record created for screening record '{screening_id}' whose decision is "
+                    f"'{screening_obj.data.get('decision')}', not 'include' -- extraction is only allowed for "
+                    "included candidates",
+                )
+            if data.get("protocol_id") != screening_obj.data.get("protocol_id"):
+                report.error(
+                    file_rel, "$.protocol_id",
+                    f"protocol_id does not match the referenced screening record's protocol_id "
+                    f"('{screening_obj.data.get('protocol_id')}')",
+                )
+            extraction_source = data.get("canonical_source_id")
+            screening_source = screening_obj.data.get("canonical_source_id")
+            if extraction_source and screening_source and extraction_source != screening_source:
+                report.error(
+                    file_rel, "$.canonical_source_id",
+                    f"conflicts with canonical_source_id '{screening_source}' already recorded on screening "
+                    f"record '{screening_id}'",
+                )
 
         canonical_source_id = data.get("canonical_source_id")
         if canonical_source_id and canonical_source_id not in source_ids:
@@ -228,6 +303,402 @@ def check_research_references(
             )
 
 
+_PROTOCOL_ID_VERSION_RE = re.compile(r"-v(\d+)$")
+
+
+def check_protocol_version_matches_id(report: Report, protocols: dict[str, ResearchObject]) -> None:
+    for obj in protocols.values():
+        match = _PROTOCOL_ID_VERSION_RE.search(obj.id)
+        if not match:
+            continue  # id-Muster ist bereits schema-seitig erzwungen, sollte hier nie eintreten
+        id_version = int(match.group(1))
+        declared_version = obj.data.get("version")
+        if declared_version != id_version:
+            report.error(
+                relative(obj.path), "$.version",
+                f"version {declared_version!r} does not match the -v{id_version} suffix of id '{obj.id}'",
+            )
+
+
+def check_deduplication(report: Report, objects: dict[str, dict[str, ResearchObject]]) -> None:
+    """Erkennt Kandidaten mit identischem normalisiertem stabilem Identifikator innerhalb
+    desselben Protokolls, die nicht als decision: duplicate markiert sind. Kollisionen ueber
+    verschiedene Protokolle hinweg sind erlaubt (dieselbe Publikation kann in mehreren Reviews
+    vorkommen). URL-Kollisionen sind nur eine Warnung (Redirects/Mirrors, siehe
+    tools/_datalib.py::normalize_url)."""
+    screening = objects["screening_record"]
+    by_protocol: dict[str, list[ResearchObject]] = {}
+    for obj in screening.values():
+        by_protocol.setdefault(obj.data.get("protocol_id"), []).append(obj)
+
+    for records in by_protocol.values():
+        identifier_map: dict[tuple[str, str], list[ResearchObject]] = {}
+        url_map: dict[str, list[ResearchObject]] = {}
+        for obj in records:
+            identifiers = obj.data.get("candidate_identifiers") or {}
+            for field in DEDUPLICATION_IDENTIFIER_FIELDS:
+                value = identifiers.get(field)
+                if not value:
+                    continue
+                normalized = NORMALIZERS[field](value)
+                identifier_map.setdefault((field, normalized), []).append(obj)
+            url = identifiers.get("url")
+            if url:
+                url_map.setdefault(normalize_url(url), []).append(obj)
+
+        for (field, normalized), group in identifier_map.items():
+            active = [o for o in group if o.data.get("decision") in ACTIVE_SCREENING_DECISIONS]
+            if len(active) >= 2:
+                ids = ", ".join(sorted(o.id for o in active))
+                for o in active:
+                    report.error(
+                        relative(o.path), f"$.candidate_identifiers.{field}",
+                        f"duplicate {field} '{normalized}' shared with other active (non-duplicate-marked) "
+                        f"screening record(s) under the same protocol: {ids} -- mark all but one as "
+                        "decision: duplicate with duplicate_of pointing to the primary record",
+                    )
+
+        for normalized, group in url_map.items():
+            active = [o for o in group if o.data.get("decision") in ACTIVE_SCREENING_DECISIONS]
+            if len(active) >= 2:
+                ids = ", ".join(sorted(o.id for o in active))
+                for o in active:
+                    report.warning(
+                        relative(o.path), "$.candidate_identifiers.url",
+                        f"candidate URL normalizes the same as other active screening record(s) under the "
+                        f"same protocol: {ids} -- verify manually whether these are the same candidate "
+                        "(redirects/mirrors can legitimately differ)",
+                    )
+
+
+def check_screening_workflow(report: Report, objects: dict[str, dict[str, ResearchObject]]) -> None:
+    protocols = objects["protocol"]
+    for obj in objects["screening_record"].values():
+        file_rel = relative(obj.path)
+        data = obj.data
+        protocol = protocols.get(data.get("protocol_id"))
+        decision = data.get("decision")
+        decision_stage = data.get("decision_stage")
+        screened_by = data.get("screened_by")
+        second_review = data.get("second_review")
+
+        dual_reviewer_stages: set = set()
+        if protocol is not None:
+            dual_reviewer_stages = set(
+                (protocol.data.get("screening_policy") or {}).get("dual_reviewer_stages") or []
+            )
+
+        if decision_stage in dual_reviewer_stages and decision in ("include", "exclude") and second_review is None:
+            report.error(
+                file_rel, "$.second_review",
+                f"decision_stage '{decision_stage}' is a dual-reviewer stage for protocol "
+                f"'{data.get('protocol_id')}' -- a final '{decision}' decision requires second_review",
+            )
+
+        if second_review:
+            reviewed_by = second_review.get("reviewed_by")
+            if reviewed_by == screened_by:
+                report.error(
+                    file_rel, "$.second_review.reviewed_by",
+                    "second_review.reviewed_by must differ from screened_by (reviewer independence)",
+                )
+
+            decision_confirmed = second_review.get("decision_confirmed")
+            adjudication = second_review.get("adjudication")
+            if decision_confirmed is False:
+                if adjudication is None:
+                    if decision != "uncertain":
+                        report.error(
+                            file_rel, "$.decision",
+                            "second_review.decision_confirmed is false without an adjudication -- decision "
+                            "must stay 'uncertain' until the conflict is resolved",
+                        )
+                else:
+                    resolved_by = adjudication.get("resolved_by")
+                    if resolved_by in (screened_by, reviewed_by):
+                        report.error(
+                            file_rel, "$.second_review.adjudication.resolved_by",
+                            "adjudication.resolved_by must be a third person, distinct from screened_by and "
+                            "second_review.reviewed_by",
+                        )
+                    final_decision = adjudication.get("final_decision")
+                    if final_decision != decision:
+                        report.error(
+                            file_rel, "$.second_review.adjudication.final_decision",
+                            f"adjudication.final_decision ('{final_decision}') must match the top-level "
+                            f"decision ('{decision}')",
+                        )
+
+        if decision_stage in ("full_text", "final") and decision == "include":
+            full_text_status = data.get("full_text_status")
+            if full_text_status != "obtained":
+                report.error(
+                    file_rel, "$.full_text_status",
+                    f"decision_stage '{decision_stage}' with decision 'include' requires full_text_status "
+                    f"'obtained', got '{full_text_status}'",
+                )
+
+
+def check_decision_history(report: Report, objects: dict[str, dict[str, ResearchObject]]) -> None:
+    for obj in objects["screening_record"].values():
+        file_rel = relative(obj.path)
+        history = obj.data.get("decision_history") or []
+        if not history:
+            continue  # Schema erzwingt minItems: 1 bereits; hier nur defensiv
+
+        expected_sequence = 1
+        prev_stage_index = -1
+        prev_decided_at = None
+        for entry in history:
+            sequence = entry.get("sequence")
+            if sequence != expected_sequence:
+                report.error(
+                    file_rel, "$.decision_history",
+                    f"decision_history sequence must be contiguous starting at 1, expected {expected_sequence} "
+                    f"but got {sequence!r}",
+                )
+            expected_sequence += 1
+
+            stage = entry.get("stage")
+            stage_index = SCREENING_STAGE_ORDER.index(stage) if stage in SCREENING_STAGE_ORDER else -1
+            if stage_index < prev_stage_index:
+                report.error(
+                    file_rel, "$.decision_history",
+                    f"decision_history stage regresses to '{stage}' after an entry at stage "
+                    f"'{SCREENING_STAGE_ORDER[prev_stage_index]}' -- stages must not run backwards",
+                )
+            prev_stage_index = max(prev_stage_index, stage_index)
+
+            decided_at = entry.get("decided_at")
+            if prev_decided_at is not None and decided_at is not None and decided_at < prev_decided_at:
+                report.error(
+                    file_rel, "$.decision_history",
+                    f"decision_history decided_at regresses from '{prev_decided_at}' to '{decided_at}'",
+                )
+            if decided_at is not None:
+                prev_decided_at = decided_at
+
+        last = history[-1]
+        mismatches = []
+        if last.get("decision") != obj.data.get("decision"):
+            mismatches.append("decision")
+        if last.get("stage") != obj.data.get("decision_stage"):
+            mismatches.append("decision_stage")
+        if last.get("decision_reason") != obj.data.get("decision_reason"):
+            mismatches.append("decision_reason")
+        if last.get("decided_by") != obj.data.get("screened_by"):
+            mismatches.append("screened_by")
+        if last.get("decided_at") != obj.data.get("screened_at"):
+            mismatches.append("screened_at")
+        if last.get("second_review") != obj.data.get("second_review"):
+            mismatches.append("second_review")
+        if mismatches:
+            report.error(
+                file_rel, "$.decision_history",
+                "last decision_history entry does not match the top-level fields it should be a projection "
+                "of (" + ", ".join(mismatches) + ")",
+            )
+
+
+def check_extraction_verification(report: Report, objects: dict[str, dict[str, ResearchObject]]) -> None:
+    """verified_by != extracted_by wird nur erzwungen, wenn das referenzierte Protokoll
+    extraction_policy.verification_required: true setzt -- ein bewusst dokumentiertes,
+    protokollabhaengiges Verhalten (siehe Scientific Research Protocol, Abschnitt 27a)."""
+    protocols = objects["protocol"]
+    for obj in objects["extraction_record"].values():
+        file_rel = relative(obj.path)
+        data = obj.data
+        if data.get("extraction_status") != "verified":
+            continue
+        protocol = protocols.get(data.get("protocol_id"))
+        verification_required = bool(
+            protocol is not None and (protocol.data.get("extraction_policy") or {}).get("verification_required")
+        )
+        if not verification_required:
+            continue
+        if data.get("verified_by") == data.get("extracted_by"):
+            report.error(
+                file_rel, "$.verified_by",
+                "this protocol's extraction_policy.verification_required is true -- verified_by must differ "
+                "from extracted_by",
+            )
+
+
+def check_promotion_records(
+    report: Report, objects: dict[str, dict[str, ResearchObject]], claim_ids: set[str]
+) -> None:
+    extractions = objects["extraction_record"]
+    active_by_candidate: dict[tuple[str, str], list[ResearchObject]] = {}
+
+    for obj in objects["promotion_record"].values():
+        file_rel = relative(obj.path)
+        data = obj.data
+        extraction_id = data.get("extraction_record_id")
+        extraction = extractions.get(extraction_id)
+        if extraction is None:
+            report.error(
+                file_rel, "$.extraction_record_id", f"references missing extraction record: {extraction_id}"
+            )
+        else:
+            if extraction.data.get("extraction_status") != "verified":
+                report.error(
+                    file_rel, "$.extraction_record_id",
+                    f"extraction record '{extraction_id}' is not extraction_status: verified -- promotion "
+                    "requires a verified extraction",
+                )
+            if extraction.data.get("protocol_id") != data.get("protocol_id"):
+                report.error(
+                    file_rel, "$.protocol_id",
+                    f"protocol_id does not match the referenced extraction record's protocol_id "
+                    f"('{extraction.data.get('protocol_id')}')",
+                )
+            candidate_working_id = data.get("candidate_working_id")
+            candidate_ids = {c.get("working_id") for c in extraction.data.get("candidate_claims") or []}
+            if candidate_working_id not in candidate_ids:
+                report.error(
+                    file_rel, "$.candidate_working_id",
+                    f"candidate_working_id '{candidate_working_id}' is not present in extraction record "
+                    f"'{extraction_id}'",
+                )
+            active_by_candidate.setdefault((extraction_id, candidate_working_id), []).append(obj)
+
+        canonical_claim_id = data.get("canonical_claim_id")
+        if canonical_claim_id and canonical_claim_id not in claim_ids:
+            report.error(
+                file_rel, "$.canonical_claim_id",
+                f"references a canonical claim that does not exist under data/claims/**: {canonical_claim_id}",
+            )
+
+    for (extraction_id, candidate_working_id), records in active_by_candidate.items():
+        active = [r for r in records if r.data.get("promotion_status") not in ("rejected", "withdrawn")]
+        if len(active) > 1:
+            ids = ", ".join(sorted(r.id for r in active))
+            for r in active:
+                report.error(
+                    relative(r.path), "$.candidate_working_id",
+                    f"candidate '{candidate_working_id}' from extraction record '{extraction_id}' has more "
+                    f"than one active (non-rejected/withdrawn) promotion record at the same time: {ids}",
+                )
+
+
+def _check_unique(report: Report, file_rel: str, path: str, values: list) -> None:
+    seen: set = set()
+    for value in values:
+        if value is None:
+            continue
+        if value in seen:
+            report.error(file_rel, path, f"duplicate value '{value}' -- entries must be unique")
+        seen.add(value)
+
+
+def _check_date_order(report: Report, file_rel: str, label: str, earlier, later) -> None:
+    if earlier and later and later < earlier:
+        report.error(file_rel, f"$.{label}", f"'{label}' out of order: '{later}' is before '{earlier}'")
+
+
+def _check_export_reference_safety(report: Report, file_rel: str, export_reference: str | None) -> None:
+    if not export_reference:
+        return
+    if "://" in export_reference:
+        report.error(
+            file_rel, "$.export_reference",
+            "must not be a URL -- only a relative path hint under research/raw/ is allowed",
+        )
+        return
+    if export_reference.startswith("/") or export_reference.startswith("\\") or re.match(r"^[a-zA-Z]:[\\/]", export_reference):
+        report.error(file_rel, "$.export_reference", "must be a relative path, not an absolute path")
+        return
+    normalized = export_reference.replace("\\", "/")
+    if ".." in normalized.split("/"):
+        report.error(file_rel, "$.export_reference", "must not contain '..' path segments")
+        return
+    if not normalized.lstrip("./").startswith("research/raw/"):
+        report.error(file_rel, "$.export_reference", "must point to a path under research/raw/")
+
+
+def check_misc_consistency(report: Report, objects: dict[str, dict[str, ResearchObject]]) -> None:
+    search_runs = objects["search_run"]
+
+    for obj in objects["protocol"].values():
+        file_rel = relative(obj.path)
+        data = obj.data
+        _check_unique(
+            report, file_rel, "$.research_questions",
+            [q.get("id") for q in data.get("research_questions") or []],
+        )
+        dedup_policy = data.get("deduplication_policy") or {}
+        _check_unique(
+            report, file_rel, "$.deduplication_policy.identifier_priority",
+            dedup_policy.get("identifier_priority") or [],
+        )
+        screening_policy = data.get("screening_policy") or {}
+        _check_unique(report, file_rel, "$.screening_policy.stages", screening_policy.get("stages") or [])
+        _check_unique(
+            report, file_rel, "$.screening_policy.dual_reviewer_stages",
+            screening_policy.get("dual_reviewer_stages") or [],
+        )
+        _check_date_order(report, file_rel, "created_at/updated_at", data.get("created_at"), data.get("updated_at"))
+
+    for obj in search_runs.values():
+        file_rel = relative(obj.path)
+        data = obj.data
+        date_range = data.get("date_range") or {}
+        _check_date_order(report, file_rel, "date_range.from/to", date_range.get("from"), date_range.get("to"))
+        _check_date_order(report, file_rel, "created_at/updated_at", data.get("created_at"), data.get("updated_at"))
+        _check_export_reference_safety(report, file_rel, data.get("export_reference"))
+
+    for obj in objects["screening_record"].values():
+        file_rel = relative(obj.path)
+        data = obj.data
+        _check_unique(report, file_rel, "$.search_run_ids", data.get("search_run_ids") or [])
+        _check_date_order(report, file_rel, "created_at/updated_at", data.get("created_at"), data.get("updated_at"))
+
+        earliest_search_run_date = None
+        for search_run_id in data.get("search_run_ids") or []:
+            search_run = search_runs.get(search_run_id)
+            if search_run is None:
+                continue
+            executed_date = (search_run.data.get("executed_at") or "")[:10]
+            if not executed_date:
+                continue
+            if earliest_search_run_date is None or executed_date < earliest_search_run_date:
+                earliest_search_run_date = executed_date
+
+        screened_at = data.get("screened_at")
+        if earliest_search_run_date and screened_at and screened_at < earliest_search_run_date:
+            report.error(
+                file_rel, "$.screened_at",
+                f"screened_at ('{screened_at}') is before the executed_at date of a referenced search run "
+                f"('{earliest_search_run_date}')",
+            )
+
+        second_review = data.get("second_review")
+        if second_review:
+            reviewed_at = second_review.get("reviewed_at")
+            _check_date_order(report, file_rel, "screened_at/second_review.reviewed_at", screened_at, reviewed_at)
+            adjudication = second_review.get("adjudication")
+            if adjudication:
+                _check_date_order(
+                    report, file_rel, "second_review.reviewed_at/second_review.adjudication.resolved_at",
+                    reviewed_at, adjudication.get("resolved_at"),
+                )
+
+    for obj in objects["extraction_record"].values():
+        file_rel = relative(obj.path)
+        data = obj.data
+        _check_unique(
+            report, file_rel, "$.candidate_claims",
+            [c.get("working_id") for c in data.get("candidate_claims") or []],
+        )
+        _check_date_order(report, file_rel, "created_at/updated_at", data.get("created_at"), data.get("updated_at"))
+        _check_date_order(report, file_rel, "extracted_at/verified_at", data.get("extracted_at"), data.get("verified_at"))
+
+    for obj in objects["promotion_record"].values():
+        file_rel = relative(obj.path)
+        data = obj.data
+        _check_date_order(report, file_rel, "created_at/updated_at", data.get("created_at"), data.get("updated_at"))
+
+
 def check_no_unwanted_binaries(report: Report, root: Path) -> None:
     if not root.exists():
         return
@@ -239,6 +710,17 @@ def check_no_unwanted_binaries(report: Report, root: Path) -> None:
             report.error(relative(path), "", "unexpected binary file inside a versioned research/ directory")
 
 
+def run_checks(report: Report, objects: dict[str, dict[str, ResearchObject]], source_ids, study_ids, claim_ids) -> None:
+    check_research_references(report, objects, source_ids, study_ids)
+    check_protocol_version_matches_id(report, objects["protocol"])
+    check_deduplication(report, objects)
+    check_screening_workflow(report, objects)
+    check_decision_history(report, objects)
+    check_extraction_verification(report, objects)
+    check_promotion_records(report, objects, claim_ids)
+    check_misc_consistency(report, objects)
+
+
 def run_validation(
     verbose: bool, research_root: Path = RESEARCH_DIR, data_root: Path = DATA_DIR
 ) -> Report:
@@ -248,14 +730,14 @@ def run_validation(
 
     check_no_unwanted_binaries(report, research_root)
 
-    source_ids, study_ids = load_canonical_reference_sets(data_root)
+    source_ids, study_ids, claim_ids = load_canonical_reference_sets(data_root)
 
     objects = load_research_dataset(research_root, report, registry, schemas, vocabularies)
-    check_research_references(report, objects, source_ids, study_ids)
+    run_checks(report, objects, source_ids, study_ids, claim_ids)
 
     examples_root = research_root / "examples"
     example_objects = load_research_dataset(examples_root, report, registry, schemas, vocabularies)
-    check_research_references(report, example_objects, source_ids, study_ids)
+    run_checks(report, example_objects, source_ids, study_ids, claim_ids)
 
     if verbose:
         for kind in RESEARCH_KINDS:

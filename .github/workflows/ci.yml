@@ -16,6 +16,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -30,6 +32,9 @@ jobs:
 
       - name: Validate research provenance layer
         run: python tools/validate_research.py --verbose
+
+      - name: Check research search run immutability
+        run: python tools/check_research_immutability.py
 
       - name: Run tests
         run: pytest

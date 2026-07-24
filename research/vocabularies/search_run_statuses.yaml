@@ -1,0 +1,23 @@
+# Kontrolliertes Vokabular: status (research_search_run)
+#
+# Eigenstaendiges Vokabular, bewusst NICHT common.schema.json#/$defs/editorial_status --
+# ein Suchlauf beschreibt ein bereits ausgefuehrtes, unveraenderliches Ereignis, kein
+# redaktionelles Dokument mit einem Entwurfs-/Freigabezyklus (siehe Decision Log).
+schema_version: "1.0.0"
+values:
+  - value: executed
+    labels: { de: Ausgeführt, en: Executed }
+    note_de: >
+      Regulaerer Zustand eines protokollierten Suchlaufs. Eine Datei wird erst angelegt,
+      nachdem die Suche tatsaechlich ausgefuehrt wurde -- es gibt keinen "geplanten" Zustand.
+  - value: superseded
+    labels: { de: Abgelöst, en: Superseded }
+    note_de: >
+      Ein spaeterer, korrigierter oder wiederholter Suchlauf ersetzt diesen. Die
+      Ausfuehrungsfelder (exact_query, executed_at, result_count, ...) bleiben unveraendert
+      erhalten -- nur der Status wechselt.
+  - value: withdrawn
+    labels: { de: Zurückgezogen, en: Withdrawn }
+    note_de: >
+      Der Suchlauf wird aus dem aktiven Rechercheverlauf zurueckgezogen (z. B. fehlerhafte
+      Ausfuehrung), bleibt aber zu Auditzwecken erhalten statt geloescht zu werden.

@@ -41,6 +41,8 @@ DUPLICATED_ENUMS = [
     ("exclusion_reason", set(_COMMON["$defs"]["exclusion_reason"]["enum"]), "exclusion_reasons"),
     ("full_text_status", set(_COMMON["$defs"]["full_text_status"]["enum"]), "full_text_statuses"),
     ("extraction_status", set(_COMMON["$defs"]["extraction_status"]["enum"]), "extraction_statuses"),
+    ("search_run_status", set(_COMMON["$defs"]["search_run_status"]["enum"]), "search_run_statuses"),
+    ("promotion_status", set(_COMMON["$defs"]["promotion_status"]["enum"]), "promotion_statuses"),
 ]
 
 # research_protocol_statuses.yaml dupliziert das status-Enum, das direkt (nicht ueber

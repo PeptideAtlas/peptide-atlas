@@ -1,0 +1,22 @@
+# Kontrolliertes Vokabular: promotion_status (research_promotion_record)
+schema_version: "1.0.0"
+values:
+  - value: proposed
+    labels: { de: Vorgeschlagen, en: Proposed }
+    note_de: Ein Kandidatenclaim wurde als moeglicher Promotion-Kandidat markiert, noch ungeprueft.
+  - value: in_review
+    labels: { de: In Prüfung, en: In Review }
+  - value: approved_for_creation
+    labels: { de: Freigegeben zur Anlage, en: Approved for Creation }
+    note_de: >
+      Wissenschaftliche Redaktion hat die Anlage eines kanonischen Claims freigegeben, die
+      kanonische Datei existiert aber ggf. noch nicht. Erfordert dokumentierte Reviewer und
+      Begruendung. Darf nie automatisiert gesetzt werden (siehe ADR-0035).
+  - value: rejected
+    labels: { de: Abgelehnt, en: Rejected }
+    note_de: Kandidat wird nicht promoviert. Darf keine canonical_claim_id tragen.
+  - value: promoted
+    labels: { de: Promoviert, en: Promoted }
+    note_de: Kanonischer Claim existiert unter data/claims/** und wird ueber canonical_claim_id referenziert.
+  - value: withdrawn
+    labels: { de: Zurückgezogen, en: Withdrawn }
