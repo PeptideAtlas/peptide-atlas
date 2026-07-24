@@ -5,7 +5,12 @@ einer eingeschlossenen Quelle — kurze Paraphrasen mit präziser Fundstelle (Se
 keine langen wörtlichen Textübernahmen.
 
 - Schema: [`schemas/research_extraction_record.schema.json`](../../schemas/research_extraction_record.schema.json)
-- `extraction_status: verified` erfordert eine zweite, getrennt dokumentierte Prüfung (`verified_by`/`verified_at`).
+- `extraction_status: verified` bedeutet **immer** durch eine andere Person geprüft: `verified_by` muss sich
+  von `extracted_by` unterscheiden, unbedingt und ohne protokollabhängige Ausnahme (`tools/validate_research.py`,
+  siehe ADR-0040 im [Decision Log](../../docs/project/Decision_Log.md)).
+- `extraction_status: self_checked` ist der ehrliche Zustand für einen rein technischen
+  Ein-Personen-Durchlauf ohne unabhängige Zweitprüfung — strukturell **nie** promotion-fähig (ein
+  `promotion_record` darf sich nur auf eine `verified`-Extraktion beziehen).
 - `candidate_claims[]` sind **ausdrücklich vorläufig** (`is_provisional: true`) und tragen niemals ein
   Status-Feld wie ein kanonischer Claim — sie erzeugen nie automatisch einen aktiven Claim unter `data/claims/**`.
 - `canonical_source_id`/`canonical_study_id` dürfen erst gesetzt werden, wenn die entsprechenden Objekte unter

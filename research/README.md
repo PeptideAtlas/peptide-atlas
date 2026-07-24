@@ -58,11 +58,23 @@ python tools/check_research_immutability.py
 `validate_research.py` läuft **getrennt** vom bestehenden `tools/validate_data.py`, prüft aber Querverweise auf
 die kanonische Datenebene (`canonical_source_id` muss unter `data/sources/**`, `canonical_study_id` unter
 `data/entities/studies/**`, `canonical_claim_id` unter `data/claims/**` existieren, sofern gesetzt) sowie
-Protokollkonsistenz (Version/ID, Freigabestatus, protokollübergreifende Referenzen), Identifier-Deduplizierung,
-Screening-Workflow (Dual-Reviewer, Adjudikation, Volltextregeln, `decision_history`) und die Claim-Promotion-
-Kette. `check_research_immutability.py` prüft zusätzlich, dass bereits committete `search_run`-Dateien nicht
-rückwirkend verändert werden (nur `status`/`updated_at`/`review`/`notes` dürfen sich ändern). Alle drei
-Validatoren laufen in CI (siehe `.github/workflows/ci.yml`).
+Protokollkonsistenz (Version/ID, Freigabestatus, ein Suchlauf darf nur eine unter
+`planned_information_sources[]` freigegebene Datenbank verwenden, protokollübergreifende Referenzen inkl. der
+gesamten `duplicate_of`-Kette), echte Identifier-Deduplizierung, den vollständigen Screening-Workflow (JEDER
+`decision_history`-Eintrag wird geprüft, nicht nur der aktuelle Zustand: Dual-Reviewer-Pflicht, wechselseitig
+konsistente Erst-/Zweit-/Adjudikationsentscheidung, Volltextregeln, terminale Extraktionsfähigkeit) und die
+Claim-Promotion-Kette (inkl. `claim_promotion_policy.requires_second_review`). `check_research_immutability.py`
+prüft zusätzlich, dass bereits committete `search_run`-Dateien nicht rückwirkend verändert werden (nur
+`status`/`updated_at`/`review`/`notes` dürfen sich ändern). Alle drei Validatoren laufen in CI (siehe
+`.github/workflows/ci.yml`).
+
+**Was validiert wird, im Klartext:** JSON-Schema-Konformität und die oben genannten Cross-Referenz-/
+Workflow-Regeln sind **Validator-seitig erzwungen** (Pull Requests mit Verstößen werden von der CI blockiert).
+Die Unveränderlichkeit von Suchläufen ist **CI-seitig geprüft**, aber nur soweit der Git-Vergleichs-Ref
+auflösbar ist (siehe `tools/check_research_immutability.py`, keine Branch-Protection-Garantie). Ob ein
+Reviewer-Kürzel tatsächlich eine andere *menschliche* Person bezeichnet, ist **nicht technisch überprüfbar**
+und bleibt organisatorisch/durch Repository-Zugriffskontrolle abgesichert (siehe „Bekannte Grenzen" im
+[Scientific Research Protocol](../docs/project/Scientific_Research_Protocol.md), Abschnitt 34).
 
 ## Kurzfassung des Workflows
 
@@ -70,15 +82,19 @@ Validatoren laufen in CI (siehe `.github/workflows/ci.yml`).
    Ausschluss-, Dedup-, Screening-, Extraktions- und Claim-Promotion-Regeln fest, bevor gesucht wird.
 2. Ein **Suchlauf** (`search_runs/`) protokolliert exakt, was wann in welcher Datenbank gesucht wurde.
 3. Jeder Treffer wird als **Screening-Datensatz** (`screening/`) erfasst und durchläuft Deduplizierung,
-   Titel-/Abstract- und Volltext-Screening bis zu einer Entscheidung (`include`/`exclude`/`duplicate`/...).
-4. Eingeschlossene Kandidaten werden in einem **Extraktionsdatensatz** (`extractions/`) mit kurzen Paraphrasen
-   und präzisen Fundstellen erfasst — inklusive vorläufiger, ausdrücklich ungeprüfter Kandidatenclaims.
+   Titel-/Abstract- und Volltext-Screening bis zu einer **terminalen** Entscheidung
+   (`decision_stage: final`, `include`/`exclude`/`duplicate`/...) — `full_text` dokumentiert nur die
+   Volltextbewertung, ist aber selbst noch nicht extraktionsfähig.
+4. Eingeschlossene, terminal bestätigte Kandidaten werden in einem **Extraktionsdatensatz** (`extractions/`)
+   mit kurzen Paraphrasen und präzisen Fundstellen erfasst — inklusive vorläufiger, ausdrücklich ungeprüfter
+   Kandidatenclaims.
 5. Ein **Promotion-Datensatz** (`promotions/`) macht optional den Fortschritt eines einzelnen Kandidatenclaims
    in Richtung eines kanonischen Claims maschinenlesbar nachvollziehbar (`promotion_status: proposed` → … →
    `promoted`).
-6. Erst nach zweiter Prüfung (`extraction_status: verified`) und wissenschaftlichem Review werden Informationen
-   **manuell** als Quelle, Studie oder Claim unter `data/**` angelegt — dieser Schritt ist in Phase 4A bewusst
-   **nicht automatisiert**.
+6. Erst nach unabhängiger Zweitprüfung (`extraction_status: verified` — per Definition durch eine andere
+   Person als `extracted_by`, `self_checked` ist nie promotion-fähig) und wissenschaftlichem Review werden
+   Informationen **manuell** als Quelle, Studie oder Claim unter `data/**` angelegt — dieser Schritt ist in
+   Phase 4A bewusst **nicht automatisiert**.
 
 ## `research/examples/`
 

@@ -62,7 +62,7 @@ erforderlichen Prüfungen, Abbruchkriterien, gespeicherter Provenienz und mögli
 | **Rolle** | Rechercheur:in, unterstützt durch automatisierte Identifikator-Normalisierung (siehe `deduplication_policy.identifier_priority`). |
 | **Erforderliche Prüfungen** | Abgleich normalisierter DOI/PMID/PMCID/NCT-ID/ISBN (`tools/_researchlib.py`, wiederverwendet aus bzw. analog zu `tools/_datalib.py::normalize_*`) — von `tools/validate_research.py` tatsächlich durchgesetzt: zwei aktive (nicht `duplicate`-markierte) Kandidaten mit identischem normalisiertem Identifikator **innerhalb desselben Protokolls** sind ein Validierungsfehler. Kollisionen über verschiedene Protokolle hinweg sind erlaubt; URL-Kollisionen lösen nur eine Warnung aus. |
 | **Abbruchkriterien** | Ein Duplikat ohne eindeutigen Hauptdatensatz wird nicht automatisch aufgelöst — es bleibt `decision: uncertain`, bis eine Person entscheidet. |
-| **Gespeicherte Provenienz** | `duplicate_of`. Keine Zyklen zulässig (siehe `tools/validate_research.py`). |
+| **Gespeicherte Provenienz** | `duplicate_of`. Keine Zyklen zulässig, `duplicate_of` (und die gesamte Kette verketteter Duplikate) muss innerhalb desselben Protokolls bleiben (siehe `tools/validate_research.py`). |
 | **Mögliche Statuswerte** | `decision: duplicate` \| `uncertain` \| (weiter zu Schritt 3). |
 
 ## 3. Deduplizierung → Titel-/Abstract-Screening
@@ -82,23 +82,36 @@ erforderlichen Prüfungen, Abbruchkriterien, gespeicherter Provenienz und mögli
 | | |
 |---|---|
 | **Eingabe** | Ein Kandidat mit `decision: include` oder `awaiting_full_text` aus Schritt 3. |
-| **Ausgabe** | `decision_stage: full_text`, finale Entscheidung `include` \| `exclude`. |
-| **Rolle** | Rechercheur:in **plus** Zweitprüfer:in (siehe `screening_policy.dual_reviewer_stages`). |
-| **Erforderliche Prüfungen** | Vollständige Lektüre; `full_text_status` muss `obtained` sein, bevor final entschieden wird (`not_yet_obtained`/`restricted_access`/`unavailable` bleiben `awaiting_full_text`). Ist `full_text`/`final` in `dual_reviewer_stages` aufgeführt, ist `second_review` für eine finale `include`/`exclude`-Entscheidung Pflicht, mit `second_review.reviewed_by` ≠ `screened_by` (Reviewer-Unabhängigkeit) — beides von `tools/validate_research.py` erzwungen. |
-| **Abbruchkriterien** | Kein `full_text`-Einschluss ohne `full_text_status: obtained`. Ein `exclude` in dieser Stufe erfordert erneut einen kontrollierten Grund. Widerspricht die Zweitprüfung (`decision_confirmed: false`) ohne Adjudikation, muss die Entscheidung `uncertain` bleiben (siehe Schritt 5 und [Scientific Research Protocol](Scientific_Research_Protocol.md), Abschnitt 10a). |
-| **Gespeicherte Provenienz** | `second_review.reviewed_by`/`reviewed_at`/`decision_confirmed`, ggf. `second_review.adjudication`; zusätzlich als neuer Eintrag in `decision_history[]` (siehe Schritt 5). |
+| **Ausgabe** | `decision_stage: full_text`, vorläufige Bewertung `include` \| `exclude`. **Noch nicht terminal/
+extraktionsfähig** — `full_text` dokumentiert nur die Volltextbewertung (siehe Schritt 4a und
+[Scientific Research Protocol](Scientific_Research_Protocol.md), Abschnitt 9b). |
+| **Rolle** | Rechercheur:in, ggf. bereits mit Zweitprüfer:in (siehe `screening_policy.dual_reviewer_stages`). |
+| **Erforderliche Prüfungen** | Vollständige Lektüre; `full_text_status` muss `obtained` sein, bevor `include` bewertet wird (`not_yet_obtained`/`restricted_access`/`unavailable` bleiben `awaiting_full_text`). |
+| **Abbruchkriterien** | Keine Bewertung `include` ohne `full_text_status: obtained`. Ein `exclude` in dieser Stufe erfordert erneut einen kontrollierten Grund. |
+| **Gespeicherte Provenienz** | Neuer Eintrag in `decision_history[]` mit `stage: full_text`. |
 | **Mögliche Statuswerte** | `include` \| `exclude` \| `awaiting_full_text` \| `uncertain`. |
 
-## 5. Volltext-Screening → Eingeschlossene Quelle
+## 4a. Volltext-Screening → Terminale Bestätigung (`final`)
 
 | | |
 |---|---|
-| **Eingabe** | Ein Kandidat mit finaler `decision: include`. |
+| **Eingabe** | Ein Kandidat mit vorläufiger `decision: include` auf Stufe `full_text`. |
+| **Ausgabe** | `decision_stage: final` — die **einzige extraktionsfähige Stufe** (ADR-0042). |
+| **Rolle** | Zweitprüfer:in (siehe `screening_policy.dual_reviewer_stages`, typischerweise `final`). |
+| **Erforderliche Prüfungen** | Ist `final` in `dual_reviewer_stages` aufgeführt, ist `second_review` mit einer expliziten, eigenständigen `reviewer_decision` Pflicht, `second_review.reviewed_by` ≠ `screened_by` (Reviewer-Unabhängigkeit) — beides von `tools/validate_research.py` erzwungen. `full_text_status: obtained` bleibt Voraussetzung für ein terminales `include`. |
+| **Abbruchkriterien** | Widerspricht `second_review.reviewer_decision` der Erstentscheidung ohne gültige Adjudikation, muss die Entscheidung `uncertain` bleiben ([Scientific Research Protocol](Scientific_Research_Protocol.md), Abschnitt 10a) — und ist damit nicht extraktionsfähig. |
+| **Gespeicherte Provenienz** | `second_review.reviewed_by`/`reviewed_at`/`reviewer_decision`/`decision_confirmed`, ggf. `second_review.adjudication`; neuer Eintrag in `decision_history[]` mit `stage: final`. |
+| **Mögliche Statuswerte** | `include` \| `exclude` \| `uncertain`. |
+
+## 5. Terminale Bestätigung → Eingeschlossene Quelle
+
+| | |
+|---|---|
+| **Eingabe** | Ein Kandidat mit terminaler `decision_stage: final`, `decision: include`, `full_text_status: obtained` und ohne ungelösten Zweitprüfungskonflikt. |
 | **Ausgabe** | Derselbe `screening_record`, jetzt als Grundlage für eine Extraktion nutzbar. `canonical_source_id` bleibt weiterhin `null`. |
-| **Rolle** | Zweitprüfer:in bestätigt (`decision_confirmed: true`). |
-| **Erforderliche Prüfungen** | `tools/validate_research.py` erzwingt: eine Extraktion darf nur für einen Kandidaten mit `decision: include` erstellt werden, dessen `protocol_id` mit der Extraktion übereinstimmt. |
-| **Abbruchkriterien** | Widerspricht die Zweitprüfung (`decision_confirmed: false`), wird die Entscheidung erneut geprüft, nicht automatisch übernommen — entweder bleibt sie `uncertain`, oder eine unabhängige dritte Person löst den Widerspruch über `second_review.adjudication` auf ([Scientific Research Protocol](Scientific_Research_Protocol.md), Abschnitt 10a). |
-| **Gespeicherte Provenienz** | Vollständige Screening-Historie bleibt in `decision_history[]` erhalten (Append-only, keine Überschreibung eines früheren Eintrags) — die Top-Level-Felder sind eine vom Validator geprüfte Projektion des letzten Eintrags ([Scientific Research Protocol](Scientific_Research_Protocol.md), Abschnitt 9a). |
+| **Erforderliche Prüfungen** | `tools/validate_research.py` erzwingt alle fünf Bedingungen aus [Scientific Research Protocol](Scientific_Research_Protocol.md), Abschnitt 9b, bevor eine Extraktion erstellt werden darf; zusätzlich muss `protocol_id` der Extraktion mit der des Screening-Datensatzes übereinstimmen. |
+| **Abbruchkriterien** | Fehlt eine der fünf Bedingungen (z. B. `decision_stage` ist noch `full_text`, oder ein Zweitprüfungskonflikt ist ungelöst), ist die Extraktion ein Validierungsfehler. |
+| **Gespeicherte Provenienz** | Vollständige Screening-Historie bleibt in `decision_history[]` erhalten (redaktionell append-only, jeder Eintrag wird gegen dieselben Invarianten geprüft) — die Top-Level-Felder sind eine vom Validator geprüfte Projektion des letzten Eintrags ([Scientific Research Protocol](Scientific_Research_Protocol.md), Abschnitt 9a). |
 | **Mögliche Statuswerte** | `decision: include` (unverändert; „eingeschlossen" ist kein eigenes Feld, sondern die Voraussetzung für Schritt 6). |
 
 ## 6. Eingeschlossene Quelle → Extraktion
@@ -118,12 +131,12 @@ erforderlichen Prüfungen, Abbruchkriterien, gespeicherter Provenienz und mögli
 | | |
 |---|---|
 | **Eingabe** | Ein `extraction_record` mit `extraction_status: awaiting_verification`. |
-| **Ausgabe** | `extraction_status: verified` (oder `rejected`, wenn die Zweitprüfung widerspricht). |
-| **Rolle** | Eine **zweite** Person (`verified_by` ≠ `extracted_by`, sofern `extraction_policy.verification_required: true` — siehe [Scientific Research Protocol](Scientific_Research_Protocol.md), Abschnitt 27a). |
+| **Ausgabe** | `extraction_status: verified` (oder `rejected`, wenn die Zweitprüfung widerspricht; oder `self_checked` für einen rein technischen Ein-Personen-Durchlauf ohne unabhängige Zweitprüfung). |
+| **Rolle** | Eine **zweite** Person — `verified_by` ≠ `extracted_by` ist bei `extraction_status: verified` **unbedingt** erzwungen, ohne protokollabhängige Ausnahme (siehe [Scientific Research Protocol](Scientific_Research_Protocol.md), Abschnitt 27a). |
 | **Erforderliche Prüfungen** | Abgleich der Beobachtungen und Kandidatenclaims gegen die Originalquelle; Diskrepanzen werden in `discrepancies[]` dokumentiert. |
-| **Abbruchkriterien** | `verified` ohne `verified_by`/`verified_at` ist ein Validierungsfehler (`tools/validate_research.py`). Ist `verification_required: true`, ist `verified_by == extracted_by` bei `verified` ebenfalls ein Fehler. |
+| **Abbruchkriterien** | `verified` ohne `verified_by`/`verified_at`, oder mit `verified_by == extracted_by`, ist immer ein Validierungsfehler (`tools/validate_research.py`) — unabhängig vom Protokoll. `self_checked` ist strukturell nie promotion-fähig (siehe Schritt 11). |
 | **Gespeicherte Provenienz** | `verified_by`, `verified_at`, `discrepancies[]`. |
-| **Mögliche Statuswerte** | `awaiting_verification` → `verified` \| `rejected`. |
+| **Mögliche Statuswerte** | `awaiting_verification` → `verified` \| `self_checked` \| `rejected`. |
 
 ## 8. Verifikation → Kanonische Quelle
 
@@ -158,7 +171,7 @@ erforderlichen Prüfungen, Abbruchkriterien, gespeicherter Provenienz und mögli
 | **Rolle** | Wissenschaftliche Redaktion (Automatisierung darf hier nur vorschlagen, siehe Kernregel oben). |
 | **Erforderliche Prüfungen** | Jeder Kandidatenclaim bleibt einzeln, atomar (eine Aussage, ein Prädikat) — keine Zusammenfassung mehrerer Beobachtungen zu einer vagen Sammelaussage. |
 | **Abbruchkriterien** | Ein Kandidatenclaim ohne präzise Fundstelle wird nicht weiterverwendet. |
-| **Gespeicherte Provenienz** | `working_id`, `locator`, Herkunfts-`extraction_record`. Ab diesem Schritt kann optional ein `promotion_record` (`research/promotions/`, Schema: `schemas/research_promotion_record.schema.json`) angelegt werden, der `extraction_record_id` + `candidate_working_id` mit dem Promotion-Fortschritt (`promotion_status: proposed` → … → `promoted`) verknüpft und die Kette bis zum kanonischen Claim maschinenlesbar macht (siehe [Scientific Research Protocol](Scientific_Research_Protocol.md), Abschnitt 29). |
+| **Gespeicherte Provenienz** | `working_id`, `locator`, Herkunfts-`extraction_record` (muss `extraction_status: verified` sein, nicht `self_checked`). Ab diesem Schritt kann optional ein `promotion_record` (`research/promotions/`, Schema: `schemas/research_promotion_record.schema.json`) angelegt werden, der `extraction_record_id` + `candidate_working_id` mit dem Promotion-Fortschritt (`promotion_status: proposed` → … → `promoted`) verknüpft und die Kette bis zum kanonischen Claim maschinenlesbar macht. Setzt das Protokoll `claim_promotion_policy.requires_second_review: true`, erzwingt der Validator mindestens zwei unterschiedliche, nicht-leere Reviewer-Kürzel bei `approved_for_creation`/`promoted` (siehe [Scientific Research Protocol](Scientific_Research_Protocol.md), Abschnitt 29, mit dokumentierter Grenze zur menschlichen Identität dieser Kürzel). |
 | **Mögliche Statuswerte** | Weiterhin `is_provisional: true` bis Schritt 12 abgeschlossen ist. |
 
 ## 11. Atomare Kandidatenclaims → Wissenschaftlicher Review

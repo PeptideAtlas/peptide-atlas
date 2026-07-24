@@ -50,7 +50,10 @@ Kurze, strukturierte Architecture Decision Records (ADRs): Kontext, Entscheidung
 | ADR-0036 | Protokoll- und Referenzkonsistenz strukturell erzwungen (Version/ID, Suchlauf-Freigabestatus, protokollübergreifende Ketten, `discovery_only`) | Entschieden (Phase 4A, Review-Härtung) | `tools/validate_research.py` erzwingt jetzt: `protocol.version` muss dem `-vN`-Suffix der `id` entsprechen; ein `search_run` darf nur gegen ein Protokoll mit Status `approved`/`superseded` ausgeführt werden; `screening_record`/`search_run` sowie `extraction_record`/`screening_record` müssen jeweils dieselbe `protocol_id` tragen; widersprechende `canonical_source_id` zwischen Screening und Extraktion ist ein Fehler. `google_scholar`/`manufacturer_registry` sind jetzt schema-seitig (nicht mehr nur redaktionell) auf `role: discovery_only` beschränkt. Ausführliches ADR siehe unten. |
 | ADR-0037 | Vollständige Screening-Historie (`decision_history`) und maschinenlesbare Claim-Promotion-Kette (`promotion_record`) | Entschieden (Phase 4A, Review-Härtung) | Löst zwei bislang nur behauptete, aber nicht durchgesetzte Aussagen der Phase-4A-Dokumentation strukturell ein. Ausführliches ADR siehe unten. |
 | ADR-0038 | Eigenständiges `search_run_status`-Vokabular; CI-Check gegen rückwirkende Suchlauf-Änderungen (mit dokumentierter Grenze) | Entschieden (Phase 4A, Review-Härtung) | `research_search_run.status` nutzt nicht mehr `editorial_status` (`draft`/`in_review`/`active`/`withdrawn`), sondern ein eigenes Vokabular (`executed`/`superseded`/`withdrawn`), das zum Ereignischarakter eines Suchlaufs passt. `tools/check_research_immutability.py` prüft in CI zusätzlich, dass bereits committete `research/search_runs/**`-Dateien nur in `status`/`updated_at`/`review`/`notes` verändert werden. Ausführliches ADR siehe unten. |
-| ADR-0039 | Echte Identifier-Deduplizierung und strukturelle Zwei-Personen-Kontrolle (Dual-Reviewer, Adjudikation, Extraktionsverifikation) | Entschieden (Phase 4A, Review-Härtung) | Die in der Dokumentation seit Phase 4A behauptete Identifier-Normalisierung und Zweitprüfung war bislang nicht tatsächlich implementiert. `tools/validate_research.py` erkennt jetzt normalisierte DOI/PMID/PMCID/NCT-ID-Kollisionen innerhalb desselben Protokolls, erzwingt `second_review` in `screening_policy.dual_reviewer_stages`, Reviewer-Unabhängigkeit, eine kontrollierte Konfliktlösung (Adjudikation durch eine dritte Person oder `decision: uncertain`) sowie `verified_by != extracted_by`, sofern `extraction_policy.verification_required: true`. Ausführliches ADR siehe unten. |
+| ADR-0039 | Echte Identifier-Deduplizierung und strukturelle Zwei-Personen-Kontrolle (Dual-Reviewer, Adjudikation, Extraktionsverifikation) | Entschieden (Phase 4A, Review-Härtung Runde 2) | Die in der Dokumentation seit Phase 4A behauptete Identifier-Normalisierung und Zweitprüfung war bislang nicht tatsächlich implementiert. `tools/validate_research.py` erkennt jetzt normalisierte DOI/PMID/PMCID/NCT-ID-Kollisionen innerhalb desselben Protokolls, erzwingt `second_review` in `screening_policy.dual_reviewer_stages`, Reviewer-Unabhängigkeit, eine kontrollierte Konfliktlösung (Adjudikation durch eine dritte Person oder `decision: uncertain`) sowie (in dieser Runde noch protokollabhängig) `verified_by != extracted_by`. Die protokollabhängige Ausnahme wurde in Runde 3 durch ADR-0040 wieder entfernt. Ausführliches ADR siehe unten. |
+| ADR-0040 | `extraction_status: verified` bedeutet unbedingt unabhängige Zweitprüfung; neuer Status `self_checked` | Entschieden (Phase 4A, Review-Härtung Runde 3) | Löst die in ADR-0039 eingeführte protokollabhängige Ausnahme ab: `verified_by != extracted_by` gilt jetzt immer, ohne Opt-out. Ausführliches ADR siehe unten. |
+| ADR-0041 | `claim_promotion_policy.requires_second_review` technisch erzwungen; Grenze zur menschlichen Reviewer-Identität dokumentiert | Entschieden (Phase 4A, Review-Härtung Runde 3) | `promotion_record`-Datensätze mit `approved_for_creation`/`promoted` benötigen jetzt mindestens zwei unterschiedliche, nicht-leere Reviewer-Kürzel, wenn das Protokoll das verlangt — bewusst ohne Actor-Registry (Lösung B). Ausführliches ADR siehe unten. |
+| ADR-0042 | Terminale Screening-Stufe als einzige Extraktionsvoraussetzung; vollständige `decision_history`-Validierung; `duplicate_of`-Kettenprüfung; Suchlauf-Datenbank muss geplant sein | Entschieden (Phase 4A, Review-Härtung Runde 3) | Schließt vier zusammenhängende, in der unabhängigen Prüfung von Runde 2 gefundene Lücken: uneindeutige `full_text`/`final`-Semantik, nur oberflächliche Workflow-Prüfung des aktuellen Zustands statt der gesamten Historie, protokollübergreifende `duplicate_of`-Ketten, und Suchläufe gegen nicht geplante Datenbanken. Ausführliches ADR siehe unten. |
 
 ## Ausführliche ADRs
 
@@ -359,6 +362,128 @@ Kurze, strukturierte Architecture Decision Records (ADRs): Kontext, Entscheidung
 - **Migrationsstrategie:** Nicht zutreffend für Produktivdaten (noch keine realen Screening-/
   Extraktionsdatensätze). Bestehende Test-Fixtures wurden im selben Commit angepasst bzw. um
   gezielte neue Negativ-/Positivszenarien ergänzt.
+
+### ADR-0040: `extraction_status: verified` bedeutet unbedingt unabhängige Zweitprüfung; neuer Status `self_checked`
+
+- **Status:** Entschieden
+- **Datum:** 2026-07-25
+- **Kontext:** ADR-0039 (Runde 2) erzwang `verified_by != extracted_by` nur, wenn das referenzierte Protokoll
+  `extraction_policy.verification_required: true` setzte. Eine unabhängige Prüfung des Heads dieser Runde
+  bemängelte zu Recht, dass dadurch `extraction_status: verified` **nicht zuverlässig** „durch eine andere
+  Person geprüft" bedeutete — ein Protokoll mit `verification_required: false` konnte eine Ein-Personen-
+  Selbstbestätigung als `verified` ausgeben, obwohl der Name des Status genau das Gegenteil suggeriert.
+- **Entscheidung:** `verified_by != extracted_by` wird jetzt **immer** erzwungen, sobald
+  `extraction_status: verified` gesetzt ist — die protokollabhängige Ausnahme aus ADR-0039 entfällt ersatzlos.
+  Für rein technische Ein-Personen-Durchläufe (Strukturtests, Platzhalterdaten) wird stattdessen ein neuer,
+  eigenständiger Status `self_checked` eingeführt (`common.schema.json#/$defs/extraction_status`,
+  `research/vocabularies/extraction_statuses.yaml`). `tools/validate_research.py` stellt zusätzlich sicher,
+  dass ein `promotion_record` sich niemals auf eine `self_checked`-Extraktion beziehen kann — nur `verified`
+  ist promotion-fähig.
+- **Alternativen:**
+    1. *Protokollabhängige Ausnahme aus ADR-0039 beibehalten* — verworfen: genau das war die im Review
+       bemängelte Lücke; „verified" hätte je nach Protokoll zwei unterschiedliche Bedeutungen gehabt.
+    2. *`verification_required` ganz entfernen, `verified_by != extracted_by` immer erzwingen, ohne
+       Alternativstatus* — verworfen: es gibt legitime Faelle (Strukturtests, Platzhalterbeispiele), in denen
+       eine einzelne Person einen Durchlauf technisch abschließt, ohne dass eine zweite Person real verfügbar
+       ist; ein Zwang zu einem irreführenden `verified` (mit einer erfundenen zweiten Person) wäre schlimmer
+       als ein ehrlich benannter Alternativstatus.
+    3. *Unbedingtes `verified` plus neuer, nie promotion-fähiger `self_checked`-Status* — **gewählt**.
+- **Konsequenzen:** `extraction_status: verified` ist jetzt eine verlässliche, protokollunabhängige Garantie.
+  Bestehende Test-Fixtures und `research/examples/**`, die zuvor auf die protokollabhängige Ausnahme setzten,
+  wurden im selben Commit auf `self_checked` umgestellt bzw. entfernt (siehe
+  `tests/fixtures/research/valid_scenarios/independently_verified_extraction_can_be_promoted` und
+  `self_verified_extraction_cannot_be_promoted`).
+- **Migrationsstrategie:** Nicht zutreffend für Produktivdaten (noch keine realen Extraktionsdatensätze). Ein
+  künftiges reales Protokoll, das bislang `verification_required: false` gesetzt hätte, muss stattdessen für
+  Ein-Personen-Durchläufe `self_checked` verwenden.
+
+### ADR-0041: `claim_promotion_policy.requires_second_review` technisch erzwungen; Grenze zur menschlichen Reviewer-Identität dokumentiert
+
+- **Status:** Entschieden
+- **Datum:** 2026-07-25
+- **Kontext:** `claim_promotion_policy.requires_second_review` existierte im Protokollschema bereits seit
+  Phase 4A, wurde aber von keinem Validator ausgewertet — ein Protokoll konnte diese Pflicht setzen, ohne dass
+  sie irgendeine Wirkung auf `promotion_record`-Datensätze hatte. Die Review-Runde 3 verlangte außerdem eine
+  explizite Entscheidung zwischen einer maschinenlesbaren Actor-Registry (human/automation/ai_assistant/
+  service) und einer ehrlich dokumentierten Grenze ohne Registry.
+- **Entscheidung:** `tools/validate_research.py` prüft jetzt: Setzt das referenzierte Protokoll
+  `claim_promotion_policy.requires_second_review: true`, müssen `promotion_record`-Datensätze mit
+  `promotion_status: approved_for_creation`/`promoted` mindestens **zwei unterschiedliche, nicht-leere**
+  Einträge in `review.reviewers` tragen. Es wird **keine** Actor-Registry eingeführt (Lösung B aus dem
+  Reviewauftrag): Die Prüfung stellt nur sicher, dass zwei unterschiedliche *Kürzel* vorhanden sind, nicht,
+  dass es sich um zwei unterschiedliche *menschliche* Personen handelt. Diese Garantie bleibt organisatorisch
+  (Reviewprozess, Repository-Zugriffskontrolle) — die Dokumentation behauptet an keiner Stelle mehr eine
+  stärkere, technisch erzwungene Garantie (siehe Scientific Research Protocol, Abschnitt 34).
+- **Alternativen:**
+    1. *Actor-Registry einführen* (`id`, `actor_type: human|automation|ai_assistant|service`, `roles[]`,
+       Reviewerfelder referenzieren Actor-IDs) — inhaltlich die langfristig sauberere Lösung für
+       Auditierbarkeit bei 100.000 Quellen und zunehmendem KI-Einsatz, aber verworfen für diesen Commit: sie
+       berührt praktisch jedes bestehende Reviewer-Feld in fünf Schemas (`review_block`, `second_review`,
+       `adjudication`, `promotion_record.review`, kanonische `data/**`-Reviewmetadaten) und wäre damit kein
+       kleiner, fokussierter Fix mehr, sondern eine eigenständige Migration — verfrüht, solange noch keine
+       realen Reviewer-Daten existieren. Bleibt für eine spätere Phase vorgemerkt.
+    2. *Nur Anzahl pruefen (>= 2 Eintraege), keine Eindeutigkeit* — verworfen: zwei identische Kürzel hätten
+       die Prüfung sonst trivial umgangen (siehe Testszenario `promotion_duplicate_reviewers`).
+    3. *Zwei-distinkte-Kürzel-Pruefung ohne Actor-Registry, Grenze explizit dokumentiert* — **gewählt**.
+- **Konsequenzen:** Die im Protokoll dokumentierte Absicht (`requires_second_review`) hat jetzt tatsächlich
+  eine Wirkung. Die verbleibende Lücke (Kürzel statt verifizierter Identität) ist an mehreren Stellen
+  (Scientific Research Protocol Abschnitt 29/34, `research/promotions/README.md`, `research/README.md`)
+  ausdrücklich als organisatorische, nicht technische Garantie benannt.
+- **Migrationsstrategie:** Nicht zutreffend für Produktivdaten. Bestehende Test-Fixtures wurden um gezielte
+  neue Szenarien ergänzt (`promotion_policy_requires_two_reviewers`,
+  `promotion_single_reviewer_when_two_required`, `promotion_duplicate_reviewers`,
+  `promotion_two_reviewers_when_required`).
+
+### ADR-0042: Terminale Screening-Stufe als einzige Extraktionsvoraussetzung; vollständige `decision_history`-Validierung; `duplicate_of`-Kettenprüfung; Suchlauf-Datenbank muss geplant sein
+
+- **Status:** Entschieden
+- **Datum:** 2026-07-25
+- **Kontext:** Eine unabhängige Prüfung des Runde-2-Heads fand vier zusammenhängende strukturelle Lücken: (1)
+  `decision_stage: full_text` und `final` wurden nebeneinander als potenziell extraktionsfähig behandelt, ohne
+  eindeutige Regel, wann welche Stufe terminal ist — eine Extraktion konnte bereits nach einem vorläufigen
+  Volltext-Einschluss entstehen. (2) Die Workflow-Invarianten (Dual-Reviewer, Reviewer-Unabhängigkeit,
+  Konfliktlösung, Volltextregeln) wurden nur auf die Top-Level-Felder angewandt, nicht auf jeden Eintrag in
+  `decision_history[]` — ein älterer, fehlerhafter Historieneintrag blieb unentdeckt. (3) `duplicate_of` prüfte
+  nur, dass das Ziel existiert, nicht, dass es demselben Protokoll angehört (auch nicht über mehrere
+  Kettenglieder hinweg). (4) `search_run.database` musste keiner im Protokoll geplanten Datenbank entsprechen
+  — eine stille Erweiterung der Recherche nach Protokollfreigabe blieb unentdeckt. Zusätzlich war
+  `second_review.reviewer_decision` weiterhin nullable und `decision_confirmed` frei editierbar, ohne dass der
+  Validator die Konsistenz zwischen beiden prüfte.
+- **Entscheidung:**
+    1. `decision_stage: final` ist ab sofort die **einzige** extraktionsfähige Stufe; `full_text` dokumentiert
+       nur die Volltextbewertung. Eine Extraktion erfordert `decision: include`, `decision_stage: final`,
+       `full_text_status: obtained`, eine vorhandene, für `final` konfigurierte Zweitprüfung sowie keinen
+       ungelösten Zweitprüfungskonflikt (Scientific Research Protocol, Abschnitt 9b).
+    2. `second_review.reviewer_decision` ist schema-seitig nicht mehr nullable. `tools/validate_research.py`
+       validiert **jeden** Eintrag in `decision_history[]` (nicht nur den letzten) gegen dieselben Invarianten:
+       Stufe im Protokoll vorgesehen, Dual-Reviewer-Pflicht, Reviewer-/Adjudikator-Unabhängigkeit, `decision_
+       confirmed` als geprüfte Projektion von `reviewer_decision == Erstentscheidung`, Konfliktlösung,
+       Volltextregeln und Datumsreihenfolge. `full_text_status` wird dafür auch je Historieneintrag
+       gespeichert (`schemas/research_screening_record.schema.json`).
+    3. `duplicate_of` und die **gesamte** Kette verketteter Duplikate müssen innerhalb derselben `protocol_id`
+       bleiben wie der Ausgangsdatensatz — nicht nur der unmittelbare Verweis.
+    4. `search_run.database` muss unter `protocol.planned_information_sources[].database` stehen; eine neue
+       Datenbank erfordert eine neue, vor der Suchausführung freigegebene Protokollversion.
+- **Alternativen:**
+    1. *`full_text` als terminale Stufe beibehalten, `final` als optionale zusätzliche Stufe* — verworfen: der
+       Reviewauftrag verlangte ausdrücklich eine eindeutige, nicht mehrdeutige Regel; eine Menge
+       `{full_text, final}` ohne klare Rangfolge hätte dieselbe Unklarheit nur verschoben.
+    2. *Nur den letzten `decision_history`-Eintrag prüfen (bisheriger Zustand)* — verworfen: das war exakt die
+       im Review gefundene Lücke.
+    3. *`duplicate_of` protokollübergreifend erlauben* — verworfen: ein Duplikat und sein Hauptdatensatz
+       müssen in derselben Recherche verortet bleiben, sonst verliert `duplicate_of` seine Bedeutung als
+       „gleicher Kandidat in dieser Recherche".
+    4. *Suchlauf-Datenbanken nicht gegen den Plan prüfen* — verworfen: das hätte eine stille
+       Scope-Erweiterung nach Protokollfreigabe ermöglicht, ohne dass dafür eine neue Protokollversion
+       nötig gewesen wäre.
+- **Konsequenzen:** Deutlich strengere, aber eindeutige Extraktionsvoraussetzungen; alle bestehenden
+  Beispiel- und Test-Fixtures mit `decision_stage: full_text` + Extraktion wurden auf `final` migriert
+  (`research/examples/**`, `tests/fixtures/research/valid/**`, betroffene `valid_scenarios/**`).
+  `decision_history`-Einträge tragen jetzt zusätzlich `full_text_status`. Höherer Pflegeaufwand pro
+  Screening-Datensatz, aber strukturell konsistente, vollständig geprüfte Historie statt nur des aktuellen
+  Zustands.
+- **Migrationsstrategie:** Alle betroffenen Produktivbeispiele und Test-Fixtures wurden im selben Commit
+  migriert. Für Produktivdaten nicht zutreffend (noch keine realen Screening-Datensätze zu Retatrutid).
 
 ## Format für neue Einträge
 
