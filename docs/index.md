@@ -33,3 +33,5 @@ Diese Wissensdatenbank dient ausschließlich der wissenschaftlichen Information.
 ## Mitarbeit
 
 Redaktionelle Grundsätze und Qualitätsanforderungen sind im [Redaktionsstandard](00_grundlagen/redaktionsstandard.md) dokumentiert. Den aktuellen Ausbaustand zeigt die [Roadmap](roadmap.md).
+
+Die technische und organisatorische Architektur der Plattform — Vision, Datenmodell, Knowledge Graph, Redaktionsprozesse, Workflow — ist im Bereich [Architektur & Projekt](project/index.md) dokumentiert.

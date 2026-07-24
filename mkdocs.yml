@@ -64,7 +64,11 @@ markdown_extensions:
       permalink: true
       toc_depth: 3
   - pymdownx.details
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.tabbed:
       alternate_style: true
   - pymdownx.critic
@@ -94,3 +98,20 @@ nav:
   - Projekt:
       - Roadmap: roadmap.md
       - Haftungshinweis: haftungshinweis.md
+  - Architektur:
+      - Übersicht: project/index.md
+      - Vision: project/Vision.md
+      - Mission: project/Mission.md
+      - Architecture: project/Architecture.md
+      - Data Model: project/Data_Model.md
+      - Knowledge Graph: project/Knowledge_Graph.md
+      - Editorial Policy: project/Editorial_Policy.md
+      - Quality Standards: project/Quality_Standards.md
+      - Contribution Guide: project/Contribution_Guide.md
+      - Workflow: project/Workflow.md
+      - Naming Conventions: project/Naming_Conventions.md
+      - Release Strategy: project/Release_Strategy.md
+      - Versioning: project/Versioning.md
+      - Glossary for Developers: project/Glossary_For_Developers.md
+      - Decision Log: project/Decision_Log.md
+      - Future Roadmap: project/Future_Roadmap.md
