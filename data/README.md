@@ -98,13 +98,18 @@ an Rezeptor Y" ist ein Claim; „Substanz X: Uebersicht" ist ein Artikel mit meh
 
 ### Quellenpflicht-Ausnahmen (`source_requirement: exempt`)
 
-Nur fuer rein administrative Claims zulaessig: **ausschliesslich** `claim_type: identity` oder
-`claim_type: classification` duerfen `source_requirement: exempt` verwenden, und auch dann nur mit einer
-ausgefuellten Begruendung in `source_exemption_reason` (nicht leer, nicht `null`). Medizinisch relevante
-Claimtypen — `mechanism`, `receptor_activity`, `pathway_activity`, `pharmacokinetics`, `efficacy`, `safety`,
-`adverse_event`, `regulatory`, `study_result`, `association`, `comparison` — koennen **niemals** ausgenommen
-werden; sie brauchen immer mindestens eine Quelle. Der Validator weist jeden Versuch, diese Claimtypen
-auszunehmen, mit einem Fehler zurueck.
+**Jeder aktive Claim mit `source_requirement: required` (dem Standardwert) braucht mindestens einen
+Evidenzlink — unabhaengig vom `claim_type`.** Das gilt auch fuer rein administrative Typen wie `structure`,
+`historical` oder `other` (z. B. attribuierte Aussagen mit `claimed_by`/`reported_by`): auch sie brauchen im
+Status `active` einen Beleg dafuer, dass die dokumentierte Aussage tatsaechlich existiert.
+
+Eine Ausnahme von der Quellenpflicht (`source_requirement: exempt`) ist nur fuer rein administrative Claims
+zulaessig: **ausschliesslich** `claim_type: identity` oder `claim_type: classification` duerfen
+`source_requirement: exempt` verwenden, und auch dann nur mit einer ausgefuellten Begruendung in
+`source_exemption_reason` (nicht leer, nicht `null`). Medizinisch relevante Claimtypen — `mechanism`,
+`receptor_activity`, `pathway_activity`, `pharmacokinetics`, `efficacy`, `safety`, `adverse_event`,
+`regulatory`, `study_result`, `association`, `comparison` — koennen **niemals** ausgenommen werden. Der
+Validator weist jeden Versuch, einen anderen Claimtyp auszunehmen, mit einem Fehler zurueck.
 
 ### Haendlerangaben und persoenliche Erfahrung
 

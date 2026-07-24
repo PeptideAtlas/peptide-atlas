@@ -26,7 +26,7 @@ def test_valid_fixture_set_has_no_errors():
 INVALID_SCENARIOS = {
     "duplicate_id": "duplicate id",
     "filename_id_mismatch": "does not match filename",
-    "missing_source": "no source",
+    "missing_source": "needs at least one evidence link",
     "unknown_predicate": "not defined in data/vocabularies/predicates.yaml",
     "unknown_entity": "references missing entity",
     "unknown_study": "references missing study",
@@ -53,6 +53,10 @@ INVALID_SCENARIOS = {
     "invalid_calendar_dates": "date",
     "article_missing_frontmatter": "missing YAML frontmatter",
     "active_claim_no_supporting_direction": "no link with direction 'supports' or 'mixed'",
+    # --- Hardening pass (Review 3): source requirement applies to ALL active claims ---
+    "active_structure_claim_no_evidence": "needs at least one evidence link",
+    "active_historical_claim_no_evidence": "needs at least one evidence link",
+    "active_claimed_by_claim_no_evidence": "needs at least one evidence link",
 }
 
 
@@ -89,14 +93,39 @@ def test_valid_exempt_identity_claim_has_no_errors():
     assert not exempt_errors, f"unexpected errors on the valid exempt claim:\n{messages}"
 
 
+@pytest.mark.parametrize(
+    "claim_suffix",
+    ["000000000004", "000000000005"],
+    ids=["active_identity_exempt", "active_classification_exempt"],
+)
+def test_valid_active_exempt_claims_have_no_errors(claim_suffix: str):
+    """Positiver Test zu Review 3, Punkt 1: aktive identity/classification-Claims mit
+    source_requirement exempt und gueltiger Begruendung sind weiterhin zulaessig, obwohl die
+    allgemeine Regel jetzt jeden aktiven Claim mit source_requirement: required ohne Evidenz ablehnt."""
+    report = _run(VALID_ROOT)
+    messages = "\n".join(issue.format() for issue in report.issues)
+    claim_errors = [
+        issue for issue in report.issues
+        if issue.level == "ERROR" and f"claim-a0000000-0000-4000-8000-{claim_suffix}" in issue.file
+    ]
+    assert not claim_errors, f"unexpected errors on the valid active exempt claim:\n{messages}"
+
+
 def test_duplicate_sources_detect_each_identifier_type():
     report = _run(INVALID_ROOT / "duplicate_sources")
-    error_messages = [issue.message for issue in report.issues if issue.level == "ERROR"]
+    error_issues = [issue for issue in report.issues if issue.level == "ERROR"]
+    error_messages = [issue.message for issue in error_issues]
 
-    assert any("duplicate DOI" in m for m in error_messages), error_messages
+    doi_errors = [m for m in error_messages if "duplicate DOI" in m]
+    assert len(doi_errors) >= 2, error_messages  # capitalization/URL pair AND doi:-prefix pair
     assert any("duplicate PMID" in m for m in error_messages), error_messages
     assert any("duplicate PMCID" in m for m in error_messages), error_messages
     assert any("duplicate ISBN" in m for m in error_messages), error_messages
+
+    # doi:-Prefix-Form muss gegen die https://doi.org/-URL-Form desselben DOI erkannt werden.
+    assert any(
+        "source-doi-prefix-b" in issue.file and "duplicate DOI" in issue.message for issue in error_issues
+    ), error_messages
 
     # Identische kanonische URLs sind nur eine Warnung, kein Fehler.
     assert not any("duplicate" in m and "URL" in m for m in error_messages), error_messages

@@ -400,13 +400,11 @@ def check_evidence_rules(
                     f"{sorted(EXEMPTABLE_CLAIM_TYPES)}, got '{claim_type}'",
                 )
 
-        if status == "active" and claim_type in MEDICALLY_RELEVANT_CLAIM_TYPES:
-            if not evidence and source_requirement != "exempt":
-                report.error(
-                    file_rel, "$.evidence",
-                    f"active claim of medically relevant type '{claim_type}' has no source "
-                    "(set source_requirement: exempt with source_exemption_reason for administrative exceptions)",
-                )
+        if status == "active" and source_requirement == "required" and not evidence:
+            report.error(
+                file_rel, "$.evidence",
+                "active claim with source_requirement 'required' needs at least one evidence link",
+            )
 
         # --- 3. Evidenzkategorie und Quellentyp konsistent validieren ------------------------
         if resolved_source_types and resolved_source_types == {"merchant_page"} and evidence_category != "merchant_claim":

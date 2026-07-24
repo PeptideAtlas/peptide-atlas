@@ -1,0 +1,24 @@
+schema_version: "1.0.0"
+id: claim-a0000000-0000-4000-8000-000000000005
+claim_type: classification
+subject_id: substance-test
+predicate: is_classified_as
+object:
+  value:
+    de: "Testklassifikation (aktiv, classification)"
+  value_type: localized_text
+statement:
+  de: Positiver Test -- aktiver classification-Claim mit source_requirement exempt und gueltiger Ausnahmebegruendung.
+qualifiers: {}
+evidence_category: established_knowledge
+certainty: not_assessed
+certainty_rationale: null
+evidence: []
+source_requirement: exempt
+source_exemption_reason: Kanonische administrative Metadaten ohne medizinische Aussage (Testfall, aktiv, classification).
+status: active
+created_at: "2026-01-01"
+updated_at: "2026-01-01"
+review:
+  last_reviewed_at: "2026-01-01"
+  reviewers: ["reviewer-1"]

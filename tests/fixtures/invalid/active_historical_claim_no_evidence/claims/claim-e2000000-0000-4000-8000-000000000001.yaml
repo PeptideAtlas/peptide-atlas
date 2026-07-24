@@ -1,0 +1,21 @@
+schema_version: "1.0.0"
+id: claim-e2000000-0000-4000-8000-000000000001
+claim_type: historical
+subject_id: substance-test
+predicate: developed_by
+object:
+  value: { de: Test }
+  value_type: localized_text
+statement:
+  de: Aktiver historical-Claim ohne jede Evidenz -- historical ist nicht in MEDICALLY_RELEVANT_CLAIM_TYPES, muss aber trotzdem eine Quelle haben.
+qualifiers: {}
+evidence_category: theoretical_hypothesis
+certainty: not_assessed
+certainty_rationale: null
+evidence: []
+status: active
+created_at: "2026-01-01"
+updated_at: "2026-01-01"
+review:
+  last_reviewed_at: "2026-01-01"
+  reviewers: ["reviewer-1"]

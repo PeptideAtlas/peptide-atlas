@@ -160,10 +160,13 @@ def normalize_doi(value: str) -> str:
     Anders als tools/new_id.py::normalize_doi (das einen ID-Slug erzeugt) wird hier NICHT
     jedes Sonderzeichen durch '-' ersetzt, da das unterschiedliche DOIs faelschlich
     gleichsetzen wuerde (z. B. '10.1000/A.B' vs. '10.1000/A-B'). Nur Groß-/Kleinschreibung
-    und die URL-Form werden vereinheitlicht.
+    sowie die verschiedenen ueblichen Prefix-/URL-Formen werden vereinheitlicht:
+    'doi:10.1000/x', 'DOI: 10.1000/x', 'https://doi.org/10.1000/x',
+    'http://dx.doi.org/10.1000/x' und der nackte '10.1000/x' ergeben denselben Wert.
     """
     text = value.strip()
     text = re.sub(r"^https?://(dx\.)?doi\.org/", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"^doi\s*:\s*", "", text, flags=re.IGNORECASE)
     return text.lower()
 
 

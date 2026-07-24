@@ -193,11 +193,15 @@ Warnungen blockieren den Build nicht):
   `study.source_ids`, `study.sponsor_ids` muessen auf existierende Objekte zeigen; `predicate` muss in
   `data/vocabularies/predicates.yaml` stehen.
 - **Evidenzebene**:
-    - Aktive medizinisch relevante Claims (`mechanism`, `receptor_activity`, `pathway_activity`,
-      `pharmacokinetics`, `efficacy`, `safety`, `adverse_event`, `regulatory`, `study_result`, `association`,
-      `comparison`) benoetigen mindestens eine Quelle. `source_requirement: exempt` ist fuer sie **strukturell
-      ausgeschlossen** — nur `claim_type: identity`/`classification` duerfen ausnehmen, und auch dann nur mit
-      nicht leerem `source_exemption_reason` (vom Schema erzwungen).
+    - **Jeder aktive Claim mit `source_requirement: required` (dem Standardwert) benoetigt mindestens einen
+      Evidenzlink** — unabhaengig vom `claim_type`. `source_requirement: exempt` ist **strukturell auf
+      `claim_type: identity`/`classification` beschraenkt** und auch dann nur mit nicht leerem
+      `source_exemption_reason` (vom Schema erzwungen) zulaessig; medizinisch relevante Claimtypen
+      (`mechanism`, `receptor_activity`, `pathway_activity`, `pharmacokinetics`, `efficacy`, `safety`,
+      `adverse_event`, `regulatory`, `study_result`, `association`, `comparison`) koennen `exempt` nie
+      verwenden — aber auch rein administrative Typen wie `structure`, `historical` oder `other` muessen im
+      Status `active` eine Quelle haben, sofern sie nicht ausdruecklich als `identity`/`classification` mit
+      Begruendung ausgenommen sind.
     - `certainty_rationale` muss ein nicht leerer String sein, sobald `certainty` nicht `not_assessed` ist —
       `null` und `""` werden vom Schema abgelehnt.
     - Beruht ein Claim ausschließlich auf `merchant_page`- bzw. `personal_report`-Quellen, muss seine

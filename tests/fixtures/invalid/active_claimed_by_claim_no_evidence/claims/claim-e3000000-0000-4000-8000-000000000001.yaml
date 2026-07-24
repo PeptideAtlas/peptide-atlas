@@ -1,0 +1,21 @@
+schema_version: "1.0.0"
+id: claim-e3000000-0000-4000-8000-000000000001
+claim_type: other
+subject_id: substance-test
+predicate: claimed_by
+object:
+  value: { de: Ein nicht belegter Haendleranspruch }
+  value_type: localized_text
+statement:
+  de: Aktiver Attributions-Claim (claimed_by) ohne jede Haendlerquelle -- auch attribuierte Aussagen brauchen einen Evidenzlink, der die Attribution selbst belegt.
+qualifiers: {}
+evidence_category: merchant_claim
+certainty: not_assessed
+certainty_rationale: null
+evidence: []
+status: active
+created_at: "2026-01-01"
+updated_at: "2026-01-01"
+review:
+  last_reviewed_at: "2026-01-01"
+  reviewers: ["reviewer-1"]
