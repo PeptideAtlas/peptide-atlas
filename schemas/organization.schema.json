@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "organization.schema.json",
+  "title": "Organization",
+  "description": "Ein Hersteller, Sponsor, akademisches Institut, eine Zulassungsbehoerde oder ein Vertrieb.",
+  "allOf": [
+    { "$ref": "entity.schema.json" },
+    {
+      "type": "object",
+      "properties": {
+        "entity_type": { "const": "organization" },
+        "id": { "pattern": "^organization-[a-z0-9]+(-[a-z0-9]+)*$" },
+        "organization_type": {
+          "type": ["string", "null"],
+          "enum": [
+            "manufacturer",
+            "sponsor",
+            "academic_institution",
+            "regulatory_agency",
+            "distributor",
+            "other",
+            null
+          ]
+        },
+        "country_code": {
+          "type": ["string", "null"],
+          "pattern": "^[A-Z]{2}$"
+        }
+      },
+      "required": ["entity_type"]
+    }
+  ]
+}

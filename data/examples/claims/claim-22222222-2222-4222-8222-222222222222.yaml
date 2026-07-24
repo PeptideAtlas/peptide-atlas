@@ -1,0 +1,25 @@
+# Diese Daten sind ausschliesslich technische Platzhalter und keine medizinischen Aussagen.
+schema_version: "1.0.0"
+id: claim-22222222-2222-4222-8222-222222222222
+claim_type: classification
+subject_id: substance-placeholder
+predicate: is_classified_as
+object:
+  value:
+    de: Technischer Platzhalter
+  value_type: localized_text
+statement:
+  de: Beispiel für einen Claim mit lokalisiertem Textwert statt einer Entitätsreferenz.
+qualifiers: {}
+evidence_category: established_knowledge
+certainty: not_assessed
+certainty_rationale: null
+evidence: []
+source_requirement: exempt
+source_exemption_reason: Kanonische administrative Metadaten ohne medizinische Aussage.
+status: draft
+created_at: "2026-07-24"
+updated_at: "2026-07-24"
+review:
+  last_reviewed_at: null
+  reviewers: []

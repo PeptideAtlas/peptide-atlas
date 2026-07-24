@@ -1,0 +1,51 @@
+# Kontrolliertes Vokabular: source_type
+schema_version: "1.0.0"
+values:
+  - value: peer_reviewed_publication
+    labels:
+      de: Peer-reviewte Publikation
+      en: Peer-Reviewed Publication
+  - value: preprint
+    labels:
+      de: Preprint
+      en: Preprint
+  - value: conference_abstract
+    labels:
+      de: Konferenzabstract
+      en: Conference Abstract
+  - value: trial_registry
+    labels:
+      de: Studienregister
+      en: Trial Registry
+  - value: regulatory_document
+    labels:
+      de: Regulatorisches Dokument
+      en: Regulatory Document
+  - value: guideline
+    labels:
+      de: Leitlinie
+      en: Guideline
+  - value: systematic_review
+    labels:
+      de: Systematischer Review
+      en: Systematic Review
+  - value: reference_database
+    labels:
+      de: Referenzdatenbank
+      en: Reference Database
+  - value: manufacturer_document
+    labels:
+      de: Herstellerdokument
+      en: Manufacturer Document
+  - value: merchant_page
+    labels:
+      de: Händlerseite
+      en: Merchant Page
+  - value: personal_report
+    labels:
+      de: Persönlicher Bericht
+      en: Personal Report
+  - value: other
+    labels:
+      de: Sonstige
+      en: Other

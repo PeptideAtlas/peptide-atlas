@@ -1,0 +1,26 @@
+schema_version: "1.0.0"
+id: claim-c2000000-0000-4000-8000-000000000001
+claim_type: efficacy
+subject_id: substance-test
+predicate: studied_for
+object:
+  value: { de: Test }
+  value_type: localized_text
+statement:
+  de: Umgehungstest -- als limited_evidence deklariert, obwohl die einzige Quelle ein persoenlicher Bericht ist.
+qualifiers: {}
+evidence_category: limited_evidence
+certainty: low
+certainty_rationale: Testdaten -- versuchte Umgehung ueber eine falsch gewaehlte Evidenzkategorie.
+evidence:
+  - source_id: source-test
+    study_id: null
+    direction: supports
+    locator: { page: null, table: null, figure: null, section: null }
+    notes: null
+status: active
+created_at: "2026-01-01"
+updated_at: "2026-01-01"
+review:
+  last_reviewed_at: "2026-01-01"
+  reviewers: ["reviewer-1"]

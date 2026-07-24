@@ -11,6 +11,12 @@ tags:
 
 Peptide Atlas wird **nicht als Wiki**, sondern als **Graph** gedacht: Artikel sind die menschenlesbare Darstellung von Knoten (Nodes) und ihren Beziehungen (Edges), nicht die primäre Datenstruktur selbst.
 
+!!! info "Konkrete Umsetzung seit Phase 3"
+    Dieses Dokument beschreibt weiterhin das Denkmodell. Die konkrete, lauffähige Umsetzung ist seit Phase 3
+    vorhanden: `python tools/export_graph.py` erzeugt `build/graph.json` (Nodes aus Entitäten unter
+    `data/entities/**`, Edges ausschließlich aus Claims mit einem `object.entity_id`, validiert gegen
+    `schemas/relationship.schema.json`). Siehe [Phase 3 Dokumentation](Phase_3_Scientific_Data_Architecture.md).
+
 !!! info "Rein strukturelles Beispiel"
     Alle Beispiele auf dieser Seite verwenden Platzhalternamen („Substanz A", „Rezeptor B" …). Es handelt sich um keine echten medizinischen Aussagen, sondern ausschließlich um eine Illustration der Graphstruktur.
 
@@ -35,6 +41,13 @@ Eine Edge verbindet zwei Nodes über einen benannten Beziehungstyp und trägt **
 | `status` | `Entwurf` \| `In Prüfung` \| `Aktiv` — Beziehungen durchlaufen denselben Redaktionsprozess wie Artikel |
 
 Damit ist Evidenz immer an der **Aussage** (der Edge) verankert, nicht pauschal am Objekt — ein zentrales Prinzip aus dem [Data Model](Data_Model.md).
+
+!!! note "Namenskonvention: `relation_type` vs. `predicate`"
+    Diese Seite verwendet zur Illustration `UPPER_CASE`-Bezeichner wie `BINDS_TO`. Die konkrete Umsetzung in
+    Phase 3 nennt dasselbe Feld `predicate` und verwendet `lower_snake_case` (z. B. `binds_to`), passend zu den
+    übrigen maschinenlesbaren Enums (siehe [Naming Conventions](Naming_Conventions.md)). Es handelt sich um
+    dieselbe Beziehung, nur mit dem in Phase 3 verbindlich festgelegten Schreibstil — das kontrollierte
+    Vokabular steht in `data/vocabularies/predicates.yaml`.
 
 ## Illustratives Beispiel (Platzhalterdaten)
 

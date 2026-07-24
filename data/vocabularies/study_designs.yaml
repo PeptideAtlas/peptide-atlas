@@ -1,0 +1,53 @@
+# Kontrolliertes Vokabular: study_design
+schema_version: "1.0.0"
+values:
+  - value: randomized_controlled_trial
+    labels: { de: Randomisierte kontrollierte Studie, en: Randomized Controlled Trial }
+  - value: nonrandomized_controlled_trial
+    labels: { de: Nichtrandomisierte kontrollierte Studie, en: Nonrandomized Controlled Trial }
+  - value: single_arm_trial
+    labels: { de: Einarmige Studie, en: Single-Arm Trial }
+  - value: prospective_cohort
+    labels: { de: Prospektive Kohortenstudie, en: Prospective Cohort }
+  - value: retrospective_cohort
+    labels: { de: Retrospektive Kohortenstudie, en: Retrospective Cohort }
+  - value: case_control
+    labels: { de: Fall-Kontroll-Studie, en: Case-Control }
+  - value: cross_sectional
+    labels: { de: Querschnittsstudie, en: Cross-Sectional }
+  - value: case_series
+    labels: { de: Fallserie, en: Case Series }
+  - value: case_report
+    labels: { de: Fallbericht, en: Case Report }
+  - value: systematic_review
+    labels: { de: Systematischer Review, en: Systematic Review }
+  - value: meta_analysis
+    labels: { de: Metaanalyse, en: Meta-Analysis }
+  - value: narrative_review
+    labels: { de: Narrativer Review, en: Narrative Review }
+  - value: guideline
+    labels: { de: Leitlinie, en: Guideline }
+  - value: animal_study
+    labels: { de: Tierstudie, en: Animal Study }
+  - value: in_vitro
+    labels: { de: In-vitro-Studie, en: In Vitro }
+  - value: ex_vivo
+    labels: { de: Ex-vivo-Studie, en: Ex Vivo }
+  - value: organoid
+    labels: { de: Organoid-Modell, en: Organoid }
+  - value: in_silico
+    labels: { de: In-silico-/Computermodell, en: In Silico }
+  - value: biochemical_assay
+    labels: { de: Biochemischer Assay, en: Biochemical Assay }
+  - value: regulatory_document
+    labels: { de: Regulatorisches Dokument, en: Regulatory Document }
+  - value: trial_registry
+    labels: { de: Studienregistereintrag, en: Trial Registry }
+  - value: manufacturer_document
+    labels: { de: Herstellerdokument, en: Manufacturer Document }
+  - value: merchant_page
+    labels: { de: Händlerseite, en: Merchant Page }
+  - value: personal_report
+    labels: { de: Persönlicher Bericht, en: Personal Report }
+  - value: other
+    labels: { de: Sonstige, en: Other }

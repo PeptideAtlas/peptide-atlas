@@ -1,0 +1,177 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "common.schema.json",
+  "title": "Common",
+  "description": "Gemeinsame, wiederverwendbare Definitionen fuer alle Peptide-Atlas-Datenschemas. Wird ausschliesslich per $ref referenziert, nicht direkt zur Validierung eines Objekts verwendet.",
+  "$defs": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0.0",
+      "description": "Phase 3 akzeptiert ausschliesslich schema_version 1.0.0. Andere Werte (auch syntaktisch gueltiges SemVer wie 2.0.0) werden abgelehnt, bis ein dokumentierter Migrationspfad fuer eine neue Schema-Version existiert (siehe Decision Log)."
+    },
+    "date": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+      "format": "date",
+      "description": "ISO-8601-Kalenderdatum (YYYY-MM-DD). Das pattern prueft die Syntax, 'format: date' (mit aktiviertem FormatChecker, siehe tools/validate_data.py) prueft zusaetzlich, dass es sich um ein tatsaechlich existierendes Kalenderdatum handelt (z. B. wird 2026-02-31 abgelehnt)."
+    },
+    "date_or_null": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+      "format": "date"
+    },
+    "language_code": {
+      "type": "string",
+      "pattern": "^[a-z]{2}$",
+      "description": "ISO-639-1-Sprachcode."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)+$",
+      "description": "Global eindeutige, stabile, ausschliesslich ASCII-lowercase-kebab-case ID. Muss mit dem Dateinamen uebereinstimmen und darf nach Veroeffentlichung nie geaendert oder wiederverwendet werden."
+    },
+    "localized_text": {
+      "type": "object",
+      "description": "Mehrsprachige Textangabe als Map von ISO-639-1-Code auf Text. In der aktuellen Projektphase ist mindestens 'de' erforderlich; weitere Sprachen koennen ohne Schemaaenderung ergaenzt werden.",
+      "patternProperties": {
+        "^[a-z]{2}$": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false,
+      "required": ["de"]
+    },
+    "editorial_status": {
+      "type": "string",
+      "enum": ["draft", "in_review", "active", "withdrawn"],
+      "description": "Maschinenlesbarer, stabiler englischer Statuswert. Deutsche Anzeigenamen werden ueber data/vocabularies/editorial_statuses.yaml bereitgestellt."
+    },
+    "review_block": {
+      "type": "object",
+      "properties": {
+        "last_reviewed_at": { "$ref": "#/$defs/date_or_null" },
+        "reviewers": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Stabile Kuerzel oder Rollen, keine Klarnamen (siehe Editorial Policy)."
+        }
+      },
+      "additionalProperties": false,
+      "required": ["last_reviewed_at", "reviewers"]
+    },
+    "synonym_type": {
+      "type": "string",
+      "enum": [
+        "alternative_name",
+        "abbreviation",
+        "development_code",
+        "brand_name",
+        "former_name",
+        "chemical_name",
+        "other"
+      ]
+    },
+    "synonym": {
+      "type": "object",
+      "properties": {
+        "value": { "type": "string", "minLength": 1 },
+        "language": { "$ref": "#/$defs/language_code" },
+        "synonym_type": { "$ref": "#/$defs/synonym_type" }
+      },
+      "additionalProperties": false,
+      "required": ["value", "language", "synonym_type"]
+    },
+    "id_ref": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)+$",
+      "description": "Verweis auf die id eines anderen kanonischen Objekts (Entitaet, Studie, Quelle oder Claim)."
+    },
+    "evidence_category": {
+      "type": "string",
+      "enum": [
+        "established_knowledge",
+        "clinical_evidence",
+        "limited_evidence",
+        "preclinical_evidence",
+        "theoretical_hypothesis",
+        "merchant_claim",
+        "personal_experience"
+      ]
+    },
+    "certainty_level": {
+      "type": "string",
+      "enum": ["high", "moderate", "low", "very_low", "not_assessed"]
+    },
+    "evidence_direction": {
+      "type": "string",
+      "enum": ["supports", "contradicts", "mixed", "context_only"]
+    },
+    "study_design": {
+      "type": "string",
+      "enum": [
+        "randomized_controlled_trial",
+        "nonrandomized_controlled_trial",
+        "single_arm_trial",
+        "prospective_cohort",
+        "retrospective_cohort",
+        "case_control",
+        "cross_sectional",
+        "case_series",
+        "case_report",
+        "systematic_review",
+        "meta_analysis",
+        "narrative_review",
+        "guideline",
+        "animal_study",
+        "in_vitro",
+        "ex_vivo",
+        "organoid",
+        "in_silico",
+        "biochemical_assay",
+        "regulatory_document",
+        "trial_registry",
+        "manufacturer_document",
+        "merchant_page",
+        "personal_report",
+        "other"
+      ]
+    },
+    "source_type": {
+      "type": "string",
+      "enum": [
+        "peer_reviewed_publication",
+        "preprint",
+        "conference_abstract",
+        "trial_registry",
+        "regulatory_document",
+        "guideline",
+        "systematic_review",
+        "reference_database",
+        "manufacturer_document",
+        "merchant_page",
+        "personal_report",
+        "other"
+      ]
+    },
+    "locator": {
+      "type": "object",
+      "properties": {
+        "page": { "type": ["string", "null"] },
+        "table": { "type": ["string", "null"] },
+        "figure": { "type": ["string", "null"] },
+        "section": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "evidence_link": {
+      "type": "object",
+      "properties": {
+        "source_id": { "$ref": "#/$defs/id_ref" },
+        "study_id": { "type": ["string", "null"] },
+        "direction": { "$ref": "#/$defs/evidence_direction" },
+        "locator": { "$ref": "#/$defs/locator" },
+        "notes": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false,
+      "required": ["source_id", "direction"]
+    }
+  }
+}

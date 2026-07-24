@@ -1,0 +1,31 @@
+schema_version: "1.0.0"
+id: claim-d2000000-0000-4000-8000-000000000001
+claim_type: mechanism
+subject_id: substance-test
+predicate: interacts_with
+object:
+  value: { de: Test }
+  value_type: localized_text
+statement:
+  de: Aktiver Claim mit einer zurueckgezogenen Quelle neben einer weiteren, gueltigen Quelle -- soll nur warnen.
+qualifiers: {}
+evidence_category: preclinical_evidence
+certainty: low
+certainty_rationale: Testdaten.
+evidence:
+  - source_id: source-retracted
+    study_id: null
+    direction: supports
+    locator: { page: null, table: null, figure: null, section: null }
+    notes: null
+  - source_id: source-valid
+    study_id: null
+    direction: supports
+    locator: { page: null, table: null, figure: null, section: null }
+    notes: null
+status: active
+created_at: "2026-01-01"
+updated_at: "2026-01-01"
+review:
+  last_reviewed_at: "2026-01-01"
+  reviewers: ["reviewer-1"]

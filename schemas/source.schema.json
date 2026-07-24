@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "source.schema.json",
+  "title": "Source",
+  "description": "Eine eigenstaendige, deduplizierte Quelle (Publikation, Registrierungseintrag, Behoerdendokument, Haendlerangabe usw.). Quellen werden von Studien und Claims referenziert, nicht in diese eingebettet.",
+  "type": "object",
+  "properties": {
+    "schema_version": { "$ref": "common.schema.json#/$defs/schema_version" },
+    "id": {
+      "type": "string",
+      "pattern": "^source-([a-z0-9]+(-[a-z0-9]+)*)$",
+      "description": "Bevorzugt stabile externe Kennung als Praefix, z. B. source-pmid-12345678, source-nct-nct00000000, source-doi-<normalisiert>. Ohne stabile externe Kennung: source-<uuid4>. Siehe tools/new_id.py."
+    },
+    "source_type": { "$ref": "common.schema.json#/$defs/source_type" },
+    "title": { "type": "string", "minLength": 1 },
+    "authors": { "type": "array", "items": { "type": "string" }, "default": [] },
+    "journal": { "type": ["string", "null"] },
+    "publication_year": { "type": ["integer", "null"], "minimum": 1800, "maximum": 2100 },
+    "publication_date": { "$ref": "common.schema.json#/$defs/date_or_null" },
+    "identifiers": {
+      "type": "object",
+      "properties": {
+        "doi": { "type": ["string", "null"] },
+        "pmid": { "type": ["string", "null"] },
+        "pmcid": { "type": ["string", "null"] },
+        "isbn": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "url": { "type": ["string", "null"] },
+    "language": { "$ref": "common.schema.json#/$defs/language_code" },
+    "peer_review_status": {
+      "type": "string",
+      "enum": ["peer_reviewed", "not_peer_reviewed", "not_applicable", "unknown"]
+    },
+    "publication_status": {
+      "type": "string",
+      "enum": ["published", "preprint", "in_press", "unpublished", "unknown"]
+    },
+    "retraction_status": {
+      "type": "string",
+      "enum": ["not_retracted", "retracted", "expression_of_concern", "corrected", "unknown"]
+    },
+    "retrieved_at": { "$ref": "common.schema.json#/$defs/date_or_null" },
+    "status": { "$ref": "common.schema.json#/$defs/editorial_status" },
+    "created_at": { "$ref": "common.schema.json#/$defs/date" },
+    "updated_at": { "$ref": "common.schema.json#/$defs/date" },
+    "review": { "$ref": "common.schema.json#/$defs/review_block" }
+  },
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "source_type",
+    "title",
+    "language",
+    "peer_review_status",
+    "publication_status",
+    "retraction_status",
+    "status",
+    "created_at",
+    "updated_at",
+    "review"
+  ]
+}

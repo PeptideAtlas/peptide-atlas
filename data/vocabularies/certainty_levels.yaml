@@ -1,0 +1,25 @@
+# Kontrolliertes Vokabular: certainty
+# Getrennt von evidence_category. Wird redaktionell vergeben und muss (ausser bei
+# not_assessed) durch certainty_rationale begruendet werden (siehe claim.schema.json).
+schema_version: "1.0.0"
+values:
+  - value: high
+    labels:
+      de: Hoch
+      en: High
+  - value: moderate
+    labels:
+      de: Moderat
+      en: Moderate
+  - value: low
+    labels:
+      de: Niedrig
+      en: Low
+  - value: very_low
+    labels:
+      de: Sehr niedrig
+      en: Very Low
+  - value: not_assessed
+    labels:
+      de: Nicht bewertet
+      en: Not Assessed

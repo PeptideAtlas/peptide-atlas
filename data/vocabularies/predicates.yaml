@@ -1,0 +1,109 @@
+# Kontrolliertes Vokabular: predicate
+# Praedikate werden intern in lower_snake_case gespeichert und ausschliesslich aus dieser
+# Datei referenziert (siehe tools/validate_data.py). Neue Praedikate werden hier ergaenzt,
+# nie frei im Claim erfunden.
+schema_version: "1.0.0"
+values:
+  - value: is_classified_as
+    labels:
+      de: ist klassifiziert als
+      en: is classified as
+  - value: interacts_with
+    labels:
+      de: interagiert mit
+      en: interacts with
+  - value: binds_to
+    labels:
+      de: bindet an
+      en: binds to
+  - value: agonist_of
+    labels:
+      de: Agonist von
+      en: agonist of
+  - value: antagonist_of
+    labels:
+      de: Antagonist von
+      en: antagonist of
+  - value: partial_agonist_of
+    labels:
+      de: Partialagonist von
+      en: partial agonist of
+  - value: inhibits
+    labels:
+      de: hemmt
+      en: inhibits
+  - value: activates
+    labels:
+      de: aktiviert
+      en: activates
+  - value: modulates
+    labels:
+      de: moduliert
+      en: modulates
+  - value: activates_pathway
+    labels:
+      de: aktiviert Signalweg
+      en: activates pathway
+  - value: inhibits_pathway
+    labels:
+      de: hemmt Signalweg
+      en: inhibits pathway
+  - value: studied_for
+    labels:
+      de: wird untersucht für
+      en: studied for
+  - value: approved_for
+    labels:
+      de: zugelassen für
+      en: approved for
+  - value: not_approved_for
+    labels:
+      de: nicht zugelassen für
+      en: not approved for
+  - value: evaluated_in
+    labels:
+      de: untersucht in
+      en: evaluated in
+  - value: associated_with_adverse_event
+    labels:
+      de: assoziiert mit Nebenwirkung
+      en: associated with adverse event
+  - value: has_pharmacokinetic_property
+    labels:
+      de: hat pharmakokinetische Eigenschaft
+      en: has pharmacokinetic property
+  - value: compared_with
+    labels:
+      de: verglichen mit
+      en: compared with
+  - value: developed_by
+    labels:
+      de: entwickelt von
+      en: developed by
+  - value: sponsored_by
+    labels:
+      de: gesponsert von
+      en: sponsored by
+  - value: published_as
+    labels:
+      de: veröffentlicht als
+      en: published as
+  - value: claimed_by
+    labels:
+      de: wird behauptet von
+      en: claimed by
+    usage_note_de: >
+      Fuer ausdruecklich attribuierte, nicht selbst uebernommene Aussagen ("Haendler X behauptet Y").
+      Der Claim dokumentiert nur, dass die Behauptung existiert und von wem sie stammt -- er macht sie
+      nicht zu einer eigenen wissenschaftlichen Wirksamkeits-, Sicherheits- oder Mechanismusaussage.
+      Passender claim_type ist in der Regel 'other' (nicht 'efficacy'/'safety'/'mechanism' usw.), die
+      evidence_category bleibt entsprechend 'merchant_claim' oder 'personal_experience'. Siehe
+      docs/project/Phase_3_Scientific_Data_Architecture.md, Abschnitt "Attribuierte Aussagen".
+  - value: reported_by
+    labels:
+      de: wird berichtet von
+      en: reported by
+    usage_note_de: >
+      Wie claimed_by, aber fuer berichtete Beobachtungen/Erfahrungen statt kommerzieller Behauptungen
+      (z. B. "Person X berichtet Y"). Ebenfalls kein eigenstaendiger wissenschaftlicher Wirksamkeits-
+      oder Sicherheitsclaim.

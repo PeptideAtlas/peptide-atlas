@@ -19,16 +19,30 @@ Peptide-Atlas/
 │   ├── 04_studien/
 │   ├── 05_vergleiche/
 │   ├── 06_medien/
-│   └── 07_glossar/
-├── data/
-│   └── catalog.json         # Strukturierter Wirkstoffkatalog
+│   ├── 07_glossar/
+│   └── project/             # Architektur-/Projektdokumentation, siehe Phase_3_Scientific_Data_Architecture.md
+├── schemas/                 # JSON Schema (Draft 2020-12) je Objektart, siehe data/README.md
+├── data/                    # Strukturierte YAML-Daten (Entitäten, Quellen, Claims) — siehe data/README.md
+│   ├── entities/
+│   ├── sources/
+│   ├── claims/
+│   ├── vocabularies/        # kontrollierte Vokabulare (Prädikate, Evidenzkategorien, ...)
+│   └── examples/            # ausschließlich fiktive Platzhalterdaten
+├── tools/                   # validate_data.py, build_catalog.py, export_graph.py, new_id.py
+├── tests/                   # pytest-Tests + Fixtures für die Datenvalidierung
+├── build/                   # generierte Artefakte (catalog.json, graph.json) — nicht committed
 ├── templates/
 │   └── artikelvorlage.md    # Wiederverwendbare Vorlage für neue Artikel
 ├── mkdocs.yml                # MkDocs-/Material-Konfiguration, Navigation
 ├── requirements.txt
+├── requirements-dev.txt     # zusätzlich pytest, für lokale Entwicklung/CI
 ├── README.md
-└── .github/workflows/deploy.yml   # GitHub Pages Deployment
+└── .github/workflows/       # ci.yml (Validierung + Tests) und deploy.yml (GitHub Pages)
 ```
+
+Die wissenschaftliche Datenarchitektur (`schemas/`, `data/`, `tools/`, `tests/`) ist in
+[docs/project/Phase_3_Scientific_Data_Architecture.md](docs/project/Phase_3_Scientific_Data_Architecture.md)
+beschrieben; die Anleitung für Redakteur:innen steht in [data/README.md](data/README.md).
 
 ## Lokale Entwicklung
 
@@ -71,6 +85,18 @@ mkdocs build --strict
 ```
 
 Das Ergebnis liegt danach im Ordner `site/` (nicht versioniert, siehe `.gitignore`).
+
+### Wissenschaftliche Daten validieren
+
+```bash
+pip install -r requirements-dev.txt
+python tools/validate_data.py --verbose
+pytest
+python tools/build_catalog.py
+python tools/export_graph.py
+```
+
+Details und Anleitung für Redakteur:innen: [data/README.md](data/README.md).
 
 ## Deployment
 

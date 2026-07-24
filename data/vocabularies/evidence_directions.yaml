@@ -1,0 +1,19 @@
+# Kontrolliertes Vokabular: evidence[].direction
+schema_version: "1.0.0"
+values:
+  - value: supports
+    labels:
+      de: Unterstützt
+      en: Supports
+  - value: contradicts
+    labels:
+      de: Widerspricht
+      en: Contradicts
+  - value: mixed
+    labels:
+      de: Gemischt
+      en: Mixed
+  - value: context_only
+    labels:
+      de: Nur Kontext
+      en: Context Only

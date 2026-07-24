@@ -1,0 +1,23 @@
+# Kontrolliertes Vokabular: status (kanonische Datenebene, data/**)
+# Maschinenintern ausschliesslich englisch (siehe Naming Conventions / Phase 3 Dokumentation).
+# Der redaktionelle Artikelstatus in Markdown-Frontmatter bleibt bewusst separat und
+# deutsch (Entwurf/In Pruefung/Aktiv/Zurueckgezogen) -- siehe article_frontmatter.schema.json
+# und Decision Log.
+schema_version: "1.0.0"
+values:
+  - value: draft
+    labels:
+      de: Entwurf
+      en: Draft
+  - value: in_review
+    labels:
+      de: In Prüfung
+      en: In Review
+  - value: active
+    labels:
+      de: Aktiv
+      en: Active
+  - value: withdrawn
+    labels:
+      de: Zurückgezogen
+      en: Withdrawn

@@ -1,0 +1,32 @@
+# Diese Daten sind ausschliesslich technische Platzhalter und keine medizinischen Aussagen.
+schema_version: "1.0.0"
+id: claim-11111111-1111-4111-8111-111111111111
+claim_type: pharmacokinetics
+subject_id: substance-placeholder
+predicate: has_pharmacokinetic_property
+object:
+  value: 12.5
+  unit: hour
+  value_type: number
+statement:
+  de: Technischer Platzhalterwert für eine pharmakokinetische Eigenschaft (Literalwert-Beispiel für das Datenmodell).
+qualifiers: {}
+evidence_category: theoretical_hypothesis
+certainty: not_assessed
+certainty_rationale: null
+evidence:
+  - source_id: source-placeholder
+    study_id: study-placeholder
+    direction: context_only
+    locator:
+      page: "12"
+      table: "2"
+      figure: null
+      section: "Results"
+    notes: null
+status: draft
+created_at: "2026-07-24"
+updated_at: "2026-07-24"
+review:
+  last_reviewed_at: null
+  reviewers: []

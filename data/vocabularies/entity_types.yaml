@@ -1,0 +1,32 @@
+# Kontrolliertes Vokabular: entity_type
+# Jeder Eintrag entspricht einem Unterordner unter data/entities/.
+schema_version: "1.0.0"
+values:
+  - value: substance
+    labels:
+      de: Substanz
+      en: Substance
+  - value: receptor
+    labels:
+      de: Rezeptor
+      en: Receptor
+  - value: pathway
+    labels:
+      de: Signalweg
+      en: Biological Pathway
+  - value: condition
+    labels:
+      de: Erkrankung / Zustand
+      en: Condition
+  - value: adverse_event
+    labels:
+      de: Nebenwirkung
+      en: Adverse Event
+  - value: organization
+    labels:
+      de: Organisation
+      en: Organization
+  - value: study
+    labels:
+      de: Studie
+      en: Study

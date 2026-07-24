@@ -1,0 +1,20 @@
+# Diese Daten sind ausschliesslich technische Platzhalter und keine medizinischen Aussagen.
+schema_version: "1.0.0"
+id: pathway-placeholder
+entity_type: pathway
+canonical_name: Placeholder Pathway
+labels:
+  de: Platzhaltersignalweg
+synonyms: []
+description:
+  de: Rein technischer Platzhalter ohne medizinische Aussage.
+status: draft
+created_at: "2026-07-24"
+updated_at: "2026-07-24"
+review:
+  last_reviewed_at: null
+  reviewers: []
+pathway_category: signaling_pathway
+external_ids:
+  reactome_id: null
+  kegg_id: null

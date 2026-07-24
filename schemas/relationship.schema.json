@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "relationship.schema.json",
+  "title": "Relationship (generated graph edge)",
+  "description": "Beschreibt das GENERIERTE Edge-Format von build/graph.json (siehe tools/export_graph.py). Dies ist kein zweites redaktionell gepflegtes Datenmodell: Edges werden ausschliesslich aus Claims mit einem entity_id-Objekt abgeleitet, niemals manuell gepflegt.",
+  "type": "object",
+  "properties": {
+    "claim_id": { "$ref": "common.schema.json#/$defs/id_ref" },
+    "from": { "$ref": "common.schema.json#/$defs/id_ref" },
+    "to": { "$ref": "common.schema.json#/$defs/id_ref" },
+    "predicate": { "type": "string" },
+    "evidence_category": { "$ref": "common.schema.json#/$defs/evidence_category" },
+    "certainty": { "$ref": "common.schema.json#/$defs/certainty_level" },
+    "status": { "$ref": "common.schema.json#/$defs/editorial_status" },
+    "source_ids": {
+      "type": "array",
+      "items": { "$ref": "common.schema.json#/$defs/id_ref" },
+      "default": []
+    }
+  },
+  "additionalProperties": false,
+  "required": ["claim_id", "from", "to", "predicate", "evidence_category", "certainty", "status", "source_ids"]
+}

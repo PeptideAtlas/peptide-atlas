@@ -1,0 +1,65 @@
+# Kontrolliertes Vokabular: evidence_category
+# Siehe docs/project/Phase_3_Scientific_Data_Architecture.md und docs/00_grundlagen/evidenzsystem.md
+# fuer die ausfuehrlichen Definitionen und Abgrenzungsbeispiele.
+schema_version: "1.0.0"
+values:
+  - value: established_knowledge
+    labels:
+      de: Gesicherte Erkenntnis
+      en: Established Knowledge
+    definition_de: >
+      Eine Aussage, die durch robuste, reproduzierte Daten, fachlichen Konsens,
+      anerkannte Referenzwerke, verbindliche regulatorische Dokumente oder
+      hochwertige Leitlinien ausreichend abgesichert ist. Darf nicht allein
+      aufgrund einer einzelnen positiven Studie vergeben werden.
+  - value: clinical_evidence
+    labels:
+      de: Klinische Evidenz
+      en: Clinical Evidence
+    definition_de: >
+      Direkte Evidenz aus Humanstudien mit ausreichender methodischer
+      Aussagekraft (z. B. RCTs, kontrollierte klinische Studien, belastbare
+      prospektive Humanstudien, methodisch starke Metaanalysen klinischer
+      Studien).
+  - value: limited_evidence
+    labels:
+      de: Begrenzte Evidenz
+      en: Limited Evidence
+    definition_de: >
+      Direkte Humaninformationen sind vorhanden, aber begrenzt (kleine
+      Stichprobe, frühe Phase, fehlende Kontrollgruppe, offene Studie,
+      Fallserie, inkonsistente Ergebnisse, nur Konferenzabstract,
+      unvollständige Resultate).
+  - value: preclinical_evidence
+    labels:
+      de: Präklinische Evidenz
+      en: Preclinical Evidence
+    definition_de: >
+      Evidenz aus nichtmenschlichen oder experimentellen Modellen
+      (Tierstudie, Zellkultur, Organoid, ex-vivo-Modell, biochemischer Assay).
+  - value: theoretical_hypothesis
+    labels:
+      de: Theoretische Hypothese
+      en: Theoretical Hypothesis
+    definition_de: >
+      Eine theoretische oder indirekt abgeleitete Annahme ohne ausreichenden
+      direkten experimentellen Beleg (mechanistische Extrapolation,
+      Computermodell, Strukturvorhersage, indirekte Schlussfolgerung, noch
+      nicht experimentell geprüfte Hypothese).
+  - value: merchant_claim
+    labels:
+      de: Händlerangabe
+      en: Merchant Claim
+    definition_de: >
+      Angabe eines Verkäufers, Händlers oder kommerziellen Anbieters, die
+      nicht ausreichend durch unabhängige wissenschaftliche Quellen bestätigt
+      wurde. Darf niemals als alleiniger Wirksamkeitsnachweis dienen.
+  - value: personal_experience
+    labels:
+      de: Persönliche Erfahrung
+      en: Personal Experience
+    definition_de: >
+      Einzelbericht, Erfahrungsbericht, Testimonial oder informelle
+      persönliche Beobachtung außerhalb systematischer wissenschaftlicher
+      Datenerhebung. Darf niemals als allgemeiner Wirksamkeitsnachweis
+      dargestellt werden.

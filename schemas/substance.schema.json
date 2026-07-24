@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "substance.schema.json",
+  "title": "Substance",
+  "description": "Eine molekulare Substanz (z. B. Peptid, Protein, kleines Molekuel, Hormon). Ersetzt die frueher getrennten abstrakten Objekte 'Peptide' und 'Drug', um Doppelanlage desselben Molekuels zu verhindern (siehe ADR zu substance vs. medicinal_product). Ein konkretes Markenprodukt oder Fertigarzneimittel wird spaeter als eigenes Objekt medicinal_product modelliert, nicht hier.",
+  "allOf": [
+    { "$ref": "entity.schema.json" },
+    {
+      "type": "object",
+      "properties": {
+        "entity_type": { "const": "substance" },
+        "id": { "pattern": "^substance-[a-z0-9]+(-[a-z0-9]+)*$" },
+        "substance_classes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "enum": [
+              "peptide",
+              "protein",
+              "small_molecule",
+              "hormone",
+              "antibody",
+              "conjugate",
+              "approved_drug",
+              "investigational_drug",
+              "endogenous_substance",
+              "synthetic_analogue"
+            ]
+          }
+        },
+        "sequence": {
+          "type": "object",
+          "properties": {
+            "format": { "type": ["string", "null"], "enum": ["one_letter_amino_acid", null] },
+            "value": { "type": ["string", "null"] },
+            "length": { "type": ["integer", "null"], "minimum": 0 }
+          },
+          "additionalProperties": false
+        },
+        "molecular_formula": { "type": ["string", "null"] },
+        "molecular_weight": {
+          "type": "object",
+          "properties": {
+            "value": { "type": ["number", "null"] },
+            "unit": { "type": ["string", "null"], "enum": ["g_per_mol", null] }
+          },
+          "additionalProperties": false
+        },
+        "identifiers": {
+          "type": "object",
+          "properties": {
+            "inn": { "type": ["string", "null"] },
+            "unii": { "type": ["string", "null"] },
+            "pubchem_cid": { "type": ["string", "null"] },
+            "chembl_id": { "type": ["string", "null"] },
+            "cas_number": { "type": ["string", "null"] }
+          },
+          "additionalProperties": false
+        },
+        "development_codes": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": []
+        },
+        "origin": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": ["string", "null"],
+              "enum": ["synthetic", "natural", "semi_synthetic", "endogenous", "recombinant", null]
+            },
+            "organism_taxon_id": { "type": ["string", "null"] }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": ["entity_type", "substance_classes"]
+    }
+  ]
+}

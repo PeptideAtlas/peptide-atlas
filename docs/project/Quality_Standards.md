@@ -21,7 +21,9 @@ Für jeden Content-Artikel (nicht: Architektur-/Projektdokumente):
 | `description` | ja | Ein-Satz-Zusammenfassung |
 | `tags` | ja | mind. 1 Tag |
 | `status` | ja | `Entwurf` \| `In Prüfung` \| `Aktiv` |
-| `evidenzstufe` | ja, sobald medizinisch relevante Aussagen enthalten sind | `A`–`E` oder `Nicht zutreffend` |
+| `evidenzstufe` | **veraltet (Legacy)** | `A`–`E` oder `Nicht zutreffend`. Seit Phase 3 nicht mehr die primäre Evidenzbewertung für neue wissenschaftliche Objektseiten — siehe unten und [Evidenzsystem](../00_grundlagen/evidenzsystem.md). Für bestehende Legacy-Seiten weiterhin toleriert (Validator warnt, bricht nicht ab). |
+| `entity_id` | empfohlen für neue Objektseiten | Verweist auf das kanonische Objekt in `data/entities/**` (siehe [Phase 3 Dokumentation](Phase_3_Scientific_Data_Architecture.md)). |
+| `claim_ids` | empfohlen für neue Objektseiten | Claims in `data/claims/**`, auf die sich der Artikel stützt — ersetzt die pauschale Artikel-Evidenznote durch claim-basierte Evidenz. |
 | `quellen_typ` | empfohlen | gemäß Artikelvorlage unter `templates/artikelvorlage.md` im Repository |
 | `last_reviewed` | empfohlen ab Status `In Prüfung` | siehe [Editorial Policy](Editorial_Policy.md) |
 
@@ -64,6 +66,11 @@ Ein Pull Request mit Content-Änderungen wird erst gemerged, wenn:
 - Enthält Werbesprache oder Heilsversprechen
 - `evidenzstufe` fehlt, obwohl medizinisch relevante Aussagen enthalten sind
 
-## Automatisierung (Ausblick, nicht in dieser Phase umgesetzt)
+## Automatisierung (seit Phase 3 umgesetzt)
 
-Ein CI-Schritt könnte künftig automatisiert prüfen: Pflichtfelder vorhanden, `evidenzstufe` aus gültiger Werteliste, keine toten internen Links (über `--strict` hinaus auch externe Links). Diese Automatisierung ist als offener Punkt in [Future Roadmap](Future_Roadmap.md) und [Decision Log](Decision_Log.md) vermerkt, aber bewusst noch nicht implementiert.
+`python tools/validate_data.py` prüft automatisiert und CI-gebunden (siehe ADR-0021 im [Decision Log](Decision_Log.md)):
+Frontmatter-Pflichtfelder (`title`, `description`, `tags`, `status`), gültige Werte für Status/Evidenzkategorie/
+Sicherheit/Studiendesign/Prädikat, Referenzintegrität von `entity_id`/`claim_ids`, sowie die claim-basierten
+Evidenzregeln aus [Phase 3 Dokumentation](Phase_3_Scientific_Data_Architecture.md). Externe Linkprüfung (über
+`mkdocs build --strict` hinaus) ist weiterhin nicht Teil des zwingenden Builds, um Netzwerkausfälle nicht zum
+Build-Blocker zu machen (siehe dortige Begründung).

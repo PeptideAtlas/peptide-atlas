@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "entity.schema.json",
+  "title": "Entity",
+  "description": "Gemeinsames Basisschema fuer jedes kanonische Datenobjekt unter data/entities/**. Typ-spezifische Schemas (substance.schema.json, receptor.schema.json, ...) erweitern dieses Schema per allOf.",
+  "type": "object",
+  "properties": {
+    "schema_version": { "$ref": "common.schema.json#/$defs/schema_version" },
+    "id": { "$ref": "common.schema.json#/$defs/id" },
+    "entity_type": {
+      "type": "string",
+      "enum": [
+        "substance",
+        "receptor",
+        "pathway",
+        "condition",
+        "adverse_event",
+        "organization",
+        "study"
+      ]
+    },
+    "canonical_name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Sprachunabhaengiger oder international etablierter Name. Kein Marketingname, kein uebersetzter Fantasiename."
+    },
+    "labels": { "$ref": "common.schema.json#/$defs/localized_text" },
+    "synonyms": {
+      "type": "array",
+      "items": { "$ref": "common.schema.json#/$defs/synonym" },
+      "default": []
+    },
+    "description": { "$ref": "common.schema.json#/$defs/localized_text" },
+    "status": { "$ref": "common.schema.json#/$defs/editorial_status" },
+    "created_at": { "$ref": "common.schema.json#/$defs/date" },
+    "updated_at": { "$ref": "common.schema.json#/$defs/date" },
+    "review": { "$ref": "common.schema.json#/$defs/review_block" }
+  },
+  "required": [
+    "schema_version",
+    "id",
+    "entity_type",
+    "canonical_name",
+    "labels",
+    "description",
+    "status",
+    "created_at",
+    "updated_at",
+    "review"
+  ]
+}
