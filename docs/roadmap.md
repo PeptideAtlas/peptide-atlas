@@ -24,7 +24,7 @@ status: Aktiv
 - [x] Knowledge-Graph-Denkmodell dokumentiert
 - [x] Workflow, Naming, Versionierung dokumentiert
 
-## Version 0.3 — Scientific Data Architecture (aktuell, Phase 3)
+## Version 0.3 — Scientific Data Architecture (abgeschlossen, Phase 3)
 
 - [x] JSON Schemas für Entitäten, Studien, Quellen, Claims und Beziehungen (`schemas/`)
 - [x] YAML-Datenebene mit kontrollierten Vokabularen (`data/`)
@@ -37,10 +37,25 @@ status: Aktiv
 - [ ] Erste Wirkstoffartikel im Bereich [Wirkstoffe](01_wirkstoffe/index.md) — bewusst nicht Teil von Phase 3,
       siehe [Phase 3 Dokumentation](project/Phase_3_Scientific_Data_Architecture.md)
 
-## Geplant (Phase 4+)
+## Version 0.4 — Scientific Research and Evidence-Curation Protocol (aktuell, Phase 4A)
 
-- [ ] Retatrutid als erstes vollständiges wissenschaftliches Pilotobjekt (erste reale `substance`-, `source`-
-      und `claim`-Dateien nach dem in Phase 3 geschaffenen Schema)
+- [x] Separate Recherche-/Provenienzebene `research/**`, getrennt von `data/**` (siehe ADR-0033 im
+      [Decision Log](project/Decision_Log.md))
+- [x] Schemas für Rechercheprotokoll, Suchlauf, Screening- und Extraktionsdatensatz (`schemas/research_*.schema.json`)
+- [x] Eigenständiger Validator (`tools/validate_research.py`), getrennt von `tools/validate_data.py`
+- [x] [Scientific Research Protocol](project/Scientific_Research_Protocol.md) und
+      [Evidence Curation Workflow](project/Evidence_Curation_Workflow.md) dokumentiert
+- [x] [Retatrutide Pilot Research Protocol](project/Retatrutide_Pilot_Research_Protocol.md) — geplante
+      Suchstrategie und Forschungsfragen, ausdrücklich ohne reale Ergebnisse oder Claims
+- [x] CI-Integration (`validate_research.py` vor Tests und Website-Build)
+- [ ] Wissenschaftlicher Review und Freigabe des Retatrutid-Pilotprotokolls (`status: approved`) — Voraussetzung
+      für Phase 4B
+
+## Geplant (Phase 4B+)
+
+- [ ] Retatrutid als erstes vollständiges wissenschaftliches Pilotobjekt: reale `search_run`-, `screening_record`-
+      und `extraction_record`-Datensätze, nach Review daraus promotierte `substance`-, `source`-, `study`- und
+      `claim`-Dateien (siehe [Evidence Curation Workflow](project/Evidence_Curation_Workflow.md))
 - [ ] Ausbau [Biologie](02_biologie/index.md): weitere Rezeptorklassen und Signalwege
 - [ ] Aufbau [Indikationen](03_indikationen/index.md) mit klarer Trennung Zulassung/Forschung (als Claims, siehe
       [Data Model](project/Data_Model.md))

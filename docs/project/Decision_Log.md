@@ -44,6 +44,9 @@ Kurze, strukturierte Architecture Decision Records (ADRs): Kontext, Entscheidung
 | ADR-0030 | Zusätzliche Evidenzintegrität: Richtung und Teil-Retraktion | Entschieden (Phase 3, Review-Härtung) | Ein aktiver Claim benötigt jetzt mindestens einen Evidenzlink mit `direction: supports`/`mixed` (sonst stützt nichts die Aussage). Nutzt ein aktiver Claim mindestens eine zurückgezogene Quelle neben weiteren, gültigen Quellen, warnt der Validator (vollständig zurückgezogene Evidenz bleibt ein Fehler, unverändert aus Phase 3 v1). |
 | ADR-0031 | Vokabular-/Schema-Duplikation als dokumentierte technische Schuld, gegen Drift abgesichert | Entschieden (Phase 3, Review-Härtung) | Statt die Schemas in diesem Härtungscommit vollständig auf dynamisch aus `data/vocabularies/*.yaml` generierte Enums umzustellen (unverhältnismäßiger Umfang für diesen Commit), sichert `tests/test_vocabulary_consistency.py` die bestehende Doppelpflege ab: der Test vergleicht jedes doppelt gepflegte Enum (evidence_category, certainty_level, evidence_direction, study_design, editorial_status, source_type, entity_type, substance_classes) gegen sein Vokabular und schlägt fehl, sobald beide Seiten auseinanderlaufen. Echte Konsolidierung bleibt für eine spätere Phase vorgemerkt. |
 | ADR-0032 | Quellenpflicht für aktive Claims gilt für jeden `claim_type`, nicht nur für `MEDICALLY_RELEVANT_CLAIM_TYPES` | Entschieden (Phase 3, Review-Härtung Runde 3) | Die bisherige Regel prüfte fehlende Evidenz nur bei Claimtypen aus `MEDICALLY_RELEVANT_CLAIM_TYPES` — ein aktiver Claim vom Typ `structure`, `historical` oder `other` mit `source_requirement: required` und leerem `evidence[]` blieb dadurch unbeanstandet. Die Regel gilt jetzt für **jeden** aktiven Claim mit `source_requirement: required` (dem Standardwert), unabhängig vom `claim_type`. Die Whitelist aus ADR-0024 (nur `identity`/`classification` dürfen `source_requirement: exempt` mit Begründung verwenden) bleibt unverändert die einzige Ausnahme. Die Fehlermeldung empfiehlt nicht mehr, `source_requirement: exempt` zu setzen, da das für die meisten Claimtypen ausdrücklich verboten ist. |
+| ADR-0033 | `research/**` als separate Provenienz- und Arbeitsdatenebene neben `data/**` | Entschieden (Phase 4A) | Rechercheverlauf, Kandidaten, Screening und Extraktion sind wichtig für Auditierbarkeit, aber nicht identisch mit kanonischem Wissen. Ausführliches ADR siehe Abschnitt „Ausführliche ADRs" unten. |
+| ADR-0034 | Studie und Publikation bleiben getrennte Objekte; mehrere Publikationen dürfen nicht als mehrere Studien gezählt werden | Entschieden (Phase 4A) | Setzt die bereits in [Data Model](Data_Model.md) angelegte Trennung für die Recherche-Ebene konsequent fort. Ausführliches ADR siehe unten. |
+| ADR-0035 | Automatisierte Extraktion und KI dürfen keine aktiven kanonischen Claims freigeben | Entschieden (Phase 4A) | Kernregel des [Evidence Curation Workflow](Evidence_Curation_Workflow.md): kein Werkzeug in Phase 4A schreibt `status: active` in `data/claims/**`. Ausführliches ADR siehe unten. |
 
 ## Ausführliche ADRs
 
@@ -83,6 +86,100 @@ Kurze, strukturierte Architecture Decision Records (ADRs): Kontext, Entscheidung
   nötig. Das Format des leeren `data/catalog.json` (Phase 1) wird durch das generierte `build/catalog.json`
   ersetzt (siehe ADR-0020). Reale Inhalte (z. B. Retatrutid als Pilotobjekt, siehe [Roadmap](../roadmap.md))
   werden ab Phase 4 direkt im neuen Format angelegt.
+
+### ADR-0033: `research/**` als separate Provenienz- und Arbeitsdatenebene neben `data/**`
+
+- **Status:** Entschieden
+- **Datum:** 2026-07-24
+- **Kontext:** Phase 3 etablierte `data/**` als kanonische, geprüfte Wissensebene. Für Phase 4A musste geklärt
+  werden, wo Rechercheverlauf, gefundene Kandidaten, Screening-Entscheidungen und Extraktionsnotizen
+  gespeichert werden — Informationen, die für Auditierbarkeit und Reproduzierbarkeit unverzichtbar sind, aber
+  zum Zeitpunkt ihrer Entstehung noch nicht geprüftes Wissen darstellen. Würde man sie direkt in `data/**`
+  ablegen, entstünde die Gefahr, dass ein ungeprüfter Kandidat mit einem kanonischen Objekt verwechselt wird.
+- **Entscheidung:** Eine eigenständige Ebene `research/**` wird eingeführt, strukturell getrennt von `data/**`:
+  `research/protocols/`, `research/search_runs/`, `research/screening/`, `research/extractions/`. Ein
+  Forschungsdatensatz gilt **nie automatisch** als wissenschaftliche Erkenntnis. Eine Information wird erst
+  dann kanonisches Wissen, wenn sie nach manueller Prüfung ausdrücklich als Entität, Quelle, Studie oder Claim
+  unter `data/**` angelegt wurde (siehe [Evidence Curation Workflow](Evidence_Curation_Workflow.md)).
+  `research/**` fließt **nicht** in `build/catalog.json` oder `build/graph.json` ein und wird von einem
+  eigenständigen Validator geprüft (`tools/validate_research.py`, getrennt von `tools/validate_data.py`).
+- **Alternativen:**
+    1. *Recherchedaten direkt in `data/**` mit Status `draft`* — verworfen: `data/**`-Schemas sind auf geprüfte
+       kanonische Objekte zugeschnitten (z. B. `claim.schema.json` erwartet `evidence_category`/`certainty`
+       bereits final); Recherche-Zwischenstände (Screening-Entscheidungen, unverifizierte Extraktion) passen
+       strukturell nicht in dieses Modell, ohne es zu verwässern.
+    2. *Recherchedaten in einem externen Tool (Zotero, ein Tabellenblatt, ein separates Repository)* —
+       verworfen: keine Versionierung im selben Repository, kein gemeinsamer Validator, keine Nachvollziehbarkeit
+       über Git-Historie, kein einheitliches Schema-Ökosystem.
+    3. *Gar keine strukturierte Recherche-Ebene, nur Freitext-Notizen* — verworfen: bei einem Zielbild von
+       100.000 Quellen ist Freitext nicht mehr auditierbar oder maschinell prüfbar (siehe
+       [Scientific Research Protocol](Scientific_Research_Protocol.md), Abschnitt 33).
+    4. *Eigenständige Ebene `research/**` mit eigenen Schemas und eigenem Validator* — **gewählt**.
+- **Konsequenzen:** Klare Trennung zwischen „wurde gefunden/geprüft" und „ist kanonisches Wissen". Zusätzlicher
+  Pflegeaufwand (zwei Validatoren, acht zusätzliche Schemas), aber keine Vermischung von Provenienz und
+  Wissen. `research/raw/**` bleibt zusätzlich als nicht versionierter lokaler Arbeitsbereich für Volltexte/
+  Exporte ausgeschlossen (siehe `.gitignore`).
+- **Migrationsstrategie:** Nicht zutreffend — `research/**` ist komplett neu, keine bestehenden Daten müssen
+  migriert werden. Die Promotion von `research/**` nach `data/**` bleibt in Phase 4A ausdrücklich manuell;
+  eine spätere Phase könnte Teile davon (z. B. Identifikator-Normalisierung) stärker automatisieren, ohne die
+  grundsätzliche Trennung aufzuheben.
+
+### ADR-0034: Studie und Publikation bleiben getrennte Objekte; mehrere Publikationen zählen nicht als mehrere Studien
+
+- **Status:** Entschieden
+- **Datum:** 2026-07-24
+- **Kontext:** [Data Model](Data_Model.md) legte bereits fest, dass eine Studie mehrere Publikationen haben
+  kann. Phase 4A musste diese Regel für die Recherche-Ebene konkretisieren: Ein Registereintrag (z. B.
+  ClinicalTrials.gov) und ein späterer Fachartikel zur selben Studie dürfen beim Screening/bei der Extraktion
+  nicht versehentlich als zwei unabhängige Studien behandelt werden — das würde Evidenz künstlich verdoppeln.
+- **Entscheidung:** Ein `extraction_record` kann sowohl `canonical_source_id` (die konkrete Publikation/den
+  Registereintrag) als auch `canonical_study_id` (die zugrunde liegende Studie) referenzieren — getrennt.
+  Die `deduplication_policy` eines Protokolls priorisiert stabile externe Kennungen (insbesondere `nct_id`), um
+  zu erkennen, dass Registereintrag und Publikation dieselbe Studie beschreiben (siehe
+  [Scientific Research Protocol](Scientific_Research_Protocol.md), Abschnitte 13–16).
+- **Alternativen:**
+    1. *Studie und Publikation als ein Objekt behandeln* — verworfen: verhindert die korrekte Modellierung von
+       Zwischen-/End-/Sicherheits-Updates derselben Studie und würde bei mehreren Publikationen zu doppelt
+       gezählter Evidenz führen.
+    2. *Nur die Publikation referenzieren, Studienzuordnung dem Claim überlassen* — verworfen: verlagert die
+       Verantwortung für Doppelzählungsvermeidung vom Extraktionsschritt (wo die Information vorliegt) auf den
+       späteren, isolierten Claim-Erstellungsschritt.
+    3. *Getrennte Referenzierung von Quelle und Studie bereits im Extraktionsdatensatz* — **gewählt**.
+- **Konsequenzen:** Follow-up-, Subgruppen- und Sicherheitsanalysen lassen sich korrekt mit der Ursprungsstudie
+  verknüpfen, ohne die zugrunde liegende Studie zu duplizieren. Erfordert redaktionelle Sorgfalt beim Anlegen
+  neuer Studien (Abgleich per Registerkennung, bevor eine neue `data/entities/studies/*.yaml` entsteht).
+- **Migrationsstrategie:** Nicht zutreffend, da `data/entities/studies/**` in Phase 4A noch keine realen
+  Objekte enthält. Die Regel gilt ab dem ersten realen Promotion-Schritt (Phase 4B).
+
+### ADR-0035: Automatisierte Extraktion und KI dürfen keine aktiven kanonischen Claims freigeben
+
+- **Status:** Entschieden
+- **Datum:** 2026-07-24
+- **Kontext:** [Architecture](Architecture.md) legte bereits fest, dass KI die Redaktion unterstützt, aber keine
+  eigenständigen medizinischen Aussagen erzeugt oder autonom veröffentlicht. Phase 4A musste diese Grundregel
+  für den konkreten Recherche-Workflow strukturell (nicht nur redaktionell) absichern.
+- **Entscheidung:** `candidate_claims[]` in einem `extraction_record` tragen strukturell **kein** Status-Feld
+  (`additionalProperties: false` in `schemas/research_extraction_record.schema.json` verhindert, dass ein
+  Status wie „aktiv" dort überhaupt eingetragen werden kann) und sind immer `is_provisional: true` (per
+  `const`-Constraint erzwungen). Kein Werkzeug in Phase 4A schreibt eine Datei unter `data/claims/**` oder
+  setzt `status: active` — dieser Schritt bleibt manuell (siehe [Evidence Curation Workflow](Evidence_Curation_Workflow.md),
+  Abschnitt 12).
+- **Alternativen:**
+    1. *Ein `status`-Feld an `candidate_claims` zulassen, aber redaktionell vorschreiben, es nie auf „aktiv" zu
+       setzen* — verworfen: eine rein redaktionelle Regel ohne strukturelle Durchsetzung kann versehentlich
+       oder durch ein zukünftiges Automatisierungs-Update umgangen werden.
+    2. *Ein separates „Freigabe-Tool" bauen, das Kandidatenclaims nach Prüfung automatisch in `data/claims/**`
+       schreibt* — verworfen für Phase 4A: das würde die Promotion nur technisch bequemer machen, ohne einen
+       zusätzlichen Sicherheitsgewinn, und ist verfrüht, solange noch keine echten Kandidatenclaims vorliegen.
+       Bleibt als mögliche Komfortfunktion für eine spätere Phase vorgemerkt (siehe [Future Roadmap](Future_Roadmap.md)).
+    3. *Strukturelle Unmöglichkeit eines aktiven Status auf Kandidatenclaims, Promotion bleibt manuell* —
+       **gewählt**.
+- **Konsequenzen:** Ein Kandidatenclaim kann nicht versehentlich als aktiver Claim missverstanden oder
+  fehlerhaft automatisiert übernommen werden — der Validator (`tools/validate_research.py`) würde einen
+  zusätzlichen Status-Schlüssel ohnehin ablehnen. Der manuelle Promotion-Schritt bleibt Mehraufwand für die
+  Redaktion, ist aber angesichts der medizinischen Tragweite aktiver Claims bewusst in Kauf genommen.
+- **Migrationsstrategie:** Nicht zutreffend — die Regel gilt von Anfang an für jeden neu erstellten
+  Extraktionsdatensatz.
 
 ## Format für neue Einträge
 

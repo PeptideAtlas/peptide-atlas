@@ -94,7 +94,7 @@ flowchart TB
 : KI-Systeme unterstützen die Redaktion (Konsistenzprüfung, Formatierungsvorschläge, Verlinkungsvorschläge, Übersetzungsentwürfe), erzeugen aber **keine eigenständigen medizinischen Aussagen** und veröffentlichen nichts autonom. Jeder KI-Vorschlag durchläuft denselben Redaktionsprozess wie menschliche Beiträge (siehe [Contribution Guide](Contribution_Guide.md)).
 
 **Datenhaltung**
-: Git-Repository bleibt die primäre Datenhaltung. Strukturierte Daten (`data/`) werden als versionierte Dateien geführt, nicht in einer externen Datenbank — solange Schreibzugriffe selten und redaktionell kontrolliert bleiben.
+: Git-Repository bleibt die primäre Datenhaltung. Strukturierte Daten (`data/`) werden als versionierte Dateien geführt, nicht in einer externen Datenbank — solange Schreibzugriffe selten und redaktionell kontrolliert bleiben. Seit Phase 4A ergänzt `research/` (siehe ADR-0033 im [Decision Log](Decision_Log.md)) eine separate, ebenfalls versionierte Provenienz-/Arbeitsebene für Rechercheverlauf, Screening und Extraktion — getrennt vom kanonischen `data/`, mit eigenem Validator (`tools/validate_research.py`). Nur Volltexte/Exporte in `research/raw/` bleiben bewusst unversioniert (siehe `research/raw/README.md`).
 
 **Deployment**
 : GitHub Actions + GitHub Pages bleibt die Standardlösung. Ein Wechsel (z. B. eigenes Hosting) wird nur nötig, falls eine API mit dynamischem Verhalten hinzukommt, die GitHub Pages nicht abbilden kann.

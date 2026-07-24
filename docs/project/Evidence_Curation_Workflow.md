@@ -1,0 +1,210 @@
+---
+title: Evidence Curation Workflow
+description: Der Zustandsübergang vom Suchtreffer bis zum aktiven kanonischen Claim und seiner Artikelintegration.
+tags:
+  - Architektur
+  - Projekt
+  - Datenmodell
+---
+
+# Evidence Curation Workflow
+
+Dieses Dokument beschreibt den konkreten Zustandsübergang, den eine Information in Peptide Atlas durchläuft —
+vom ersten Suchtreffer bis zum aktiven, veröffentlichten kanonischen Claim und seiner Einbindung in einen
+Artikel. Es ergänzt das [Scientific Research Protocol](Scientific_Research_Protocol.md) (das *Verfahren*) um
+die *Zustandsmaschine* (welche konkreten Objekte/Felder sich wann ändern).
+
+!!! warning "Kernregel"
+    **Automatisierung und KI dürfen Informationen finden, strukturieren und als Kandidaten markieren. Sie
+    dürfen keine medizinische Aussage selbstständig als aktiven kanonischen Claim freigeben.** Jeder Übergang
+    zu „aktiv" erfordert eine dokumentierte menschliche Entscheidung.
+
+## Überblick
+
+```mermaid
+flowchart LR
+    A[Suchtreffer] --> B[Kandidat]
+    B --> C[Deduplizierung]
+    C --> D["Titel-/Abstract-Screening"]
+    D --> E["Volltext-Screening"]
+    E --> F[Eingeschlossene Quelle]
+    F --> G[Extraktion]
+    G --> H[Verifikation]
+    H --> I[Kanonische Quelle]
+    I --> J[Kanonische Studie]
+    J --> K[Atomare Kandidatenclaims]
+    K --> L["Wissenschaftlicher Review"]
+    L --> M["Aktiver kanonischer Claim"]
+    M --> N[Artikelintegration]
+```
+
+Jeder Kasten entspricht unten einem eigenen Abschnitt mit Eingabe, Ausgabe, verantwortlicher Rolle,
+erforderlichen Prüfungen, Abbruchkriterien, gespeicherter Provenienz und möglichen Statuswerten.
+
+## 1. Suchtreffer → Kandidat
+
+| | |
+|---|---|
+| **Eingabe** | Ein Treffer aus einem ausgeführten Suchlauf (`search_run`). |
+| **Ausgabe** | Ein neuer `screening_record` mit `decision: pending`. |
+| **Rolle** | Rechercheur:in (kann automatisiert vorbefüllt werden — Titel, Identifikatoren). |
+| **Erforderliche Prüfungen** | Keine inhaltliche Prüfung; nur strukturelle Erfassung (Titel, Identifikatoren, Quellentyp). |
+| **Abbruchkriterien** | Kein Kandidat wird verworfen, ohne als `screening_record` erfasst zu werden — auch ein sofort erkennbar irrelevanter Treffer durchläuft mindestens `decision: exclude` mit Grund. |
+| **Gespeicherte Provenienz** | `search_run_ids` (mindestens ein Suchlauf), `candidate_identifiers`. |
+| **Mögliche Statuswerte** | `decision: pending`. |
+
+## 2. Kandidat → Deduplizierung
+
+| | |
+|---|---|
+| **Eingabe** | Ein oder mehrere `screening_record`-Kandidaten mit überlappenden Identifikatoren. |
+| **Ausgabe** | Entweder ein eigenständiger Kandidat (`decision_stage: deduplication` bestanden) oder ein als Duplikat markierter Kandidat (`decision: duplicate`, `duplicate_of: <Haupt-ID>`). |
+| **Rolle** | Rechercheur:in, unterstützt durch automatisierte Identifikator-Normalisierung (siehe `deduplication_policy.identifier_priority`). |
+| **Erforderliche Prüfungen** | Abgleich normalisierter DOI/PMID/PMCID/NCT-ID (analog zu `tools/_datalib.py::normalize_*` in der kanonischen Datenebene). |
+| **Abbruchkriterien** | Ein Duplikat ohne eindeutigen Hauptdatensatz wird nicht automatisch aufgelöst — es bleibt `decision: uncertain`, bis eine Person entscheidet. |
+| **Gespeicherte Provenienz** | `duplicate_of`. Keine Zyklen zulässig (siehe `tools/validate_research.py`). |
+| **Mögliche Statuswerte** | `decision: duplicate` \| `uncertain` \| (weiter zu Schritt 3). |
+
+## 3. Deduplizierung → Titel-/Abstract-Screening
+
+| | |
+|---|---|
+| **Eingabe** | Ein eigenständiger (nicht-duplizierter) Kandidat. |
+| **Ausgabe** | `decision: include` \| `exclude` \| `awaiting_full_text` \| `uncertain`, `decision_stage: title_abstract`. |
+| **Rolle** | Rechercheur:in. |
+| **Erforderliche Prüfungen** | Abgleich mit `eligibility.inclusion_criteria`/`exclusion_criteria` des Protokolls anhand von Titel und Kurzfassung. |
+| **Abbruchkriterien** | `exclude` erfordert einen kontrollierten `decision_reason` (`research/vocabularies/exclusion_reasons.yaml`) — kein Ausschluss ohne dokumentierten Grund. |
+| **Gespeicherte Provenienz** | `screened_by`, `screened_at`, `decision_reason`. |
+| **Mögliche Statuswerte** | `pending` → `include` \| `exclude` \| `awaiting_full_text` \| `uncertain`. |
+
+## 4. Titel-/Abstract-Screening → Volltext-Screening
+
+| | |
+|---|---|
+| **Eingabe** | Ein Kandidat mit `decision: include` oder `awaiting_full_text` aus Schritt 3. |
+| **Ausgabe** | `decision_stage: full_text`, finale Entscheidung `include` \| `exclude`. |
+| **Rolle** | Rechercheur:in **plus** Zweitprüfer:in (siehe `screening_policy.dual_reviewer_stages`). |
+| **Erforderliche Prüfungen** | Vollständige Lektüre; `full_text_status` muss `obtained` sein, bevor final entschieden wird (`not_yet_obtained`/`restricted_access`/`unavailable` bleiben `awaiting_full_text`). |
+| **Abbruchkriterien** | Kein `full_text`-Einschluss ohne `full_text_status: obtained`. Ein `exclude` in dieser Stufe erfordert erneut einen kontrollierten Grund. |
+| **Gespeicherte Provenienz** | `second_review.reviewed_by`/`reviewed_at`/`decision_confirmed`. |
+| **Mögliche Statuswerte** | `include` \| `exclude` \| `awaiting_full_text` \| `uncertain`. |
+
+## 5. Volltext-Screening → Eingeschlossene Quelle
+
+| | |
+|---|---|
+| **Eingabe** | Ein Kandidat mit finaler `decision: include`. |
+| **Ausgabe** | Derselbe `screening_record`, jetzt als Grundlage für eine Extraktion nutzbar. `canonical_source_id` bleibt weiterhin `null`. |
+| **Rolle** | Zweitprüfer:in bestätigt (`decision_confirmed: true`). |
+| **Erforderliche Prüfungen** | `tools/validate_research.py` erzwingt: eine Extraktion darf nur für einen Kandidaten mit `decision: include` erstellt werden. |
+| **Abbruchkriterien** | Widerspricht die Zweitprüfung (`decision_confirmed: false`), wird die Entscheidung erneut geprüft, nicht automatisch übernommen. |
+| **Gespeicherte Provenienz** | Vollständige Screening-Historie bleibt in der Datei erhalten (keine Überschreibung). |
+| **Mögliche Statuswerte** | `decision: include` (unverändert; „eingeschlossen" ist kein eigenes Feld, sondern die Voraussetzung für Schritt 6). |
+
+## 6. Eingeschlossene Quelle → Extraktion
+
+| | |
+|---|---|
+| **Eingabe** | Ein eingeschlossener `screening_record` (`decision: include`). |
+| **Ausgabe** | Ein neuer `extraction_record` mit `extraction_status: draft`, verknüpft über `screening_record_id`. |
+| **Rolle** | Rechercheur:in (Extraktion kann durch Automatisierung/KI vorstrukturiert werden — Textstellen als Kandidaten markieren). |
+| **Erforderliche Prüfungen** | Jede Beobachtung als kurze Paraphrase mit präziser Fundstelle (`schemas/common.schema.json#/$defs/observation_entry`, technisch auf 600 Zeichen begrenzt). |
+| **Abbruchkriterien** | Keine langen wörtlichen Textübernahmen (siehe [Scientific Research Protocol](Scientific_Research_Protocol.md), Abschnitt 32). `candidate_claims[]` dürfen keine kanonische Claim-ID vortäuschen und tragen kein Status-Feld. |
+| **Gespeicherte Provenienz** | `extracted_by`, `extracted_at`, je Beobachtung ein `locator`. |
+| **Mögliche Statuswerte** | `draft` → `awaiting_verification`. |
+
+## 7. Extraktion → Verifikation
+
+| | |
+|---|---|
+| **Eingabe** | Ein `extraction_record` mit `extraction_status: awaiting_verification`. |
+| **Ausgabe** | `extraction_status: verified` (oder `rejected`, wenn die Zweitprüfung widerspricht). |
+| **Rolle** | Eine **zweite** Person (`verified_by` ≠ `extracted_by`). |
+| **Erforderliche Prüfungen** | Abgleich der Beobachtungen und Kandidatenclaims gegen die Originalquelle; Diskrepanzen werden in `discrepancies[]` dokumentiert. |
+| **Abbruchkriterien** | `verified` ohne `verified_by`/`verified_at` ist ein Validierungsfehler (`tools/validate_research.py`). |
+| **Gespeicherte Provenienz** | `verified_by`, `verified_at`, `discrepancies[]`. |
+| **Mögliche Statuswerte** | `awaiting_verification` → `verified` \| `rejected`. |
+
+## 8. Verifikation → Kanonische Quelle
+
+| | |
+|---|---|
+| **Eingabe** | Ein verifizierter `extraction_record`. |
+| **Ausgabe** | Eine **neue Datei** unter `data/sources/**`, die die Quelle kanonisch beschreibt (siehe `schemas/source.schema.json`). |
+| **Rolle** | Wissenschaftliche Redaktion. |
+| **Erforderliche Prüfungen** | Vollständige Prüfung gegen `schemas/source.schema.json` (Quellentyp, Retraction-Status, Peer-Review-Status usw., siehe [Phase 3 Dokumentation](Phase_3_Scientific_Data_Architecture.md)). |
+| **Abbruchkriterien** | Dieser Schritt ist **manuell** — kein Werkzeug legt automatisch eine `data/sources/*.yaml`-Datei an. |
+| **Gespeicherte Provenienz** | Der `screening_record`/`extraction_record` wird nachträglich mit `canonical_source_id` auf die neue Datei verwiesen (Rückverknüpfung von Recherche zu kanonischem Objekt). |
+| **Mögliche Statuswerte** | Neues Source-Objekt startet mit `status: draft`. |
+
+## 9. Kanonische Quelle → Kanonische Studie
+
+| | |
+|---|---|
+| **Eingabe** | Eine kanonische Quelle, die über eine Studie berichtet. |
+| **Ausgabe** | Eine **neue oder bestehende** Datei unter `data/entities/studies/**` (siehe `schemas/study.schema.json`). Bestehend, wenn bereits eine andere Publikation derselben Studie kanonisiert wurde (siehe [Scientific Research Protocol](Scientific_Research_Protocol.md), Abschnitte 13–16). |
+| **Rolle** | Wissenschaftliche Redaktion. |
+| **Erforderliche Prüfungen** | Abgleich über `identifier_priority` (insbesondere `nct_id`), um Mehrfachanlage derselben Studie zu vermeiden. |
+| **Abbruchkriterien** | Keine neue Studie anlegen, wenn eine bestehende Studie (per Registerkennung) dieselbe Untersuchung beschreibt — stattdessen `source_ids` der bestehenden Studie ergänzen. |
+| **Gespeicherte Provenienz** | `study.source_ids` verweist auf alle zugehörigen Quellen. |
+| **Mögliche Statuswerte** | Neues/aktualisiertes Study-Objekt, `status: draft` oder unverändert. |
+
+## 10. Kanonische Studie → Atomare Kandidatenclaims
+
+| | |
+|---|---|
+| **Eingabe** | Kanonische Quelle(n) und Studie, plus die im Extraktionsdatensatz erfassten `candidate_claims[]`. |
+| **Ausgabe** | Formulierte, aber weiterhin **nicht kanonische** atomare Aussagen — Vorstufe zum Claim. |
+| **Rolle** | Wissenschaftliche Redaktion (Automatisierung darf hier nur vorschlagen, siehe Kernregel oben). |
+| **Erforderliche Prüfungen** | Jeder Kandidatenclaim bleibt einzeln, atomar (eine Aussage, ein Prädikat) — keine Zusammenfassung mehrerer Beobachtungen zu einer vagen Sammelaussage. |
+| **Abbruchkriterien** | Ein Kandidatenclaim ohne präzise Fundstelle wird nicht weiterverwendet. |
+| **Gespeicherte Provenienz** | `working_id`, `locator`, Herkunfts-`extraction_record`. |
+| **Mögliche Statuswerte** | Weiterhin `is_provisional: true` bis Schritt 12 abgeschlossen ist. |
+
+## 11. Atomare Kandidatenclaims → Wissenschaftlicher Review
+
+| | |
+|---|---|
+| **Eingabe** | Ein formulierter Kandidatenclaim mit zugehöriger kanonischer Quelle/Studie. |
+| **Ausgabe** | Eine bewertete Aussage: `evidence_category`, `certainty` (mit `certainty_rationale`), `direction` je Evidenzlink. |
+| **Rolle** | Wissenschaftliche Redaktion; für medizinisch relevante Claimtypen zusätzlich ein **zweiter** Review oder eine dokumentierte unabhängige Kontrollprüfung (siehe [Editorial Policy](Editorial_Policy.md)). |
+| **Erforderliche Prüfungen** | Quellenidentität, Studienzuordnung, Ergebnisinterpretation, Claim-Formulierung, Quellenrichtung, Evidenzkategorie, Sicherheit (`certainty`), Interessenkonflikte, Retraction-Status (siehe ursprünglicher Auftrag, Abschnitt „Manuelle Schritte"). |
+| **Abbruchkriterien** | `merchant_claim`/`personal_experience` dürfen keinen aktiven, medizinisch relevanten Claim stützen; ein Claim ohne mindestens eine Quelle (außer begründeter Ausnahme für `identity`/`classification`) wird nicht aktiv (siehe `tools/validate_data.py`). |
+| **Gespeicherte Provenienz** | `claim.review.reviewers`, `claim.review.last_reviewed_at`. |
+| **Mögliche Statuswerte** | Neuer Claim startet `status: draft` oder `in_review`. |
+
+## 12. Wissenschaftlicher Review → Aktiver kanonischer Claim
+
+| | |
+|---|---|
+| **Eingabe** | Ein geprüfter Claim-Entwurf. |
+| **Ausgabe** | Eine neue Datei unter `data/claims/**` mit `status: active`. |
+| **Rolle** | Wissenschaftliche Redaktion (Freigabeentscheidung). |
+| **Erforderliche Prüfungen** | Vollständige Validierung gegen `schemas/claim.schema.json` (siehe [Phase 3 Dokumentation](Phase_3_Scientific_Data_Architecture.md)): Quellenpflicht, Evidenzkategorie-/Quellentyp-Konsistenz, `certainty_rationale`, mindestens ein stützender Evidenzlink. |
+| **Abbruchkriterien** | `active` ohne `review.last_reviewed_at` oder ohne Reviewer ist ein Validierungsfehler. Dies ist der **einzige** Punkt in der gesamten Kette, an dem eine Aussage kanonisch aktiv wird — und er ist strukturell nicht automatisierbar (kein Werkzeug in Phase 4A schreibt `status: active`). |
+| **Gespeicherte Provenienz** | Vollständige Kette von `search_run` → `screening_record` → `extraction_record` → `claim` bleibt über IDs nachvollziehbar. |
+| **Mögliche Statuswerte** | `draft` → `in_review` → `active` (oder `withdrawn`, falls später zurückgezogen). |
+
+## 13. Aktiver kanonischer Claim → Artikelintegration
+
+| | |
+|---|---|
+| **Eingabe** | Ein oder mehrere aktive Claims zu einer Entität. |
+| **Ausgabe** | Ein Markdown-Artikel unter `docs/**`, dessen Frontmatter `entity_id`/`claim_ids` auf die Claims verweist. |
+| **Rolle** | Wissenschaftliche Redaktion. |
+| **Erforderliche Prüfungen** | `entity_id`/`claim_ids` müssen existieren und thematisch verbunden sein (siehe `tools/validate_data.py`, Abschnitt Artikelintegration in [Phase 3 Dokumentation](Phase_3_Scientific_Data_Architecture.md)). |
+| **Abbruchkriterien** | Ein zurückgezogener Claim darf nicht unmarkiert in einem aktiven Artikel erscheinen. |
+| **Gespeicherte Provenienz** | Der Artikeltext verweist auf Claims, kopiert deren Inhalt aber nicht (keine doppelte Faktenpflege, siehe [Phase 3 Dokumentation](Phase_3_Scientific_Data_Architecture.md)). |
+| **Mögliche Statuswerte** | Artikel-Status `Entwurf` \| `In Prüfung` \| `Aktiv` \| `Zurückgezogen` (bewusst getrennt von den englischen Datenebene-Statuswerten, siehe ADR-0019 im [Decision Log](Decision_Log.md)). |
+
+## Zusammenfassung der Kernregel
+
+An **keiner** Stelle dieses Workflows erzeugt ein automatischer oder KI-gestützter Schritt selbstständig:
+
+- eine kanonische Quelle, Studie oder einen kanonischen Claim unter `data/**`,
+- einen Claim-Status `active`,
+- eine endgültige Evidenzkategorie- oder Sicherheitsbewertung.
+
+Automatisierung darf Suchergebnisse importieren, Identifikatoren normalisieren, mögliche Duplikate markieren,
+Metadaten vorbefüllen und Textstellen als Extraktionskandidaten markieren — jeder Schritt danach erfordert eine
+dokumentierte menschliche Entscheidung (siehe [Scientific Research Protocol](Scientific_Research_Protocol.md)).

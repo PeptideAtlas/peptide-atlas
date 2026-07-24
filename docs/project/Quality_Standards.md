@@ -74,3 +74,11 @@ Sicherheit/Studiendesign/Prädikat, Referenzintegrität von `entity_id`/`claim_i
 Evidenzregeln aus [Phase 3 Dokumentation](Phase_3_Scientific_Data_Architecture.md). Externe Linkprüfung (über
 `mkdocs build --strict` hinaus) ist weiterhin nicht Teil des zwingenden Builds, um Netzwerkausfälle nicht zum
 Build-Blocker zu machen (siehe dortige Begründung).
+
+Seit Phase 4A prüft zusätzlich `python tools/validate_research.py` — getrennt von `validate_data.py` — die
+Recherche-/Provenienzebene (`research/**`): Schemakonformität, Referenzintegrität (`protocol_id`,
+`search_run_ids`, `duplicate_of`, `canonical_source_id`/`canonical_study_id` gegen `data/**`) und
+Workflow-Regeln (Ausschluss braucht Grund, Duplikat braucht Ziel, Extraktion nur für eingeschlossene
+Kandidaten, keine Zyklen). Beide Validatoren laufen vor `mkdocs build --strict` in CI und im
+Deployment-Workflow — ein ungültiger Rechercheworkflow wird ebenso wenig veröffentlicht wie ungültige
+kanonische Daten. Details: [Scientific Research Protocol](Scientific_Research_Protocol.md).

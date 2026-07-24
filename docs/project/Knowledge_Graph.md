@@ -17,6 +17,11 @@ Peptide Atlas wird **nicht als Wiki**, sondern als **Graph** gedacht: Artikel si
     `data/entities/**`, Edges ausschließlich aus Claims mit einem `object.entity_id`, validiert gegen
     `schemas/relationship.schema.json`). Siehe [Phase 3 Dokumentation](Phase_3_Scientific_Data_Architecture.md).
 
+    Die seit Phase 4A bestehende Recherche-/Provenienzebene (`research/**`, siehe ADR-0033 im
+    [Decision Log](Decision_Log.md)) fließt bewusst **nicht** in den Graphexport ein — Kandidaten und
+    Screening-Entscheidungen sind kein kanonisches Wissen. Erst ein daraus promotierter aktiver Claim erzeugt
+    eine Edge (siehe [Evidence Curation Workflow](Evidence_Curation_Workflow.md)).
+
 !!! info "Rein strukturelles Beispiel"
     Alle Beispiele auf dieser Seite verwenden Platzhalternamen („Substanz A", „Rezeptor B" …). Es handelt sich um keine echten medizinischen Aussagen, sondern ausschließlich um eine Illustration der Graphstruktur.
 
