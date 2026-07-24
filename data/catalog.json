@@ -1,6 +1,0 @@
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "version": "0.1.0",
-  "beschreibung": "Strukturierter Katalog der in Peptide Atlas dokumentierten Wirkstoffe. Wird parallel zu den Markdown-Artikeln unter docs/01_wirkstoffe/ gepflegt.",
-  "eintraege": []
-}

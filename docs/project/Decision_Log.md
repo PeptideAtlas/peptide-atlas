@@ -26,6 +26,54 @@ Kurze, strukturierte Architecture Decision Records (ADRs): Kontext, Entscheidung
 | ADR-0012 | `CHANGELOG.md` einführen | Vorgeschlagen, nicht umgesetzt | Aktuell fehlt eine zusammenfassende Änderungsdokumentation auf Repository-Ebene, siehe [Versioning](Versioning.md). Empfohlen ab v0.3. |
 | ADR-0013 | `LICENSE`-Datei ergänzen | Vorgeschlagen, nicht umgesetzt | Repository ist öffentlich, aber unlizenziert (bestätigt über GitHub-API, 404 auf `/license`). Rechtlich zu klären, bevor Dritte substanziell beitragen oder Inhalte nachnutzen. |
 | ADR-0014 | Frontmatter-/Schema-Validator als CI-Schritt | Vorgeschlagen, nicht umgesetzt | Automatisierte Prüfung der Pflichtfelder aus [Quality Standards](Quality_Standards.md) — technisch sinnvoll, aber erst mit wachsender Artikelzahl priorisiert. |
+| ADR-0015 | `substance` statt getrennter `Peptide`/`Drug`-Objekte | Entschieden (Phase 3) | Vereinheitlichtes Objekt mit `substance_classes` statt separater Typen aus [Data Model](Data_Model.md), verhindert Doppelanlage desselben Moleküls. Ein konkretes Markenprodukt folgt später als eigenes `medicinal_product`-Objekt (nicht Teil von Phase 3). Siehe [Phase 3 Dokumentation](Phase_3_Scientific_Data_Architecture.md). |
+| ADR-0016 | Claim als zentrales wissenschaftliches Objekt; Evidenzkategorie und Sicherheit getrennt bewertet | Entschieden (Phase 3) | Setzt ADR-0008 konkret um und löst das einteilige A–E-Modell für neue Claims ab: sieben Evidenzkategorien (`established_knowledge` … `personal_experience`) plus separat und redaktionell vergebenes `certainty`. Siehe [Evidenzsystem](../00_grundlagen/evidenzsystem.md), [Phase 3 Dokumentation](Phase_3_Scientific_Data_Architecture.md). |
+| ADR-0017 | Eine YAML-Datei pro kanonischem Objekt, Quelle und Claim; JSON/Graph deterministisch generiert | Entschieden (Phase 3) | Setzt ADR-0007 technisch um. Ausführliches ADR mit Alternativenvergleich siehe Abschnitt „Ausführliche ADRs" unten. |
+| ADR-0018 | `evidenzstufe` als veraltetes Legacy-Feld markiert | Entschieden (Phase 3) | Validator gibt eine Deprecation-Warnung aus, kein Build-Abbruch. Neue wissenschaftliche Objektseiten bewerten Evidenz claim-basiert über `entity_id`/`claim_ids` statt einer pauschalen Artikel-Evidenznote. Vollständige Entfernung frühestens Phase 4. Siehe [Evidenzsystem](../00_grundlagen/evidenzsystem.md). |
+| ADR-0019 | Artikel-Frontmatter-Status bleibt deutsch; Datenebene (`data/**`) nutzt englische Statuswerte | Entschieden (Phase 3) | Löst einen Konflikt zwischen dem Prinzip „maschinenlesbare Enums englisch, Anzeige deutsch" und der bestehenden, redaktionell direkt bearbeiteten deutschen Frontmatter-Konvention (siehe [Naming Conventions](Naming_Conventions.md)). Artikel-Status bleibt `Entwurf`/`In Prüfung`/`Aktiv`/`Zurückgezogen`; die neue Datenebene nutzt `draft`/`in_review`/`active`/`withdrawn` mit deutschen Anzeigenamen aus `data/vocabularies/editorial_statuses.yaml`. Keine Migration bestehender Artikel-Frontmatter-Statuswerte. |
+| ADR-0020 | `data/catalog.json` entfernt, ersetzt durch generiertes `build/catalog.json` | Entschieden (Phase 3) | Setzt ADR-0011 um: das leere Phase-1-Gerüst wird gelöscht, der Katalog wird bei jedem Build aus `data/**` generiert und nicht committed (siehe `.gitignore`). |
+| ADR-0021 | CI validiert Daten und Tests vor `mkdocs build --strict`; Deploy-Workflow gleichermaßen abgesichert | Entschieden (Phase 3) | Setzt ADR-0014 um: neuer `.github/workflows/ci.yml` für Pull Requests; `deploy.yml` um `validate_data.py` und `pytest` vor dem Seiten-Build erweitert. Ein ungültiger wissenschaftlicher Datensatz wird dadurch nie auf GitHub Pages veröffentlicht. |
+| ADR-0022 | Indikation als Claim statt eigenes Objekt; `condition` für Erkrankung/Zustand | Entschieden (Phase 3) | Verhindert ein redundantes Indikationsobjekt pro Substanz-Erkrankung-Kombination. „Zugelassen für"/„untersucht für" werden als Claims (`approved_for`/`not_approved_for`/`studied_for`) modelliert, die Erkrankung selbst als eigenständiges `condition`-Objekt. |
+| ADR-0023 | Reduzierter Objekttyp-Katalog für Phase 3 (sieben Entitätstypen statt der vollen Data-Model-Liste) | Entschieden (Phase 3) | Konsolidierung bzw. Zurückstellung mehrerer in [Data Model](Data_Model.md) skizzierter Objekttypen (Publication/Journal/Author, Institution/Company/Agency, Target/Mechanism, Gene, Organ/Tissue/Biomarker, Country) zugunsten der einfachsten belastbaren Lösung für den aktuellen Bedarf. Details je Typ siehe [Phase 3 Dokumentation](Phase_3_Scientific_Data_Architecture.md). |
+
+## Ausführliche ADRs
+
+### ADR-0017: Eine YAML-Datei pro kanonischem Objekt, Quelle und Claim; JSON/Graph deterministisch generiert
+
+- **Status:** Entschieden
+- **Datum:** 2026-07-24
+- **Kontext:** Phase 2 hatte festgelegt, dass strukturierte Daten und der Knowledge Graph aus einer Source of
+  Truth abgeleitet werden, ohne die technische Umsetzung festzulegen (ADR-0007). Phase 3 muss diese Umsetzung
+  konkretisieren: Peptide Atlas soll langfristig mindestens 5.000 Fachartikel und 100.000 Quellen tragen können,
+  mit nachvollziehbarer Historie, geringen Merge-Konflikten bei parallelen redaktionellen Beiträgen und ohne
+  Datenbankbetrieb (Prinzip „Static-First", siehe [Architecture](Architecture.md)).
+- **Entscheidung:** Jedes kanonische Objekt (Entität, Studie, Quelle, Claim) wird als eigene YAML-Datei unter
+  `data/**` geführt, validiert gegen JSON Schema (Draft 2020-12). `build/catalog.json` und `build/graph.json`
+  werden bei jedem Build deterministisch aus diesen Dateien generiert, nicht committed und dienen als Grundlage
+  für eine künftige read-only API.
+- **Alternativen:**
+    1. *Markdown bleibt alleinige Source of Truth* — verworfen: maschinenlesbare Fakten (Evidenzkategorie,
+       Studiendesign, Quellen-IDs) lassen sich aus Freitext nicht zuverlässig und ohne Duplizierung ableiten;
+       widerspricht dem data-first Hybridmodell (siehe [Phase 3 Dokumentation](Phase_3_Scientific_Data_Architecture.md)).
+    2. *Ein einzelnes großes `catalog.json`* — verworfen: bei 5.000+ Objekten führt jede Änderung zu einem
+       Merge-Konflikt auf derselben Datei; keine granulare Git-Historie pro Objekt; schlecht in Pull Requests
+       reviewbar.
+    3. *Relationale Datenbank* — verworfen: erfordert Datenbankbetrieb, widerspricht dem Static-First-Prinzip
+       und macht Peptide Atlas von einer laufenden Infrastruktur abhängig, ohne dass ein konkreter Schreibfall
+       (Nutzeranmeldung, Transaktionen) das erfordert.
+    4. *Graphdatenbank (z. B. Neo4j)* — verworfen: zusätzliche Infrastruktur, zusätzlicher Betriebsaufwand, für
+       die aktuelle Lese-/Export-Anforderung nicht nötig; ein statischer, deterministischer JSON-Graphexport
+       genügt (siehe [Knowledge Graph](Knowledge_Graph.md)).
+    5. *Eine YAML-Datei pro Objekt plus generierte JSON-Exporte* — **gewählt**.
+- **Konsequenzen:** Geringe Merge-Konflikte, gute Reviewbarkeit in Pull Requests, granulare Git-Historie pro
+  Objekt, kein Datenbankbetrieb, statische Plattform bleibt möglich, mehrsprachige Felder sind nativ abbildbar,
+  spätere Migration zu einer Datenbank bleibt offen, sollte Schreiblast oder Abfragekomplexität das erfordern.
+  Nachteil: viele kleine Dateien erfordern Tooling (Validator, Katalog-/Graphexport) statt eines einzelnen
+  Abfragepunkts — dieses Tooling ist Teil von Phase 3 (`tools/`).
+- **Migrationsstrategie:** Es existieren noch keine realen Objektinstanzen; es ist daher keine Datenmigration
+  nötig. Das Format des leeren `data/catalog.json` (Phase 1) wird durch das generierte `build/catalog.json`
+  ersetzt (siehe ADR-0020). Reale Inhalte (z. B. Retatrutid als Pilotobjekt, siehe [Roadmap](../roadmap.md))
+  werden ab Phase 4 direkt im neuen Format angelegt.
 
 ## Format für neue Einträge
 

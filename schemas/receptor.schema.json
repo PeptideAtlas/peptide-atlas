@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "receptor.schema.json",
+  "title": "Receptor",
+  "description": "Ein Rezeptor, an den Substanzen binden koennen. Rezeptor-spezifische Zusatzfelder zum Basis-Entity-Schema.",
+  "allOf": [
+    { "$ref": "entity.schema.json" },
+    {
+      "type": "object",
+      "properties": {
+        "entity_type": { "const": "receptor" },
+        "id": { "pattern": "^receptor-[a-z0-9]+(-[a-z0-9]+)*$" },
+        "receptor_family": {
+          "type": ["string", "null"],
+          "enum": [
+            "gpcr",
+            "receptor_tyrosine_kinase",
+            "cytokine_receptor",
+            "nuclear_receptor",
+            "ion_channel",
+            "other",
+            null
+          ]
+        },
+        "gene_symbol": { "type": ["string", "null"] },
+        "uniprot_id": { "type": ["string", "null"] }
+      },
+      "required": ["entity_type"]
+    }
+  ]
+}

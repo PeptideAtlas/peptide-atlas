@@ -1,0 +1,15 @@
+schema_version: "1.0.0"
+id: substance-test
+entity_type: substance
+canonical_name: Test Substance
+labels:
+  de: Testsubstanz
+description:
+  de: Testdaten.
+status: published
+created_at: "2026-01-01"
+updated_at: "2026-01-01"
+review:
+  last_reviewed_at: null
+  reviewers: []
+substance_classes: [peptide]

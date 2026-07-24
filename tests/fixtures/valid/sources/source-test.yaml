@@ -1,0 +1,20 @@
+schema_version: "1.0.0"
+id: source-test
+source_type: peer_reviewed_publication
+title: Test Publication
+authors: []
+journal: null
+publication_year: null
+publication_date: null
+identifiers:
+  doi: null
+  pmid: null
+  pmcid: null
+  isbn: null
+url: null
+language: en
+peer_review_status: peer_reviewed
+publication_status: published
+retraction_status: not_retracted
+retrieved_at: null
+status: draft

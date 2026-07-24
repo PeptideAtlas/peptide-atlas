@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "adverse_event.schema.json",
+  "title": "Adverse Event",
+  "description": "Eine Nebenwirkung/unerwuenschte Wirkung als eigenstaendiges, wiederverwendbares Objekt. Die Verknuepfung zu einer Substanz erfolgt ueber einen Claim (Praedikat associated_with_adverse_event), nicht als eingebettetes Feld.",
+  "allOf": [
+    { "$ref": "entity.schema.json" },
+    {
+      "type": "object",
+      "properties": {
+        "entity_type": { "const": "adverse_event" },
+        "id": { "pattern": "^adverse-event-[a-z0-9]+(-[a-z0-9]+)*$" },
+        "meddra_term": { "type": ["string", "null"] },
+        "severity_scale": {
+          "type": ["string", "null"],
+          "enum": ["mild", "moderate", "severe", "life_threatening", "not_assessed", null]
+        }
+      },
+      "required": ["entity_type"]
+    }
+  ]
+}

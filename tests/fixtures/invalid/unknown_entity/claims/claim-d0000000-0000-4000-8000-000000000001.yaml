@@ -1,0 +1,21 @@
+schema_version: "1.0.0"
+id: claim-d0000000-0000-4000-8000-000000000001
+claim_type: mechanism
+subject_id: substance-does-not-exist
+predicate: interacts_with
+object:
+  value: { de: Test }
+  value_type: localized_text
+statement:
+  de: Claim, dessen subject_id auf keine existierende Entitaet verweist.
+qualifiers: {}
+evidence_category: theoretical_hypothesis
+certainty: not_assessed
+certainty_rationale: null
+evidence: []
+status: draft
+created_at: "2026-01-01"
+updated_at: "2026-01-01"
+review:
+  last_reviewed_at: null
+  reviewers: []

@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "claim.schema.json",
+  "title": "Claim",
+  "description": "Das zentrale wissenschaftliche Objekt von Peptide Atlas: eine einzeln pruefbare Aussage mit genau einer primaeren Evidenzkategorie und einer getrennt bewerteten Sicherheit. Ein Claim darf nur einmal als kanonischer Datensatz existieren; Artikel verweisen darauf, kopieren ihn aber nicht.",
+  "type": "object",
+  "properties": {
+    "schema_version": { "$ref": "common.schema.json#/$defs/schema_version" },
+    "id": {
+      "type": "string",
+      "pattern": "^claim-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$"
+    },
+    "claim_type": {
+      "type": "string",
+      "enum": [
+        "identity",
+        "classification",
+        "structure",
+        "mechanism",
+        "receptor_activity",
+        "pathway_activity",
+        "pharmacokinetics",
+        "efficacy",
+        "safety",
+        "adverse_event",
+        "regulatory",
+        "study_result",
+        "association",
+        "comparison",
+        "historical",
+        "other"
+      ]
+    },
+    "subject_id": { "$ref": "common.schema.json#/$defs/id_ref" },
+    "predicate": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(_[a-z0-9]+)*$",
+      "description": "Muss aus data/vocabularies/predicates.yaml stammen (Vokabularpruefung erfolgt im Validator, nicht im JSON Schema)."
+    },
+    "object": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "entity_id": { "$ref": "common.schema.json#/$defs/id_ref" }
+          },
+          "additionalProperties": false,
+          "required": ["entity_id"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "value": { "type": "number" },
+            "unit": { "type": ["string", "null"] },
+            "value_type": { "const": "number" }
+          },
+          "additionalProperties": false,
+          "required": ["value", "value_type"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "value": { "$ref": "common.schema.json#/$defs/localized_text" },
+            "value_type": { "const": "localized_text" }
+          },
+          "additionalProperties": false,
+          "required": ["value", "value_type"]
+        }
+      ]
+    },
+    "statement": { "$ref": "common.schema.json#/$defs/localized_text" },
+    "qualifiers": { "type": "object", "default": {} },
+    "evidence_category": { "$ref": "common.schema.json#/$defs/evidence_category" },
+    "certainty": { "$ref": "common.schema.json#/$defs/certainty_level" },
+    "certainty_rationale": { "type": ["string", "null"], "minLength": 1 },
+    "evidence": {
+      "type": "array",
+      "items": { "$ref": "common.schema.json#/$defs/evidence_link" },
+      "default": []
+    },
+    "source_requirement": {
+      "type": "string",
+      "enum": ["required", "exempt"],
+      "default": "required"
+    },
+    "source_exemption_reason": { "type": ["string", "null"] },
+    "status": { "$ref": "common.schema.json#/$defs/editorial_status" },
+    "created_at": { "$ref": "common.schema.json#/$defs/date" },
+    "updated_at": { "$ref": "common.schema.json#/$defs/date" },
+    "review": { "$ref": "common.schema.json#/$defs/review_block" }
+  },
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "claim_type",
+    "subject_id",
+    "predicate",
+    "object",
+    "statement",
+    "evidence_category",
+    "certainty",
+    "evidence",
+    "status",
+    "created_at",
+    "updated_at",
+    "review"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": { "certainty": { "not": { "const": "not_assessed" } } },
+        "required": ["certainty"]
+      },
+      "then": { "required": ["certainty_rationale"] }
+    },
+    {
+      "if": {
+        "properties": { "source_requirement": { "const": "exempt" } },
+        "required": ["source_requirement"]
+      },
+      "then": { "required": ["source_exemption_reason"] }
+    }
+  ]
+}

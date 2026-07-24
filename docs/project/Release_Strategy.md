@@ -26,12 +26,15 @@ Diese Strategie beschreibt **ausschließlich technische und strukturelle** Meile
 - Knowledge-Graph-Denkmodell dokumentiert
 - Empfehlungen zu Workflow, Naming, Versionierung dokumentiert (Umsetzung folgt in v0.3+)
 
-### v0.3 — Struktur- und Prozess-Tooling
+### v0.3 — Struktur- und Prozess-Tooling (Phase 3, größtenteils umgesetzt)
 
-- Frontmatter-/Schema-Validator als CI-Schritt
-- Branch-Protection auf `main` aktiviert (siehe [Workflow](Workflow.md))
-- `CHANGELOG.md` eingeführt (siehe [Versioning](Versioning.md), aktuell fehlend)
-- Erste strukturierte Datendateien (`data/`) nach dem [Data Model](Data_Model.md) angelegt — als Schema-Gerüst, nicht zwingend mit realen Inhalten
+- [x] Frontmatter-/Schema-Validator als CI-Schritt (`tools/validate_data.py`, `.github/workflows/ci.yml`)
+- [x] Schema-Gerüst (`schemas/`) und strukturierte Datenebene (`data/`) nach dem [Data Model](Data_Model.md)
+      angelegt — siehe [Phase 3 Dokumentation](Phase_3_Scientific_Data_Architecture.md). Ausschließlich
+      Platzhalterdaten, keine realen Inhalte (folgen ab Phase 4).
+- [ ] Branch-Protection auf `main` aktiviert (siehe [Workflow](Workflow.md)) — weiterhin offen, liegt bei der
+      Repository-Administration (ADR-0010)
+- [ ] `CHANGELOG.md` eingeführt (siehe [Versioning](Versioning.md), aktuell fehlend)
 
 ### v0.5 — Redaktioneller Regelbetrieb
 

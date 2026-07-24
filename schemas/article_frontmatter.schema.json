@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "article_frontmatter.schema.json",
+  "title": "Article Frontmatter",
+  "description": "Schema fuer das YAML-Frontmatter redaktioneller Markdown-Artikel unter docs/** (ausser docs/project/**). Der Artikelstatus bleibt bewusst bei den bestehenden deutschen Werten (Entwurf/In Pruefung/Aktiv/Zurueckgezogen) aus dem Redaktionsstandard -- siehe Decision Log ADR zur Abgrenzung von der maschinenlesbaren Datenebene (data/**), die englische Statuswerte verwendet.",
+  "type": "object",
+  "properties": {
+    "title": { "type": "string", "minLength": 1 },
+    "description": { "type": "string", "minLength": 1 },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": ["Entwurf", "In Prüfung", "Aktiv", "Zurückgezogen"]
+    },
+    "evidenzstufe": {
+      "type": "string",
+      "enum": ["A", "B", "C", "D", "E", "Nicht zutreffend"],
+      "description": "VERALTET (Legacy). Fuer bestehende Legacy-Seiten vorruebergehend toleriert. Neue wissenschaftliche Objektseiten bewerten Evidenz pro Claim (siehe entity_id/claim_ids) statt pauschal am Artikel."
+    },
+    "quellen_typ": {
+      "type": "string",
+      "enum": ["Zulassung", "Klinische Forschung", "Präklinische Forschung", "Händlerangabe", "Gemischt"]
+    },
+    "last_reviewed": { "$ref": "common.schema.json#/$defs/date_or_null" },
+    "reviewed_by": { "type": ["string", "null"] },
+    "entity_id": {
+      "$ref": "common.schema.json#/$defs/id_ref",
+      "description": "Verweist auf das kanonische Objekt (data/entities/**), das dieser Artikel behandelt. Optional fuer allgemeine Grundlagenartikel."
+    },
+    "claim_ids": {
+      "type": "array",
+      "items": { "$ref": "common.schema.json#/$defs/id_ref" },
+      "default": [],
+      "description": "Claims (data/claims/**), auf die sich der Artikel stuetzt. Muessen existieren und thematisch mit entity_id verbunden sein (siehe Validator)."
+    }
+  },
+  "additionalProperties": true,
+  "required": ["title", "description", "tags", "status"]
+}

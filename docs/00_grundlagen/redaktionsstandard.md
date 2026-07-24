@@ -15,7 +15,14 @@ Diese Regeln gelten verbindlich für alle Inhalte in Peptide Atlas.
 
 - Jede medizinisch relevante Aussage muss eine nachvollziehbare Quelle haben (Studie, Leitlinie, Zulassungsdokument).
 - Quellen werden am Ende jedes Artikels im Abschnitt „Quellen" aufgeführt und, wo möglich, im Fließtext direkt referenziert.
-- Die Evidenzstärke jeder Aussage folgt dem [Evidenzsystem](evidenzsystem.md).
+- Die Evidenzstärke jeder Aussage folgt dem [Evidenzsystem](evidenzsystem.md). Seit Phase 3 gilt das
+  claim-basierte Modell (Evidenzkategorie getrennt von Sicherheit) für neue wissenschaftliche Objektseiten; das
+  bisherige `evidenzstufe`-Feld (A–E) ist Legacy und wird für bestehende Artikel weiter toleriert, aber nicht
+  mehr neu vergeben.
+- Neue Objektseiten verweisen im Frontmatter über `entity_id` und `claim_ids` auf die strukturierten Daten unter
+  `data/` (siehe `data/README.md` im Repository sowie
+  [Phase 3 Dokumentation](../project/Phase_3_Scientific_Data_Architecture.md)) — der Claim, nicht der Artikel,
+  trägt die Quelle und die Evidenzbewertung.
 
 ## Trennung der Ebenen
 

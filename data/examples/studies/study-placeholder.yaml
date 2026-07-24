@@ -1,0 +1,38 @@
+# Diese Daten sind ausschliesslich technische Platzhalter und keine medizinischen Aussagen.
+schema_version: "1.0.0"
+id: study-placeholder
+entity_type: study
+canonical_name: Placeholder Study
+labels:
+  de: Technische Platzhalterstudie
+synonyms: []
+description:
+  de: Ausschließlich zur Prüfung des Datenmodells.
+status: draft
+created_at: "2026-07-24"
+updated_at: "2026-07-24"
+review:
+  last_reviewed_at: null
+  reviewers: []
+
+study_design: randomized_controlled_trial
+phase: null
+registration:
+  registry: clinicaltrials_gov
+  identifier: NCT00000000
+recruitment_status: unknown
+start_date: null
+completion_date: null
+population:
+  species: human
+  description:
+    de: Technische Platzhalterpopulation.
+sample_size:
+  planned: null
+  analyzed: null
+interventions: []
+comparators: []
+outcomes: []
+sponsor_ids: []
+source_ids:
+  - source-placeholder

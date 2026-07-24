@@ -13,6 +13,15 @@ Dieses Dokument entwirft ein **universelles, technologieunabhängiges Datenmodel
 
 **Wichtig:** Dieses Dokument definiert nur die **Struktur**. Es enthält keine echten Wirkstoff-, Studien- oder Krankheitsdaten. Alle Beispiele sind rein illustrativ und mit Platzhaltern gekennzeichnet.
 
+!!! info "Konkrete Umsetzung seit Phase 3"
+    Dieses Dokument bleibt die konzeptionelle Leitplanke. Die konkrete, implementierte und getestete Umsetzung
+    (JSON Schemas, YAML-Dateien, Validator) steht in [Phase 3 Dokumentation](Phase_3_Scientific_Data_Architecture.md).
+    Zwei Konkretisierungen weichen bewusst von der ursprünglichen Tabelle unten ab (siehe ADR-0015, ADR-0022,
+    ADR-0023 im [Decision Log](Decision_Log.md)): `Peptide`/`Drug` wurden zu einem einzigen Objekt `substance`
+    vereinheitlicht, und `Indication` wird als Claim statt als eigenes Objekt modelliert. Der Objekttyp-Katalog
+    wurde für Phase 3 auf sieben Entitätstypen reduziert (siehe Phase 3 Dokumentation für die vollständige
+    Begründung je Typ).
+
 ## Leitprinzipien
 
 1. **Ein Objekt, eine ID, eine Quelle der Wahrheit.** Jedes Objekt existiert genau einmal und wird von überall darauf verlinkt, nie dupliziert.
@@ -100,9 +109,12 @@ Beziehungstypen werden ausführlich in [Knowledge Graph](Knowledge_Graph.md) beh
 | `COMPARED_TO` | Drug ↔ Drug, Peptide ↔ Peptide | Vergleiche |
 | `SIMILAR_TO` | Peptide ↔ Peptide (struktureller Analog) | Vergleiche |
 
-## Verhältnis zum aktuellen `data/catalog.json`
+## Verhältnis zum generierten `build/catalog.json`
 
-Das bestehende `data/catalog.json` (siehe `README.md` im Repository-Root) ist der erste, noch leere Ansatzpunkt für dieses Modell. Empfehlung (nicht in dieser Phase umgesetzt): `catalog.json` perspektivisch in typ-spezifische Dateien aufteilen (z. B. `data/drugs.json`, `data/receptors.json`) statt eines einzelnen Katalogs, sobald reale Einträge entstehen — siehe [Decision Log](Decision_Log.md).
+Das ursprüngliche, leere `data/catalog.json` (Phase 1) wurde entfernt (siehe ADR-0020 im [Decision Log](Decision_Log.md)).
+An seine Stelle tritt ein generiertes `build/catalog.json`: typ-spezifische YAML-Dateien unter `data/entities/<typ>/`
+sind die redaktionelle Source of Truth, der Katalog wird daraus bei jedem Build deterministisch erzeugt und
+nicht committed. Details: [Phase 3 Dokumentation](Phase_3_Scientific_Data_Architecture.md).
 
 ## Nicht Teil dieses Dokuments
 

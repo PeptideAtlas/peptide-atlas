@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "condition.schema.json",
+  "title": "Condition",
+  "description": "Eine Erkrankung oder ein biologischer Zustand (nicht zu verwechseln mit einer Indikation, die eine kontextabhaengige, claim-basierte Aussage ueber eine Substanz-Condition-Beziehung ist, siehe Data Model / Phase 3 Dokumentation).",
+  "allOf": [
+    { "$ref": "entity.schema.json" },
+    {
+      "type": "object",
+      "properties": {
+        "entity_type": { "const": "condition" },
+        "id": { "pattern": "^condition-[a-z0-9]+(-[a-z0-9]+)*$" },
+        "condition_category": { "type": ["string", "null"] },
+        "classification": {
+          "type": "object",
+          "properties": {
+            "icd10": { "type": ["string", "null"] },
+            "icd11": { "type": ["string", "null"] }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": ["entity_type"]
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+schema_version: "1.0.0"
+id: receptor-test
+entity_type: receptor
+canonical_name: Test Receptor
+labels:
+  de: Testrezeptor
+synonyms: []
+description:
+  de: Testdaten fuer die Validator-Testsuite, keine medizinische Aussage.
+status: draft
+created_at: "2026-01-01"
+updated_at: "2026-01-01"
+review:
+  last_reviewed_at: null
+  reviewers: []
+receptor_family: gpcr
+gene_symbol: null
+uniprot_id: null

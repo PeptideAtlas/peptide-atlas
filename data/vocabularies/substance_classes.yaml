@@ -1,0 +1,44 @@
+# Kontrolliertes Vokabular: substance_classes
+# Eine Substanz kann mehrere Klassen gleichzeitig tragen (z. B. peptide + investigational_drug).
+schema_version: "1.0.0"
+values:
+  - value: peptide
+    labels:
+      de: Peptid
+      en: Peptide
+  - value: protein
+    labels:
+      de: Protein
+      en: Protein
+  - value: small_molecule
+    labels:
+      de: Kleines Molekül
+      en: Small Molecule
+  - value: hormone
+    labels:
+      de: Hormon
+      en: Hormone
+  - value: antibody
+    labels:
+      de: Antikörper
+      en: Antibody
+  - value: conjugate
+    labels:
+      de: Konjugat
+      en: Conjugate
+  - value: approved_drug
+    labels:
+      de: Zugelassenes Arzneimittel
+      en: Approved Drug
+  - value: investigational_drug
+    labels:
+      de: Prüfsubstanz
+      en: Investigational Drug
+  - value: endogenous_substance
+    labels:
+      de: Körpereigene Substanz
+      en: Endogenous Substance
+  - value: synthetic_analogue
+    labels:
+      de: Synthetisches Analogon
+      en: Synthetic Analogue

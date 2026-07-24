@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "study.schema.json",
+  "title": "Study",
+  "description": "Eine eigenstaendige Studie (Registrierung/Design), losgeloest von ihren Publikationen. Eine Studie kann mehrere Quellen (Publikationen, Registrierungseintrag, Zwischen- und Endergebnisse) besitzen oder auch keine. Studie und Publikation duerfen nicht gleichgesetzt werden (siehe Data Model).",
+  "allOf": [
+    { "$ref": "entity.schema.json" },
+    {
+      "type": "object",
+      "properties": {
+        "entity_type": { "const": "study" },
+        "id": { "pattern": "^study-[a-z0-9]+(-[a-z0-9]+)*$" },
+        "study_design": { "$ref": "common.schema.json#/$defs/study_design" },
+        "phase": {
+          "type": ["string", "null"],
+          "enum": ["phase_1", "phase_2", "phase_3", "phase_4", "not_applicable", null]
+        },
+        "registration": {
+          "type": "object",
+          "properties": {
+            "registry": {
+              "type": ["string", "null"],
+              "enum": ["clinicaltrials_gov", "drks", "isrctn", "euctr", "other", null]
+            },
+            "identifier": { "type": ["string", "null"] }
+          },
+          "additionalProperties": false
+        },
+        "recruitment_status": {
+          "type": ["string", "null"],
+          "enum": [
+            "not_yet_recruiting",
+            "recruiting",
+            "enrolling_by_invitation",
+            "active_not_recruiting",
+            "completed",
+            "terminated",
+            "suspended",
+            "withdrawn",
+            "unknown",
+            null
+          ]
+        },
+        "start_date": { "$ref": "common.schema.json#/$defs/date_or_null" },
+        "completion_date": { "$ref": "common.schema.json#/$defs/date_or_null" },
+        "population": {
+          "type": "object",
+          "properties": {
+            "species": {
+              "type": ["string", "null"],
+              "enum": ["human", "animal_rodent", "animal_non_rodent", "in_vitro", "other", null]
+            },
+            "description": { "$ref": "common.schema.json#/$defs/localized_text" }
+          },
+          "additionalProperties": false
+        },
+        "sample_size": {
+          "type": "object",
+          "properties": {
+            "planned": { "type": ["integer", "null"], "minimum": 0 },
+            "analyzed": { "type": ["integer", "null"], "minimum": 0 }
+          },
+          "additionalProperties": false
+        },
+        "interventions": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "comparators": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "outcomes": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "sponsor_ids": {
+          "type": "array",
+          "items": { "$ref": "common.schema.json#/$defs/id_ref" },
+          "default": []
+        },
+        "source_ids": {
+          "type": "array",
+          "items": { "$ref": "common.schema.json#/$defs/id_ref" },
+          "default": []
+        }
+      },
+      "required": ["entity_type", "study_design"]
+    }
+  ]
+}

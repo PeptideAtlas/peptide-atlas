@@ -1,0 +1,19 @@
+# Diese Daten sind ausschliesslich technische Platzhalter und keine medizinischen Aussagen.
+schema_version: "1.0.0"
+id: receptor-placeholder
+entity_type: receptor
+canonical_name: Placeholder Receptor
+labels:
+  de: Platzhalterrezeptor
+synonyms: []
+description:
+  de: Rein technischer Platzhalter ohne medizinische Aussage.
+status: draft
+created_at: "2026-07-24"
+updated_at: "2026-07-24"
+review:
+  last_reviewed_at: null
+  reviewers: []
+receptor_family: gpcr
+gene_symbol: null
+uniprot_id: null

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "pathway.schema.json",
+  "title": "Biological Pathway",
+  "description": "Ein Signalweg oder Stoffwechselweg. Pathway-spezifische Zusatzfelder zum Basis-Entity-Schema.",
+  "allOf": [
+    { "$ref": "entity.schema.json" },
+    {
+      "type": "object",
+      "properties": {
+        "entity_type": { "const": "pathway" },
+        "id": { "pattern": "^pathway-[a-z0-9]+(-[a-z0-9]+)*$" },
+        "pathway_category": {
+          "type": ["string", "null"],
+          "enum": ["signaling_pathway", "metabolic_pathway", "other", null]
+        },
+        "external_ids": {
+          "type": "object",
+          "properties": {
+            "reactome_id": { "type": ["string", "null"] },
+            "kegg_id": { "type": ["string", "null"] }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": ["entity_type"]
+    }
+  ]
+}

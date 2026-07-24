@@ -1,0 +1,35 @@
+schema_version: "1.0.0"
+id: substance-test
+entity_type: substance
+canonical_name: Test Substance
+labels:
+  de: Testsubstanz
+synonyms: []
+description:
+  de: Testdaten fuer die Validator-Testsuite, keine medizinische Aussage.
+status: draft
+created_at: "2026-01-01"
+updated_at: "2026-01-01"
+review:
+  last_reviewed_at: null
+  reviewers: []
+substance_classes:
+  - peptide
+sequence:
+  format: null
+  value: null
+  length: null
+molecular_formula: null
+molecular_weight:
+  value: null
+  unit: null
+identifiers:
+  inn: null
+  unii: null
+  pubchem_cid: null
+  chembl_id: null
+  cas_number: null
+development_codes: []
+origin:
+  type: synthetic
+  organism_taxon_id: null

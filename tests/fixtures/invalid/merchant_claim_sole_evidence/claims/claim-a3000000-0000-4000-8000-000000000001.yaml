@@ -1,0 +1,26 @@
+schema_version: "1.0.0"
+id: claim-a3000000-0000-4000-8000-000000000001
+claim_type: efficacy
+subject_id: substance-test
+predicate: studied_for
+object:
+  value: { de: Test }
+  value_type: localized_text
+statement:
+  de: Aktiver Wirksamkeits-Claim, dessen einzige Evidenzkategorie merchant_claim ist.
+qualifiers: {}
+evidence_category: merchant_claim
+certainty: low
+certainty_rationale: Test.
+evidence:
+  - source_id: source-test
+    study_id: null
+    direction: supports
+    locator: { page: null, table: null, figure: null, section: null }
+    notes: null
+status: active
+created_at: "2026-01-01"
+updated_at: "2026-01-01"
+review:
+  last_reviewed_at: "2026-01-01"
+  reviewers: ["reviewer-1"]
