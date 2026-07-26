@@ -27,6 +27,8 @@ second_review: &id001
   reviewer_decision: include
   adjudication: null
   notes: null
+  reviewer_decision_reason: null
+  reviewer_duplicate_of: null
 decision_history:
 - sequence: 1
   stage: final
@@ -38,6 +40,8 @@ decision_history:
   second_review: *id001
   primary_decision: include
   duplicate_of: null
+  primary_decision_reason: null
+  primary_duplicate_of: null
 canonical_source_id: null
 created_at: '2026-01-01'
 updated_at: '2026-01-02'

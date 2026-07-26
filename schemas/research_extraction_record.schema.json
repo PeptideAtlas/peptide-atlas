@@ -78,9 +78,14 @@
         "required": ["working_id", "claim_type_candidate", "predicate_candidate", "statement_candidate", "locator", "is_provisional"]
       }
     },
-    "extracted_by": { "type": "string", "minLength": 1 },
+    "extracted_by": { "$ref": "common.schema.json#/$defs/research_actor_id" },
     "extracted_at": { "$ref": "common.schema.json#/$defs/date" },
-    "verified_by": { "type": ["string", "null"] },
+    "verified_by": {
+      "anyOf": [
+        { "$ref": "common.schema.json#/$defs/research_actor_id" },
+        { "type": "null" }
+      ]
+    },
     "verified_at": { "$ref": "common.schema.json#/$defs/date_or_null" },
     "discrepancies": {
       "type": "array",

@@ -26,6 +26,8 @@ second_review: &id001
   reviewer_decision: include
   adjudication: null
   notes: null
+  reviewer_decision_reason: null
+  reviewer_duplicate_of: null
 decision_history:
 - sequence: 1
   stage: deduplication
@@ -37,6 +39,8 @@ decision_history:
   decided_at: '2026-01-02'
   full_text_status: not_applicable
   second_review: null
+  primary_decision_reason: null
+  primary_duplicate_of: null
 - sequence: 2
   stage: title_abstract
   primary_decision: awaiting_full_text
@@ -47,6 +51,8 @@ decision_history:
   decided_at: '2026-01-03'
   full_text_status: not_yet_obtained
   second_review: null
+  primary_decision_reason: null
+  primary_duplicate_of: null
 - sequence: 3
   stage: full_text
   primary_decision: include
@@ -57,6 +63,8 @@ decision_history:
   decided_at: '2026-01-04'
   full_text_status: obtained
   second_review: null
+  primary_decision_reason: null
+  primary_duplicate_of: null
 - sequence: 4
   stage: final
   primary_decision: include
@@ -67,6 +75,8 @@ decision_history:
   decided_at: '2026-01-05'
   full_text_status: obtained
   second_review: *id001
+  primary_decision_reason: null
+  primary_duplicate_of: null
 canonical_source_id: null
 created_at: '2026-01-01'
-updated_at: '2026-01-02'
+updated_at: '2026-01-06'

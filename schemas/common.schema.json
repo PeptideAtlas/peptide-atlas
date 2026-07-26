@@ -249,6 +249,16 @@
       "enum": ["proposed", "in_review", "approved_for_creation", "rejected", "promoted", "withdrawn"],
       "description": "Statuswerte fuer research_promotion_record. approved_for_creation/promoted duerfen nie automatisiert durch Automatisierung/KI gesetzt werden (siehe ADR-0035, ADR-0037)."
     },
+    "research_actor_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]*$",
+      "description": "Stabiles, syntaktisch eindeutiges Kuerzel fuer einen Research-Akteur (Screener, Zweitpruefer, Adjudikator, Extraktor, Verifizierer, Promotion-Reviewer). Kein fuehrendes/nachgestelltes oder alleiniges Leerzeichen, kein Grossbuchstabe -- verhindert, dass 'reviewer-1' und ' reviewer-1 ' oder 'Reviewer-1' faelschlich als unterschiedliche Kuerzel durchgehen oder Gleichheits-/Unabhaengigkeitspruefungen (z. B. Zweitpruefer != Erstpruefer) durch Leerzeichenvarianten umgangen werden. Stellt NUR syntaktisch stabile, unterscheidbare Kuerzel sicher -- beweist NICHT, dass zwei unterschiedliche Kuerzel zwei unterschiedliche MENSCHLICHE Personen repraesentieren (das bleibt organisatorisch kontrolliert, siehe ADR-0041 und ADR-0046)."
+    },
+    "dual_reviewable_screening_stage": {
+      "type": "string",
+      "enum": ["title_abstract", "full_text", "final"],
+      "description": "Teilmenge von screening_stage, die ein verpflichtendes Zweitreview mit Adjudikation unterstuetzt (siehe screening_policy.dual_reviewer_stages in research_protocol.schema.json). 'deduplication' ist bewusst ausgeschlossen: adjudication.final_decision ist auf include/exclude beschraenkt, 'exclude' ist an der Stufe 'deduplication' fachlich nie zulaessig (siehe screening_decision-Matrix) und 'duplicate' ist als Adjudikationsergebnis nicht abbildbar -- ein Dedup-Konflikt waere damit strukturell nur halb unterstuetzt. Ein Dedup-Widerspruch bleibt daher immer 'uncertain' und wird durch einen NEUEN Screening-Eintrag (nicht durch Adjudikation) aufgeloest (siehe ADR-0046)."
+    },
     "short_paraphrase": {
       "type": "object",
       "description": "Wie localized_text, aber mit harter Laengengrenze je Sprache -- erzwingt eine kurze Paraphrase statt einer laengeren woertlichen Textuebernahme (siehe Scientific Research Protocol, Abschnitt Urheberrecht).",

@@ -143,8 +143,9 @@
         },
         "dual_reviewer_stages": {
           "type": "array",
-          "items": { "$ref": "common.schema.json#/$defs/screening_stage" },
-          "default": []
+          "items": { "$ref": "common.schema.json#/$defs/dual_reviewable_screening_stage" },
+          "default": [],
+          "description": "Muss eine Teilmenge von screening_policy.stages sein (vom Validator geprueft, siehe ADR-0046). 'deduplication' ist bereits schema-seitig ausgeschlossen (siehe common.schema.json#/$defs/dual_reviewable_screening_stage)."
         }
       },
       "additionalProperties": false,
@@ -198,7 +199,7 @@
       "type": "object",
       "properties": {
         "last_reviewed_at": { "$ref": "common.schema.json#/$defs/date_or_null" },
-        "reviewers": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "reviewers": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/research_actor_id" } },
         "approval_decision": {
           "type": ["string", "null"],
           "description": "Dokumentierte Freigabeentscheidung. Pflicht (nicht leer), sobald status 'approved' ist."

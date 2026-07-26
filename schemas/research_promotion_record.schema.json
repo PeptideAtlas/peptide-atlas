@@ -33,11 +33,7 @@
         "reviewers": {
           "type": "array",
           "uniqueItems": true,
-          "items": {
-            "type": "string",
-            "pattern": ".*\\S.*",
-            "description": "Mindestens ein Nicht-Leerzeichen-Zeichen -- ein leerer oder nur aus Leerzeichen bestehender Reviewer-Kuerzel ist ungueltig."
-          }
+          "items": { "$ref": "common.schema.json#/$defs/research_actor_id" }
         }
       },
       "additionalProperties": false,
@@ -50,7 +46,7 @@
     },
     "decision_rationale": {
       "type": ["string", "null"],
-      "description": "Dokumentierte wissenschaftliche Begruendung. Pflicht (nicht leer) sobald promotion_status 'approved_for_creation' oder 'promoted' ist."
+      "description": "Dokumentierte wissenschaftliche/redaktionelle Begruendung. Pflicht (nicht leer) sobald promotion_status 'approved_for_creation', 'promoted' ODER 'rejected' ist -- auch eine Ablehnung muss nachvollziehbar begruendet sein (siehe ADR-0046)."
     },
     "created_at": { "$ref": "common.schema.json#/$defs/date" },
     "updated_at": { "$ref": "common.schema.json#/$defs/date" }
@@ -91,7 +87,7 @@
     },
     {
       "if": {
-        "properties": { "promotion_status": { "enum": ["approved_for_creation", "promoted"] } },
+        "properties": { "promotion_status": { "enum": ["approved_for_creation", "promoted", "rejected"] } },
         "required": ["promotion_status"]
       },
       "then": {
@@ -107,7 +103,8 @@
           }
         },
         "required": ["decision_rationale", "review"]
-      }
+      },
+      "description": "Jede ENDGUELTIGE Promotion-Entscheidung (approved_for_creation, promoted, rejected) erfordert dieselbe Mindest-Audit-Spur: ein dokumentiertes Reviewdatum, mindestens einen Reviewer und eine nicht-leere Begruendung -- auch eine Ablehnung ist eine wissenschaftliche/redaktionelle Entscheidung, die nachvollziehbar sein muss (siehe ADR-0046). proposed/in_review/withdrawn sind bewusst ausgenommen, da dort noch keine endgueltige Entscheidung getroffen wurde."
     }
   ]
 }

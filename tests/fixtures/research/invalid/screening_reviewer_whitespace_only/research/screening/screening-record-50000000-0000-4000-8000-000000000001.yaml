@@ -1,0 +1,38 @@
+schema_version: 1.0.0
+id: screening-record-50000000-0000-4000-8000-000000000001
+protocol_id: research-protocol-test-substance-v1
+search_run_ids:
+- search-run-40000000-0000-4000-8000-000000000001
+candidate_identifiers:
+  doi: null
+  pmid: null
+  pmcid: null
+  nct_id: null
+  isbn: null
+  url: null
+candidate_title: Test Candidate
+candidate_source_type: peer_reviewed_publication
+decision: include
+decision_stage: final
+decision_reason: null
+duplicate_of: null
+full_text_status: obtained
+screened_by: '   '
+screened_at: '2026-01-02'
+second_review: null
+decision_history:
+- sequence: 1
+  stage: final
+  primary_decision: include
+  primary_decision_reason: null
+  decision: include
+  decision_reason: null
+  duplicate_of: null
+  primary_duplicate_of: null
+  decided_by: reviewer-1
+  decided_at: '2026-01-02'
+  full_text_status: obtained
+  second_review: null
+canonical_source_id: null
+created_at: '2026-01-01'
+updated_at: '2026-01-02'

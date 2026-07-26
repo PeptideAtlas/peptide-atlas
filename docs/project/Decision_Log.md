@@ -57,6 +57,12 @@ Kurze, strukturierte Architecture Decision Records (ADRs): Kontext, Entscheidung
 | ADR-0043 | Erst-, Zweit- und Endentscheidung strukturell getrennt (`primary_decision` vs. `decision`); zentrale Stage-/Decision-Matrix | Entschieden (Phase 4A, Review-Härtung Runde 4) | Behebt eine Modellierungslücke, bei der die Erstentscheidung verloren ging, sobald eine Adjudikation oder ein ungelöster Widerspruch die effektive `decision` änderte, und bei der `decision_confirmed` fälschlich gegen die effektive statt die Erstentscheidung geprüft wurde. Ausführliches ADR siehe unten. |
 | ADR-0044 | Zeitliche Provenienzkette objektübergreifend validiert (Screening → Extraktion → Verifikation → Promotion) | Entschieden (Phase 4A, Review-Härtung Runde 4) | Eine Extraktion konnte bislang zeitlich vor ihrer eigenen terminalen Einschlussentscheidung liegen, eine Promotion vor der zugehörigen Verifikation. Ausführliches ADR siehe unten. |
 | ADR-0045 | Promotion-Reviewer-Liste schema-seitig auf Eindeutigkeit und Nicht-Leerheit geprüft, ohne die gemeinsame `review_block`-Definition zu verändern | Entschieden (Phase 4A, Review-Härtung Runde 4) | `research_promotion_record.schema.json` definiert `review.reviewers` jetzt eigenständig (`uniqueItems`, Nicht-Leerzeichen-Pattern) statt des gemeinsamen `common.schema.json#/$defs/review_block`, um andere Objektarten nicht zu berühren. Ausführliches ADR siehe unten. |
+| ADR-0046 | Stage-/Decision-Matrix auch gegen `second_review.reviewer_decision` geprüft; `deduplication` unterstützt strukturell keine Adjudikation | Entschieden (Phase 4A, Review-Härtung Runde 5) | ADR-0043s Matrix wurde bislang nur gegen `primary_decision` und die effektive `decision` geprüft, nicht gegen die eigenständige Entscheidung der Zweitprüfung. Zusätzlich hätte ein Dedup-Konflikt nur teilweise per Adjudikation lösbar sein können. Ausführliches ADR siehe unten. |
+| ADR-0047 | Vollständige, verlustfreie Drei-Ebenen-Entscheidungsprovenienz (`primary_decision_reason`/`primary_duplicate_of`, `second_review.reviewer_decision_reason`/`reviewer_duplicate_of`) | Entschieden (Phase 4A, Review-Härtung Runde 5) | Gründe und Duplikatverweise existierten bislang nur für die effektive Entscheidung — bei einer Abweichung zwischen Erst-, Zweit- und Endentscheidung gingen die jeweils eigenständigen Begründungen verloren. Ausführliches ADR siehe unten. |
+| ADR-0048 | Objektinterne zeitliche Vollständigkeit: jedes dokumentierte Ereignisdatum liegt innerhalb von `[created_at, updated_at]` desselben Objekts | Entschieden (Phase 4A, Review-Härtung Runde 5) | ADR-0044 prüft die Kette objektübergreifend, aber nicht, dass ein Objekt nicht angeblich vor einem von ihm selbst gespeicherten Ereignis zuletzt aktualisiert wurde. Ausführliches ADR siehe unten. |
+| ADR-0049 | `rejected`-Promotions erfordern dieselbe Mindest-Audit-Spur wie `approved_for_creation`/`promoted` | Entschieden (Phase 4A, Review-Härtung Runde 5) | Eine Ablehnung konnte bislang ohne Reviewer, Reviewdatum oder Begründung existieren, obwohl sie eine ebenso konsequenzreiche wissenschaftliche/redaktionelle Entscheidung ist. Ausführliches ADR siehe unten. |
+| ADR-0050 | Stabile Research-Actor-ID-Syntax (`research_actor_id`) ohne Actor-Registry | Entschieden (Phase 4A, Review-Härtung Runde 5) | Alle Research-Akteursfelder verwendeten bislang ein reines `minLength: 1`-Feld — Leerzeichenvarianten oder Groß-/Kleinschreibung hätten Gleichheits-/Unabhängigkeitsprüfungen (z. B. Zweitprüfer ≠ Erstprüfer) unterlaufen können. Ausführliches ADR siehe unten. |
+| ADR-0051 | `screening_policy.dual_reviewer_stages` muss Teilmenge von `screening_policy.stages` sein | Entschieden (Phase 4A, Review-Härtung Runde 5) | Ein Protokoll konnte bislang eine Zweitprüferstufe verlangen, die gar nicht als Screening-Stufe konfiguriert war. Ausführliches ADR siehe unten. |
 
 ## Ausführliche ADRs
 
@@ -636,6 +642,274 @@ Kurze, strukturierte Architecture Decision Records (ADRs): Kontext, Entscheidung
   kontrolliert (keine Actor-Registry in Phase 4A).
 - **Migrationsstrategie:** Nicht zutreffend -- betrifft nur `research/promotions/**`, das noch keine
   realen Objekte enthaelt.
+
+### ADR-0046: Stage-/Decision-Matrix auch gegen `second_review.reviewer_decision` geprüft; `deduplication` unterstützt strukturell keine Adjudikation
+
+- **Status:** Entschieden
+- **Datum:** 2026-07-26
+- **Kontext:** Die in ADR-0043 eingeführte zentrale Stage-/Decision-Matrix
+  (`tools/_researchlib.py::ALLOWED_DECISIONS_BY_STAGE`) wurde bislang nur gegen `primary_decision`
+  und die effektive `decision` jedes `decision_history`-Eintrags geprüft, nicht aber gegen
+  `second_review.reviewer_decision` selbst — eine Zweitprüfung hätte an der Stufe `final` z. B.
+  `reviewer_decision: pending` oder `duplicate` eintragen können, obwohl diese Werte an dieser Stufe
+  fachlich nie sinnvoll sind. Zusätzlich blieb offen, wie ein Widerspruch an der Stufe
+  `deduplication` behandelt wird: `adjudication.final_decision` ist strukturell auf
+  `include`/`exclude` beschränkt (ADR-0043), aber `exclude` ist an dieser Stufe fachlich nie
+  zulässig und `duplicate` als bestätigtes Adjudikationsergebnis war überhaupt nicht abbildbar — ein
+  verpflichtendes Zweitreview mit Adjudikation an dieser Stufe wäre damit nur halb unterstützt
+  gewesen.
+- **Entscheidung:**
+    - `tools/validate_research.py::_check_decision_snapshot` prüft `second_review.reviewer_decision`
+      jetzt ebenfalls gegen `ALLOWED_DECISIONS_BY_STAGE[stage]` (dieselbe Matrix, dieselbe Fehlermeldungsform
+      wie bei `primary_decision`/`decision`).
+    - `deduplication` unterstützt strukturell **keine** Adjudikation: sobald ein
+      `decision_history`-Eintrag an dieser Stufe `second_review.adjudication` gesetzt hat, ist das ein
+      Validierungsfehler, unabhängig vom Inhalt der Adjudikation. Ein Dedup-Widerspruch (Erst- und
+      Zweitprüfung sind sich uneinig, ob ein Kandidat ein Duplikat ist) bleibt stattdessen immer
+      `decision: uncertain` (bereits über die bestehende "ohne Adjudikation muss uncertain bleiben"-Regel
+      abgedeckt) und wird durch einen **neuen**, späteren `decision_history`-Eintrag aufgelöst, nicht
+      rückwirkend durch eine dritte Person an derselben Stufe. `second_review` selbst bleibt an der Stufe
+      `deduplication` weiterhin erlaubt (Erst-/Zweitprüfung können sich einig sein oder unaufgelöst
+      widersprechen) — nur die Adjudikation ist ausgeschlossen.
+    - `screening_policy.dual_reviewer_stages` ist jetzt schema-seitig auf eine neue, engere Aufzählung
+      `common.schema.json#/$defs/dual_reviewable_screening_stage` (`title_abstract`/`full_text`/`final`)
+      beschränkt statt des allgemeinen `screening_stage`-Vokabulars — `deduplication` kann dort gar nicht
+      erst eingetragen werden. Ein verpflichtendes Zweitreview mit Adjudikation ist damit ausschließlich für
+      inhaltliche Screening-Entscheidungen vorgesehen, nicht für die rein mechanische Duplikaterkennung
+      (die ohnehin bereits durch die separate, identifierbasierte `check_deduplication`-Prüfung abgedeckt
+      ist).
+- **Alternativen:**
+    1. *Adjudikationsmodell stufenspezifisch erweitern, sodass `deduplication` ein drittes
+       Adjudikationsergebnis (`duplicate`) zulässt* — verworfen: hätte eine parallele,
+       stufenabhängige Variante von `adjudication.final_decision` erfordert (unterschiedliche gültige
+       Werte je nachdem, ob das umschließende `second_review` zum Top-Level-Feld oder zu einem
+       `decision_history`-Eintrag gehört, mit unterschiedlichen Sibling-Feldnamen `decision_stage` vs.
+       `stage`) — deutlich höhere Schema-Komplexität für einen Anwendungsfall, der auch einfacher (durch
+       Re-Screening statt Adjudikation) lösbar ist.
+    2. *`dual_reviewer_stages` weiterhin frei konfigurierbar lassen, nur validator-seitig vor
+       `deduplication` warnen* — verworfen: eine Warnung hätte die halb unterstützte Konfiguration
+       weiterhin technisch zugelassen; der Reviewauftrag verlangt ausdrücklich, keine halb unterstützte
+       Konfiguration zuzulassen.
+    3. *`deduplication` schema-seitig aus `dual_reviewer_stages` ausschließen, Adjudikation an dieser
+       Stufe validator-seitig strukturell verbieten, `second_review` selbst dort weiterhin optional
+       zulassen* — **gewählt**.
+- **Konsequenzen:** Eine Zweitprüfung mit fachlich unpassender Entscheidung an einer Stufe wird jetzt
+  zuverlässig zurückgewiesen, unabhängig davon, ob es sich um `primary_decision`, `second_review.
+  reviewer_decision` oder die effektive `decision` handelt. Ein Dedup-Konflikt bleibt immer
+  nachvollziehbar `uncertain`, statt eine strukturell unvollständige Adjudikation vorzutäuschen.
+- **Migrationsstrategie:** Nicht zutreffend für Produktivdaten (keine realen `research/**`-Objekte
+  außerhalb von Beispielen). Test-Fixtures wurden im selben Commit ergänzt.
+
+### ADR-0047: Vollständige, verlustfreie Drei-Ebenen-Entscheidungsprovenienz
+
+- **Status:** Entschieden
+- **Datum:** 2026-07-26
+- **Kontext:** ADR-0043 trennte `primary_decision` (Erstentscheidung) strukturell von der effektiven
+  `decision`, aber `decision_reason` und `duplicate_of` existierten weiterhin nur einmal — für die
+  effektive Ebene. Wich die Endentscheidung von der Erstentscheidung ab (z. B. eine Adjudikation
+  überstimmt einen ursprünglichen `exclude`-Entscheid mit Begründung `wrong_substance`), ging die
+  Begründung/der Duplikatverweis der Erstentscheidung vollständig verloren. Dasselbe Problem bestand
+  für die Begründung der Zweitprüfung selbst, sobald sie von der Erst- oder Endentscheidung abwich.
+- **Entscheidung:** Jeder `decision_history`-Eintrag und jedes `second_review`-Objekt speichern jetzt
+  drei vollständig unabhängige, verlustfreie Ebenen:
+    - `primary_decision_reason`/`primary_duplicate_of` (Erstentscheidung, `decision_history`-Eintrag)
+    - `second_review.reviewer_decision_reason`/`second_review.reviewer_duplicate_of` (Zweitprüfung)
+    - `decision_reason`/`duplicate_of` (effektive/adjudizierte Entscheidung, unverändert seit ADR-0043)
+
+  Für jede der drei Ebenen gilt schema-seitig dieselbe bedingte Regel wie bisher nur für die effektive
+  Ebene: der jeweilige Grund ist Pflicht (nicht `null`) genau dann, wenn die zugehörige Entscheidung
+  `exclude` ist, und der jeweilige Duplikatverweis ist Pflicht (nicht `null`) genau dann, wenn die
+  zugehörige Entscheidung `duplicate` ist — je unabhängig für Erst-, Zweit- und Endentscheidung. Die
+  neuen `_duplicate_of`-Felder werden ausschließlich schema-seitig auf Formatgültigkeit geprüft (Pattern),
+  nicht referenziell gegen existierende `screening_record`-IDs — anders als das bestehende, effektive
+  `duplicate_of` (siehe Grenzen unten).
+- **Alternativen:**
+    1. *Alternative, umbenannte Objektstruktur (`primary_review`/`second_review`/`effective_decision`
+       als drei parallele Unterobjekte)* — im Reviewauftrag als langfristig sauberer bezeichnet, aber
+       verworfen für diese Runde: hätte `primary_decision`/`decision` (ADR-0043, bereits durch mehrere
+       Testrunden gehärtet) umbenennen und alle bestehenden Konsumenten/Fixtures migrieren müssen, ohne
+       einen zusätzlichen fachlichen Nutzen gegenüber der additiven Lösung zu bieten.
+    2. *Nur eine gemeinsame `decision_reason`/`duplicate_of` für alle drei Ebenen beibehalten, Verlust
+       bei Abweichung in Kauf nehmen* — verworfen: genau das ist die im Reviewauftrag benannte Lücke.
+    3. *Additive, gleich benannte Felder je Ebene (`primary_decision_reason`/`primary_duplicate_of`,
+       `reviewer_decision_reason`/`reviewer_duplicate_of`), bestehende Feldnamen unverändert* —
+       **gewählt**.
+- **Konsequenzen:** Ein überstimmter Erstentscheid (z. B. `primary_decision: exclude` mit Grund
+  `wrong_substance`, später durch Adjudikation zu `include` überstimmt) bleibt jetzt vollständig
+  nachvollziehbar, ebenso ein unaufgelöster Duplikat-Widerspruch (`primary_decision: duplicate` mit
+  `primary_duplicate_of`, während die Zweitprüfung widerspricht und die effektive Entscheidung
+  `uncertain` bleibt). **Bekannte Grenze:** `primary_duplicate_of`/`reviewer_duplicate_of` werden — anders
+  als das effektive `duplicate_of` — nicht referenziell gegen existierende `screening_record`-IDs oder auf
+  Zyklen geprüft; dies wurde bewusst nicht ergänzt, um den Umfang dieser Runde nicht über die im
+  Reviewauftrag benannte Lücke hinaus auszudehnen (siehe Scientific Research Protocol, Abschnitt 34).
+- **Migrationsstrategie:** Alle bestehenden `screening_record`-Dateien (Produktivbeispiele,
+  Test-Fixtures) wurden automatisiert migriert: `primary_decision_reason`/`primary_duplicate_of`
+  wurden aus dem jeweiligen Eintrags-`decision_reason`/`duplicate_of` übernommen (semantisch neutral
+  für alle Fälle ohne Konflikt zwischen Erst- und Endentscheidung), `reviewer_decision_reason`/
+  `reviewer_duplicate_of` analog aus dem umschließenden Objekt. Für Produktivdaten nicht zutreffend
+  (noch keine realen Screening-Datensätze).
+
+### ADR-0048: Objektinterne zeitliche Vollständigkeit (`created_at`/`updated_at` gegen jedes dokumentierte Ereignis)
+
+- **Status:** Entschieden
+- **Datum:** 2026-07-26
+- **Kontext:** ADR-0044 prüft die zeitliche Provenienzkette OBJEKTÜBERGREIFEND (Screening →
+  Extraktion → Verifikation → Promotion), und `check_misc_consistency` prüfte bereits die einfache
+  Reihenfolge `created_at <= updated_at` je Objekt. Es fehlte jedoch eine Prüfung, dass jedes von
+  einem Objekt SELBST dokumentierte Ereignisdatum (z. B. `decision_history[].decided_at`,
+  `second_review.reviewed_at`, `adjudication.resolved_at`, `extracted_at`, `verified_at`,
+  `review.last_reviewed_at`, das Datum aus `executed_at`) tatsächlich innerhalb von dessen eigenem
+  `[created_at, updated_at]`-Intervall liegt. Zwei bereits akzeptierte Positiv-Fixtures
+  (`valid_stage_decision_matrix`, `valid_full_temporal_chain`) hatten `updated_at` VOR einer
+  Entscheidung/Zweitprüfung/Adjudikation, die im selben Datensatz dokumentiert war — ein Datensatz kann
+  nicht vor einem in ihm dokumentierten Ereignis zuletzt aktualisiert worden sein.
+- **Entscheidung:** Eine neue Prüfung `tools/validate_research.py::check_object_temporal_bounds`
+  erzwingt für jede der fünf Research-Objektarten `created_at <= Ereignisdatum <= updated_at`,
+  unabhängig für jedes gespeicherte Ereignis:
+    - `screening_record`: für JEDEN `decision_history`-Eintrag `decided_at`, und wo vorhanden
+      `second_review.reviewed_at` sowie `second_review.adjudication.resolved_at`.
+    - `extraction_record`: `extracted_at`, und wo gesetzt `verified_at`.
+    - `promotion_record`: wo nicht `null`, `review.last_reviewed_at`.
+    - `research_search_run`: das Kalenderdatum aus `executed_at` (Zeitanteil wird für den Vergleich
+      abgeschnitten, da `created_at`/`updated_at` reine Kalenderdaten sind).
+    - `research_protocol`: wo nicht `null`, `review.last_reviewed_at`.
+
+  Konvention (einheitlich für alle fünf Objektarten, siehe Scientific Research Protocol, Abschnitt 9d):
+  `created_at` ist der Zeitpunkt, zu dem der Recherche-Datensatz (der Fall/Vorgang) angelegt wurde —
+  typischerweise VOR den darin dokumentierten Ereignissen (ein Screening-Datensatz wird angelegt,
+  sobald ein Kandidat gefunden wurde; die eigentliche Entscheidung folgt später). `updated_at` ist der
+  Zeitpunkt der letzten Bearbeitung und muss daher mindestens so aktuell sein wie jedes im Datensatz
+  gespeicherte Ereignisdatum. Diese Konvention gilt unverändert auch für `research_search_run` — kein
+  objektspezifisches, abweichendes Datumsmodell.
+- **Alternativen:**
+    1. *Keine zusätzliche Prüfung, da `check_temporal_chain` (ADR-0044) die fachlich wichtigste Kette
+       bereits objektübergreifend absichert* — verworfen: die beiden betroffenen Positiv-Fixtures
+       zeigen konkret, dass ein Objekt intern inkonsistent sein kann, ohne dass die objektübergreifende
+       Kette das bemerkt (die Kettenprüfung vergleicht nur Objektgrenzen, nicht `updated_at` gegen
+       Ereignisse INNERHALB desselben Objekts an jeder Stelle).
+    2. *Nur `updated_at` gegen das jeweils letzte/aktuellste Ereignis prüfen, nicht gegen jeden
+       einzelnen `decision_history`-Eintrag* — verworfen: hätte eine inkonsistente Datumsangabe bei
+       einem NICHT-terminalen Historieneintrag übersehen.
+    3. *Einheitliche, objektartenübergreifende `created_at <= Ereignis <= updated_at`-Prüfung für alle
+       fünf Research-Objektarten, mit explizit dokumentierter `created_at`-Konvention* — **gewählt**.
+- **Konsequenzen:** Die beiden betroffenen Positiv-Fixtures wurden korrigiert (`updated_at`
+  entsprechend angehoben). Ein Objekt mit einem `updated_at` vor einem selbst dokumentierten Ereignis
+  wird jetzt zuverlässig zurückgewiesen, mit klarer Fehlermeldung je betroffenem Feldpaar.
+- **Migrationsstrategie:** Nicht zutreffend für Produktivdaten. Betroffene Test-Fixtures wurden im
+  selben Commit korrigiert.
+
+### ADR-0049: `rejected`-Promotions erfordern dieselbe Mindest-Audit-Spur wie `approved_for_creation`/`promoted`
+
+- **Status:** Entschieden
+- **Datum:** 2026-07-26
+- **Kontext:** `research_promotion_record.schema.json` erzwang eine vollständige Audit-Spur
+  (`review.last_reviewed_at`, mindestens ein Reviewer, nicht-leere `decision_rationale`) bislang nur
+  für `promotion_status: approved_for_creation`/`promoted`. Ein `promotion_status: rejected` konnte
+  ohne Reviewdatum, Reviewer oder Begründung existieren — eine Ablehnung ist jedoch eine ebenso
+  konsequenzreiche wissenschaftliche/redaktionelle Entscheidung wie eine Freigabe und muss ebenso
+  nachvollziehbar sein.
+- **Entscheidung:** Die bestehende schema-seitige `allOf`-Regel (bislang nur für
+  `approved_for_creation`/`promoted`) gilt jetzt symmetrisch auch für `rejected`: `review.
+  last_reviewed_at` (String, nicht `null`), `review.reviewers` (mindestens ein Eintrag) und
+  `decision_rationale` (nicht-leerer String) sind für jede der drei ENDGÜLTIGEN Promotion-Entscheidungen
+  Pflicht. `proposed`/`in_review`/`withdrawn` sind davon unverändert ausgenommen, da dort noch keine
+  endgültige Entscheidung getroffen wurde. Zusätzlich prüft `tools/validate_research.py::
+  check_promotion_records` die protokollabhängige Mindestanzahl unterschiedlicher Reviewer
+  (`claim_promotion_policy.requires_second_review`, ADR-0041) jetzt ebenfalls symmetrisch für
+  `approved_for_creation`/`promoted`/`rejected` statt nur für die ersten beiden — eine Ablehnung bei
+  aktivierter Zweitprüfpflicht benötigt also ebenfalls mindestens zwei unterschiedliche Reviewer-Kürzel.
+  `canonical_claim_id: null` bei `rejected` bleibt unverändert (bereits seit Runde 1 erzwungen).
+- **Alternativen:**
+    1. *`rejected` benötigt bewusst nur einen Reviewer, auch wenn `requires_second_review: true` gilt*
+       — verworfen: eine Ablehnung kann ebenso strittig/folgenreich sein wie eine Freigabe (ein zu
+       Unrecht abgelehnter Kandidatenclaim geht ohne Zweitmeinung verloren); der Reviewauftrag verlangt
+       ausdrücklich eine bewusste, dokumentierte Entscheidung statt einer stillschweigenden Ausnahme.
+    2. *Eigene, von `approved_for_creation`/`promoted` unabhängige (schwächere) Mindestanforderung für
+       `rejected`* — verworfen: keine fachliche Begründung, warum eine Ablehnung eine geringere
+       Nachvollziehbarkeitspflicht haben sollte als eine Freigabe.
+    3. *Symmetrische Mindest-Audit-Spur (Reviewdatum, Reviewer, Begründung) UND symmetrische
+       Zweitprüfpflicht für alle drei endgültigen Promotion-Zustände* — **gewählt**.
+- **Konsequenzen:** Ein `rejected`-Datensatz ohne Reviewer/Reviewdatum/Begründung wird jetzt
+  schema-seitig zurückgewiesen; bei aktivierter Zweitprüfpflicht wird ein einzelner Reviewer bei
+  `rejected` validator-seitig zurückgewiesen (dieselbe Fehlermeldung wie bei
+  `approved_for_creation`/`promoted`, siehe ADR-0041). Ein bereits bestehendes Produktivbeispiel
+  (`research/examples/promotions/promotion-record-b0000000-…-000000000001.yaml`, `rejected` mit nur
+  einem Reviewer bei aktivierter Zweitprüfpflicht) wurde im selben Commit auf zwei Reviewer erweitert.
+- **Migrationsstrategie:** Ein Produktivbeispiel wurde angepasst (siehe oben; `research/examples/**`
+  ist kein kanonisches Wissen, sondern illustratives Beispielmaterial). Betroffene Test-Fixtures wurden
+  im selben Commit korrigiert/ergänzt.
+
+### ADR-0050: Stabile Research-Actor-ID-Syntax (`research_actor_id`) ohne Actor-Registry
+
+- **Status:** Entschieden
+- **Datum:** 2026-07-26
+- **Kontext:** Research-Akteursfelder (`screened_by`, `decided_by`, `second_review.reviewed_by`,
+  `adjudication.resolved_by`, `extracted_by`, `verified_by`, `promotion.review.reviewers[]`,
+  `protocol.review.reviewers[]`) verwendeten bislang uneinheitliche, schwache Constraints (`type:
+  string, minLength: 1` bzw., für `promotion.review.reviewers[]` seit ADR-0045, ein reines
+  Nicht-Leerzeichen-Pattern). Ein Kürzel mit führendem/nachgestelltem Leerzeichen oder abweichender
+  Groß-/Kleinschreibung (`"reviewer-1"` vs. `" reviewer-1"` vs. `"Reviewer-1"`) hätte dieselbe Person
+  syntaktisch als zwei unterschiedliche Kürzel erscheinen lassen können oder umgekehrt eine
+  Unabhängigkeitsprüfung (z. B. `second_review.reviewed_by != decided_by`, ADR-0039) durch eine
+  triviale Leerzeichenvariante unterlaufen können.
+- **Entscheidung:** `common.schema.json` definiert eine neue, wiederverwendbare Definition
+  `research_actor_id` (`^[a-z0-9][a-z0-9._-]*$` — beginnt mit einem alphanumerischen Kleinbuchstaben,
+  danach nur Kleinbuchstaben, Ziffern, Punkt, Unterstrich, Bindestrich; kein Leerzeichen, keine
+  Großschreibung). Angewendet auf alle acht oben genannten Felder in
+  `research_screening_record.schema.json`, `research_extraction_record.schema.json`,
+  `research_promotion_record.schema.json` und `research_protocol.schema.json` (jeweils inkl.
+  `verified_by`, das weiterhin `null` sein darf, solange keine Verifikation stattgefunden hat). Die
+  gemeinsame `common.schema.json#/$defs/review_block` (verwendet von Entitäten, Quellen, Claims,
+  Protokollen außerhalb der Research-Ebene, sowie von `research_search_run.review`) bleibt bewusst
+  unangetastet (siehe bereits ADR-0045) — `research_search_run.review.reviewers`/`executed_by` sind
+  nicht Teil dieser Härtung, da im Reviewauftrag nicht benannt.
+- **Grenze (ausdrücklich dokumentiert):** Die Syntax stellt nur sicher, dass zwei unterschiedliche
+  Kürzel STABIL unterscheidbar sind. Sie beweist NICHT, dass zwei unterschiedliche Kürzel zwei
+  unterschiedliche MENSCHLICHE Personen repräsentieren — das bleibt wie bereits in ADR-0041
+  festgehalten organisatorisch, nicht maschinenlesbar kontrolliert (keine Actor-Registry, weiterhin
+  Lösung B).
+- **Alternativen:**
+    1. *Actor-Registry mit vordefinierten, verifizierten Kürzeln einführen* — verworfen: bereits in
+       ADR-0041 explizit gegen eine Actor-Registry entschieden (Lösung B); dieser Reviewauftrag
+       bestätigt ausdrücklich, dass diese Entscheidung bestehen bleibt.
+    2. *Nur validator-seitiges Trimmen/Normalisieren der Kürzel vor dem Vergleich, Schema unverändert*
+       — verworfen: hätte das Problem verschleiert statt es sichtbar zu machen — ein Kürzel mit
+       Leerzeichen wäre weiterhin in der YAML-Datei sichtbar uneinheitlich geblieben.
+    3. *Restriktives, dokumentiertes Format schema-seitig erzwingen (keine Registry, keine
+       Normalisierung), einheitlich über alle Research-Actor-Felder* — **gewählt**.
+- **Konsequenzen:** Kürzel mit Leerzeichen oder Großschreibung werden jetzt bereits beim Schema-Check
+  abgelehnt. Alle bestehenden Kürzel in Produktivbeispielen und Test-Fixtures (`reviewer-1` …
+  `reviewer-4`) erfüllten das neue Muster bereits ohne Änderung.
+- **Migrationsstrategie:** Nicht zutreffend — keine bestehenden Werte mussten angepasst werden.
+
+### ADR-0051: `screening_policy.dual_reviewer_stages` muss Teilmenge von `screening_policy.stages` sein
+
+- **Status:** Entschieden
+- **Datum:** 2026-07-26
+- **Kontext:** Ein Protokoll konnte bislang eine Stufe in `screening_policy.dual_reviewer_stages`
+  eintragen, die gar nicht in `screening_policy.stages` konfiguriert war — die Zweitprüferpflicht
+  hätte damit auf eine Stufe verwiesen, die für dieses Protokoll überhaupt nicht durchlaufen wird.
+- **Entscheidung:** `tools/validate_research.py::check_misc_consistency` prüft jetzt zusätzlich, dass
+  jede Stufe in `screening_policy.dual_reviewer_stages` auch in `screening_policy.stages` enthalten
+  ist. `deduplication` kann dort ohnehin nicht mehr eingetragen werden (schema-seitig durch ADR-0046
+  ausgeschlossen); diese Prüfung sichert zusätzlich, dass die verbleibenden Werte
+  (`title_abstract`/`full_text`/`final`) tatsächlich zu den für dieses Protokoll konfigurierten
+  Stufen gehören.
+- **Alternativen:**
+    1. *Keine zusätzliche Prüfung, da eine nicht konfigurierte Stufe ohnehin nie einen
+       `decision_history`-Eintrag erhält und die Regel damit praktisch folgenlos bliebe* — verworfen:
+       ein widersprüchlich konfiguriertes Protokoll ist redaktionell irreführend, unabhängig davon, ob
+       der Widerspruch je praktisch relevant wird — der Reviewauftrag verlangt ausdrücklich, dies als
+       Validierungsfehler zu behandeln.
+    2. *Teilmengenbeziehung schema-seitig statt validator-seitig erzwingen* — verworfen: JSON Schema
+       kann eine Teilmengenbeziehung zwischen zwei Arrays desselben Objekts nicht ohne unverhältnismäßig
+       komplexe `contains`/`not`-Konstruktionen ausdrücken; eine einfache validator-seitige Prüfung ist
+       hier die klarere Lösung (analog zu vielen anderen Cross-Field-Prüfungen in diesem Validator).
+    3. *Validator-seitige Teilmengenprüfung* — **gewählt**.
+- **Konsequenzen:** Ein Protokoll mit einer nicht konfigurierten Zweitprüferstufe wird jetzt
+  zuverlässig zurückgewiesen.
+- **Migrationsstrategie:** Nicht zutreffend — alle bestehenden Protokolle (Produktivbeispiele,
+  Test-Fixtures) erfüllten die Teilmengenbeziehung bereits.
 
 ## Format für neue Einträge
 

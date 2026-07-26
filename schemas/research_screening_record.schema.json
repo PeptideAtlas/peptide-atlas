@@ -8,20 +8,31 @@
     "second_review_block": {
       "type": ["object", "null"],
       "properties": {
-        "reviewed_by": { "type": "string", "minLength": 1 },
+        "reviewed_by": { "$ref": "common.schema.json#/$defs/research_actor_id" },
         "reviewed_at": { "$ref": "common.schema.json#/$defs/date" },
         "decision_confirmed": { "type": "boolean" },
         "reviewer_decision": {
           "$ref": "common.schema.json#/$defs/screening_decision",
           "description": "Die eigenstaendige, explizite Entscheidung der Zweitpruefung -- Pflichtfeld (nicht null) sobald second_review ueberhaupt vorhanden ist. decision_confirmed ist eine vom Validator geprueft abgeleitete Projektion von (reviewer_decision == primary_decision), kein frei editierbares Zusatzfeld -- NICHT gegen die effektive decision verglichen (siehe ADR-0043)."
         },
+        "reviewer_decision_reason": {
+          "anyOf": [
+            { "$ref": "common.schema.json#/$defs/exclusion_reason" },
+            { "type": "null" }
+          ],
+          "description": "Eigenstaendige Begruendung der Zweitpruefung -- Pflicht (nicht null) wenn reviewer_decision 'exclude' ist, muss null sein sonst. Getrennt von primary_decision_reason und decision_reason, damit die Begruendung der Zweitpruefung nicht verloren geht, wenn sie von der Erst- oder Endentscheidung abweicht (siehe ADR-0046)."
+        },
+        "reviewer_duplicate_of": {
+          "type": ["string", "null"],
+          "pattern": "^screening-record-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$",
+          "description": "Der von der Zweitpruefung erfasste Duplikatverweis -- Pflicht (nicht null) wenn reviewer_decision 'duplicate' ist, muss null sein sonst. Nur schema-seitig auf Formatgueltigkeit geprueft, nicht referenziell (siehe ADR-0046)."
+        },
         "adjudication": {
           "type": ["object", "null"],
-          "description": "Nur zulaessig, wenn reviewer_decision von primary_decision abweicht (decision_confirmed: false). Pflicht (nicht null), wenn dieser Widerspruch besteht UND der Datensatz nicht (mehr) auf decision: uncertain steht -- siehe Scientific Research Protocol, Abschnitt 27a/9c.",
+          "description": "Nur zulaessig, wenn reviewer_decision von primary_decision abweicht (decision_confirmed: false). Pflicht (nicht null), wenn dieser Widerspruch besteht UND der Datensatz nicht (mehr) auf decision: uncertain steht -- siehe Scientific Research Protocol, Abschnitt 27a/9c. Fuer stage 'deduplication' strukturell nie zulaessig (vom Validator geprueft, siehe ADR-0046) -- ein Dedup-Widerspruch bleibt immer 'uncertain'.",
           "properties": {
             "resolved_by": {
-              "type": "string",
-              "minLength": 1,
+              "$ref": "common.schema.json#/$defs/research_actor_id",
               "description": "Dritte Person, die den Widerspruch aufloest. Darf weder den Erstpruefer noch second_review.reviewed_by entsprechen (vom Validator geprueft)."
             },
             "resolved_at": { "$ref": "common.schema.json#/$defs/date" },
@@ -38,7 +49,50 @@
         "notes": { "type": ["string", "null"] }
       },
       "additionalProperties": false,
-      "required": ["reviewed_by", "reviewed_at", "decision_confirmed", "reviewer_decision", "adjudication", "notes"]
+      "required": [
+        "reviewed_by", "reviewed_at", "decision_confirmed", "reviewer_decision", "reviewer_decision_reason",
+        "reviewer_duplicate_of", "adjudication", "notes"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": { "reviewer_decision": { "const": "exclude" } },
+            "required": ["reviewer_decision"]
+          },
+          "then": {
+            "properties": { "reviewer_decision_reason": { "$ref": "common.schema.json#/$defs/exclusion_reason" } },
+            "required": ["reviewer_decision_reason"]
+          }
+        },
+        {
+          "if": {
+            "properties": { "reviewer_decision": { "not": { "const": "exclude" } } },
+            "required": ["reviewer_decision"]
+          },
+          "then": {
+            "properties": { "reviewer_decision_reason": { "type": "null" } }
+          }
+        },
+        {
+          "if": {
+            "properties": { "reviewer_decision": { "const": "duplicate" } },
+            "required": ["reviewer_decision"]
+          },
+          "then": {
+            "properties": { "reviewer_duplicate_of": { "type": "string", "minLength": 1 } },
+            "required": ["reviewer_duplicate_of"]
+          }
+        },
+        {
+          "if": {
+            "properties": { "reviewer_decision": { "not": { "const": "duplicate" } } },
+            "required": ["reviewer_decision"]
+          },
+          "then": {
+            "properties": { "reviewer_duplicate_of": { "type": "null" } }
+          }
+        }
+      ]
     }
   },
   "properties": {
@@ -89,7 +143,7 @@
       "description": "Pflicht (nicht null) wenn decision 'duplicate' ist. Darf nicht auf den eigenen Datensatz zeigen (Selbstreferenz) und keine Zyklen bilden -- vom Validator geprueft."
     },
     "full_text_status": { "$ref": "common.schema.json#/$defs/full_text_status" },
-    "screened_by": { "type": "string", "minLength": 1 },
+    "screened_by": { "$ref": "common.schema.json#/$defs/research_actor_id" },
     "screened_at": { "$ref": "common.schema.json#/$defs/date" },
     "second_review": { "$ref": "#/$defs/second_review_block" },
     "decision_history": {
@@ -104,6 +158,13 @@
           "primary_decision": {
             "$ref": "common.schema.json#/$defs/screening_decision",
             "description": "Die Entscheidung des Erstpruefers (decided_by/decided_at) an dieser Stufe -- bleibt erhalten, auch wenn eine Zweitpruefung/Adjudikation die effektive decision spaeter davon abweichen laesst oder decision: uncertain setzt (siehe ADR-0043)."
+          },
+          "primary_decision_reason": {
+            "anyOf": [
+              { "$ref": "common.schema.json#/$defs/exclusion_reason" },
+              { "type": "null" }
+            ],
+            "description": "Begruendung der Erstentscheidung -- Pflicht (nicht null) wenn primary_decision 'exclude' ist, muss null sein sonst. Bleibt erhalten, auch wenn die effektive decision_reason spaeter davon abweicht (z. B. nach Adjudikation), siehe ADR-0046."
           },
           "decision": {
             "$ref": "common.schema.json#/$defs/screening_decision",
@@ -120,7 +181,12 @@
             "pattern": "^screening-record-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$",
             "description": "Der zum Zeitpunkt dieses Eintrags erfasste Hauptdatensatz-Verweis -- Pflicht (nicht null), wenn decision 'duplicate' ist. Geht bei spaeteren Historieneintraegen nicht verloren, da jeder Eintrag ihn eigenstaendig traegt."
           },
-          "decided_by": { "type": "string", "minLength": 1 },
+          "primary_duplicate_of": {
+            "type": ["string", "null"],
+            "pattern": "^screening-record-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$",
+            "description": "Der von der Erstentscheidung erfasste Duplikatverweis -- Pflicht (nicht null) wenn primary_decision 'duplicate' ist, muss null sein sonst. Bleibt erhalten, auch wenn die effektive duplicate_of spaeter davon abweicht, siehe ADR-0046."
+          },
+          "decided_by": { "$ref": "common.schema.json#/$defs/research_actor_id" },
           "decided_at": { "$ref": "common.schema.json#/$defs/date" },
           "full_text_status": {
             "$ref": "common.schema.json#/$defs/full_text_status",
@@ -130,8 +196,8 @@
         },
         "additionalProperties": false,
         "required": [
-          "sequence", "stage", "primary_decision", "decision", "decision_reason", "duplicate_of",
-          "decided_by", "decided_at", "full_text_status", "second_review"
+          "sequence", "stage", "primary_decision", "primary_decision_reason", "decision", "decision_reason",
+          "duplicate_of", "primary_duplicate_of", "decided_by", "decided_at", "full_text_status", "second_review"
         ],
         "allOf": [
           {
@@ -170,6 +236,44 @@
             },
             "then": {
               "properties": { "duplicate_of": { "type": "null" } }
+            }
+          },
+          {
+            "if": {
+              "properties": { "primary_decision": { "const": "exclude" } },
+              "required": ["primary_decision"]
+            },
+            "then": {
+              "properties": { "primary_decision_reason": { "$ref": "common.schema.json#/$defs/exclusion_reason" } },
+              "required": ["primary_decision_reason"]
+            }
+          },
+          {
+            "if": {
+              "properties": { "primary_decision": { "not": { "const": "exclude" } } },
+              "required": ["primary_decision"]
+            },
+            "then": {
+              "properties": { "primary_decision_reason": { "type": "null" } }
+            }
+          },
+          {
+            "if": {
+              "properties": { "primary_decision": { "const": "duplicate" } },
+              "required": ["primary_decision"]
+            },
+            "then": {
+              "properties": { "primary_duplicate_of": { "type": "string", "minLength": 1 } },
+              "required": ["primary_duplicate_of"]
+            }
+          },
+          {
+            "if": {
+              "properties": { "primary_decision": { "not": { "const": "duplicate" } } },
+              "required": ["primary_decision"]
+            },
+            "then": {
+              "properties": { "primary_duplicate_of": { "type": "null" } }
             }
           }
         ]

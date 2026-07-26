@@ -60,22 +60,29 @@ die kanonische Datenebene (`canonical_source_id` muss unter `data/sources/**`, `
 `data/entities/studies/**`, `canonical_claim_id` unter `data/claims/**` existieren, sofern gesetzt) sowie
 Protokollkonsistenz (Version/ID, Freigabestatus, ein Suchlauf darf nur eine unter
 `planned_information_sources[]` freigegebene Datenbank verwenden, protokollübergreifende Referenzen inkl. der
-gesamten `duplicate_of`-Kette), echte Identifier-Deduplizierung, den vollständigen Screening-Workflow (JEDER
-`decision_history`-Eintrag wird geprüft, nicht nur der aktuelle Zustand: Stage-/Decision-Matrix, strukturell
-getrennte `primary_decision`/effektive `decision`, Dual-Reviewer-Pflicht, wechselseitig konsistente
+gesamten `duplicate_of`-Kette, `dual_reviewer_stages` als Teilmenge von `stages`), echte Identifier-
+Deduplizierung, den vollständigen Screening-Workflow (JEDER `decision_history`-Eintrag wird geprüft, nicht nur
+der aktuelle Zustand: Stage-/Decision-Matrix gegen alle drei Entscheidungsebenen — `primary_decision`,
+`second_review.reviewer_decision`, effektive `decision` —, strukturell getrennte, verlustfreie Drei-Ebenen-
+Provenienz inkl. eigenständiger Gründe/Duplikatverweise je Ebene, Dual-Reviewer-Pflicht (nicht für
+`deduplication`, das strukturell keine Adjudikation unterstützt), wechselseitig konsistente
 Zweitentscheidung/Adjudikation, Volltextregeln, terminale Extraktionsfähigkeit), die zeitliche Provenienzkette
-objektübergreifend (Screening → Extraktion → Verifikation → Promotion) und die Claim-Promotion-Kette (inkl.
-`claim_promotion_policy.requires_second_review`). `check_research_immutability.py` prüft zusätzlich, dass
-bereits committete `search_run`-Dateien nicht rückwirkend verändert werden (nur
-`status`/`updated_at`/`review`/`notes` dürfen sich ändern). Alle drei Validatoren laufen in CI (siehe
-`.github/workflows/ci.yml`).
+sowohl objektübergreifend (Screening → Extraktion → Verifikation → Promotion) als auch objektintern (jedes von
+einem Objekt selbst dokumentierte Ereignisdatum liegt innerhalb von dessen eigenem
+`[created_at, updated_at]`) und die Claim-Promotion-Kette (inkl. `claim_promotion_policy.
+requires_second_review`, symmetrisch für `approved_for_creation`/`promoted`/`rejected`).
+`check_research_immutability.py` prüft zusätzlich, dass bereits committete `search_run`-Dateien nicht
+rückwirkend verändert werden (nur `status`/`updated_at`/`review`/`notes` dürfen sich ändern). Alle drei
+Validatoren laufen in CI (siehe `.github/workflows/ci.yml`).
 
 **Was validiert wird, im Klartext:** JSON-Schema-Konformität und die oben genannten Cross-Referenz-/
 Workflow-Regeln sind **Validator-seitig erzwungen** (Pull Requests mit Verstößen werden von der CI blockiert).
 Die Unveränderlichkeit von Suchläufen ist **CI-seitig geprüft**, aber nur soweit der Git-Vergleichs-Ref
-auflösbar ist (siehe `tools/check_research_immutability.py`, keine Branch-Protection-Garantie). Ob ein
-Reviewer-Kürzel tatsächlich eine andere *menschliche* Person bezeichnet, ist **nicht technisch überprüfbar**
-und bleibt organisatorisch/durch Repository-Zugriffskontrolle abgesichert (siehe „Bekannte Grenzen" im
+auflösbar ist (siehe `tools/check_research_immutability.py`, keine Branch-Protection-Garantie). Alle
+Research-Akteursfelder folgen einer restriktiven `research_actor_id`-Kürzel-Syntax (schema-seitig erzwungen),
+die stabile, unterscheidbare Kürzel sicherstellt — aber ob ein Reviewer-Kürzel tatsächlich eine andere
+*menschliche* Person bezeichnet, ist **nicht technisch überprüfbar** und bleibt organisatorisch/durch
+Repository-Zugriffskontrolle abgesichert (siehe „Bekannte Grenzen" im
 [Scientific Research Protocol](../docs/project/Scientific_Research_Protocol.md), Abschnitt 34).
 
 ## Kurzfassung des Workflows

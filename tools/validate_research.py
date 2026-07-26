@@ -20,9 +20,14 @@ Prueft (Ueberblick, siehe die einzelnen check_*-Funktionen fuer Details):
 - Deduplizierung: echte normalisierte DOI/PMID/PMCID/NCT-ID/ISBN-Kollisionserkennung.
 - Screening-Workflow: JEDER decision_history-Eintrag (nicht nur der aktuelle Zustand) wird
   gegen dieselben Invarianten geprueft -- Stufe im Protokoll vorgesehen, Stage-/Decision-Matrix
-  (ADR-0043), Dual-Reviewer-Pflicht, Reviewer-/Adjudikator-Unabhaengigkeit, konsistente
-  primary_decision/reviewer_decision/decision_confirmed/adjudication-Semantik (ADR-0043),
-  Volltextvollstaendigkeit, Datumsreihenfolge (inkl. gegen JEDEN referenzierten Suchlauf).
+  (ADR-0043) gegen ALLE DREI Entscheidungsebenen (primary_decision, second_review.reviewer_decision,
+  effektive decision -- ADR-0046), Dual-Reviewer-Pflicht, Reviewer-/Adjudikator-Unabhaengigkeit,
+  konsistente primary_decision/reviewer_decision/decision_confirmed/adjudication-Semantik (ADR-0043),
+  vollstaendige, verlustfreie Drei-Ebenen-Entscheidungsprovenienz inkl. eigenstaendiger Gruende/
+  Duplikatverweise je Ebene (primary_decision_reason/primary_duplicate_of,
+  second_review.reviewer_decision_reason/reviewer_duplicate_of -- ADR-0046), Volltextvollstaendigkeit,
+  Datumsreihenfolge (inkl. gegen JEDEN referenzierten Suchlauf). deduplication unterstuetzt
+  strukturell KEINE Adjudikation (ADR-0046) -- ein Dedup-Widerspruch bleibt immer 'uncertain'.
   Extraktion ist nur fuer einen screening_record zulaessig, dessen Einschluss terminal
   (decision_stage: final), vollstaendig volltextgeprueft und frei von ungeloesten
   Zweitpruefungskonflikten ist.
@@ -30,11 +35,22 @@ Prueft (Ueberblick, siehe die einzelnen check_*-Funktionen fuer Details):
   extraction_status: verified (siehe ADR-0040) -- keine protokollabhaengige Ausnahme mehr.
 - Zeitliche Provenienzkette (ADR-0044): terminale Screening-Entscheidung/-Zweitpruefung/
   -Adjudikation <= extracted_at <= verified_at <= promotion.created_at/review.last_reviewed_at
-  <= promotion.updated_at.
+  <= promotion.updated_at. Zusaetzlich OBJEKTINTERN (ADR-0046): jedes von einem Research-Objekt
+  selbst dokumentierte Ereignisdatum liegt innerhalb von dessen eigenem [created_at, updated_at].
 - Claim-Promotion: vollstaendige Kettenpruefung inkl. claim_promotion_policy.requires_second_review
-  (mindestens zwei unterschiedliche, nicht-leere Reviewer bei approved_for_creation/promoted;
-  Eindeutigkeit/Nicht-Leerheit selbst ist schema-seitig erzwungen, siehe
-  research_promotion_record.schema.json).
+  (mindestens zwei unterschiedliche, nicht-leere Reviewer bei approved_for_creation/promoted/
+  rejected -- symmetrisch fuer jede endgueltige Entscheidung, ADR-0046; Eindeutigkeit/Nicht-Leerheit
+  selbst ist schema-seitig erzwungen, siehe research_promotion_record.schema.json). rejected
+  erfordert zusaetzlich dieselbe Mindest-Audit-Spur (Reviewdatum, Reviewer, Begruendung) wie
+  approved_for_creation/promoted (schema-seitig erzwungen, ADR-0046).
+- Protokollkonsistenz (ADR-0046): screening_policy.dual_reviewer_stages muss eine Teilmenge von
+  screening_policy.stages sein; 'deduplication' ist dort bereits schema-seitig ausgeschlossen.
+- Stabile Akteurskuerzel (ADR-0046): alle Research-Actor-Felder (screened_by, decided_by,
+  second_review.reviewed_by, adjudication.resolved_by, extracted_by, verified_by,
+  promotion.review.reviewers[], protocol.review.reviewers[]) folgen einem restriktiven,
+  leerzeichen-/grossschreibungsfreien Muster (schema-seitig erzwungen) -- stellt nur syntaktisch
+  stabile, unterscheidbare Kuerzel sicher, beweist NICHT, dass zwei Kuerzel zwei unterschiedliche
+  MENSCHLICHE Personen sind (organisatorisch kontrolliert, siehe ADR-0041/ADR-0046).
 - Sonstige Konsistenz: Eindeutigkeit, Datumsreihenfolge, sichere export_reference.
 - Dateiebene: keine unerwuenschten Binaerdateien, research/examples/** als eigener Namensraum.
 
@@ -528,6 +544,23 @@ def _check_decision_snapshot(
             )
 
         reviewer_decision = second_review.get("reviewer_decision")
+        if allowed_decisions is not None and reviewer_decision not in allowed_decisions:
+            report.error(
+                file_rel, f"{entry_label}.second_review.reviewer_decision",
+                f"'{reviewer_decision}' is not an allowed decision for stage '{stage}' "
+                f"(allowed: {sorted(allowed_decisions)})",
+            )
+
+        if stage == "deduplication" and second_review.get("adjudication") is not None:
+            report.error(
+                file_rel, f"{entry_label}.second_review.adjudication",
+                "adjudication is not supported for stage 'deduplication' -- adjudication.final_decision is "
+                "restricted to include/exclude, which cannot express a confirmed 'duplicate' outcome and would "
+                "leave the stage's decision matrix only half-supported (see ADR-0046); a deduplication "
+                "conflict must stay 'uncertain' and be resolved by a subsequent screening decision_history "
+                "entry, not by third-party adjudication",
+            )
+
         decision_confirmed = second_review.get("decision_confirmed")
         decisions_agree = reviewer_decision == primary_decision
         if decision_confirmed != decisions_agree:
@@ -840,7 +873,10 @@ def check_promotion_records(
             )
 
         promotion_status = data.get("promotion_status")
-        if promotion_status in ("approved_for_creation", "promoted"):
+        if promotion_status in ("approved_for_creation", "promoted", "rejected"):
+            # Symmetrisch fuer JEDE endgueltige Promotion-Entscheidung geprueft (siehe ADR-0046) --
+            # eine Ablehnung ist wissenschaftlich/redaktionell genauso konsequenzreich wie eine
+            # Freigabe und unterliegt daher derselben Zweitreview-Policy.
             protocol = protocols.get(data.get("protocol_id"))
             requires_second_review = bool(
                 protocol is not None
@@ -848,7 +884,7 @@ def check_promotion_records(
             )
             if requires_second_review:
                 # Eindeutigkeit und Nicht-Leerheit der einzelnen Kuerzel sind bereits
-                # schema-seitig erzwungen (uniqueItems + Nicht-Leerzeichen-Pattern, siehe
+                # schema-seitig erzwungen (uniqueItems + research_actor_id-Pattern, siehe
                 # research_promotion_record.schema.json) -- hier wird nur noch die
                 # protokollabhaengige Mindestanzahl geprueft.
                 reviewers = (data.get("review") or {}).get("reviewers") or []
@@ -923,11 +959,18 @@ def check_misc_consistency(report: Report, objects: dict[str, dict[str, Research
             dedup_policy.get("identifier_priority") or [],
         )
         screening_policy = data.get("screening_policy") or {}
-        _check_unique(report, file_rel, "$.screening_policy.stages", screening_policy.get("stages") or [])
-        _check_unique(
-            report, file_rel, "$.screening_policy.dual_reviewer_stages",
-            screening_policy.get("dual_reviewer_stages") or [],
-        )
+        stages = screening_policy.get("stages") or []
+        dual_reviewer_stages = screening_policy.get("dual_reviewer_stages") or []
+        _check_unique(report, file_rel, "$.screening_policy.stages", stages)
+        _check_unique(report, file_rel, "$.screening_policy.dual_reviewer_stages", dual_reviewer_stages)
+        for stage in dual_reviewer_stages:
+            if stage not in stages:
+                report.error(
+                    file_rel, "$.screening_policy.dual_reviewer_stages",
+                    f"dual reviewer stage '{stage}' is not among screening_policy.stages {sorted(set(stages))} "
+                    "-- a stage must be configured as a screening stage before it can require dual review "
+                    "(see ADR-0046)",
+                )
         _check_unique(
             report, file_rel, "$.planned_information_sources",
             [s.get("database") for s in data.get("planned_information_sources") or []],
@@ -964,6 +1007,96 @@ def check_misc_consistency(report: Report, objects: dict[str, dict[str, Research
         _check_date_order(report, file_rel, "created_at/updated_at", data.get("created_at"), data.get("updated_at"))
 
 
+def check_object_temporal_bounds(report: Report, objects: dict[str, dict[str, ResearchObject]]) -> None:
+    """ADR-0046: jedes von einem Research-Objekt SELBST dokumentierte Ereignisdatum muss innerhalb
+    des Intervalls [created_at, updated_at] DIESES Objekts liegen -- ein Datensatz darf nicht
+    angeblich vor einem Ereignis zuletzt aktualisiert worden sein, das er selbst speichert. Ergaenzt
+    (unabhaengig von) check_misc_consistency (einfache created_at<=updated_at-Reihenfolge) und
+    check_temporal_chain (Kette OBJEKTUEBERGREIFEND, ADR-0044) um die objektINTERNE Vollstaendigkeit
+    dieser Prüfung.
+
+    Konvention (siehe Scientific Research Protocol, Abschnitt 9d): created_at ist der Zeitpunkt, zu
+    dem dieser Recherche-Datensatz (der Fall/Vorgang) angelegt wurde -- typischerweise VOR den darin
+    dokumentierten Ereignissen (ein Screening-Datensatz wird angelegt, sobald ein Kandidat gefunden
+    wurde, die eigentliche Entscheidung folgt spaeter). updated_at ist der Zeitpunkt der letzten
+    Bearbeitung und muss daher mindestens so aktuell sein wie jedes im Datensatz gespeicherte
+    Ereignisdatum. Gilt einheitlich fuer alle fuenf Research-Objektarten -- kein objektspezifisches
+    abweichendes Datumsmodell."""
+    for obj in objects["screening_record"].values():
+        file_rel = relative(obj.path)
+        data = obj.data
+        created_at = data.get("created_at")
+        updated_at = data.get("updated_at")
+        for idx, entry in enumerate(data.get("decision_history") or []):
+            label = f"decision_history[{idx}]"
+            decided_at = entry.get("decided_at")
+            _check_date_order(report, file_rel, f"created_at/{label}.decided_at", created_at, decided_at)
+            _check_date_order(report, file_rel, f"{label}.decided_at/updated_at", decided_at, updated_at)
+
+            second_review = entry.get("second_review") or {}
+            reviewed_at = second_review.get("reviewed_at")
+            if reviewed_at:
+                _check_date_order(
+                    report, file_rel, f"created_at/{label}.second_review.reviewed_at", created_at, reviewed_at
+                )
+                _check_date_order(
+                    report, file_rel, f"{label}.second_review.reviewed_at/updated_at", reviewed_at, updated_at
+                )
+
+            resolved_at = (second_review.get("adjudication") or {}).get("resolved_at")
+            if resolved_at:
+                _check_date_order(
+                    report, file_rel, f"created_at/{label}.second_review.adjudication.resolved_at",
+                    created_at, resolved_at,
+                )
+                _check_date_order(
+                    report, file_rel, f"{label}.second_review.adjudication.resolved_at/updated_at",
+                    resolved_at, updated_at,
+                )
+
+    for obj in objects["extraction_record"].values():
+        file_rel = relative(obj.path)
+        data = obj.data
+        created_at = data.get("created_at")
+        updated_at = data.get("updated_at")
+        extracted_at = data.get("extracted_at")
+        verified_at = data.get("verified_at")
+        _check_date_order(report, file_rel, "created_at/extracted_at", created_at, extracted_at)
+        _check_date_order(report, file_rel, "extracted_at/updated_at", extracted_at, updated_at)
+        if verified_at:
+            _check_date_order(report, file_rel, "verified_at/updated_at", verified_at, updated_at)
+
+    for obj in objects["promotion_record"].values():
+        file_rel = relative(obj.path)
+        data = obj.data
+        created_at = data.get("created_at")
+        updated_at = data.get("updated_at")
+        last_reviewed_at = (data.get("review") or {}).get("last_reviewed_at")
+        if last_reviewed_at:
+            _check_date_order(report, file_rel, "created_at/review.last_reviewed_at", created_at, last_reviewed_at)
+            _check_date_order(report, file_rel, "review.last_reviewed_at/updated_at", last_reviewed_at, updated_at)
+
+    for obj in objects["search_run"].values():
+        file_rel = relative(obj.path)
+        data = obj.data
+        created_at = data.get("created_at")
+        updated_at = data.get("updated_at")
+        executed_date = (data.get("executed_at") or "")[:10] or None
+        if executed_date:
+            _check_date_order(report, file_rel, "created_at/executed_at", created_at, executed_date)
+            _check_date_order(report, file_rel, "executed_at/updated_at", executed_date, updated_at)
+
+    for obj in objects["protocol"].values():
+        file_rel = relative(obj.path)
+        data = obj.data
+        created_at = data.get("created_at")
+        updated_at = data.get("updated_at")
+        last_reviewed_at = (data.get("review") or {}).get("last_reviewed_at")
+        if last_reviewed_at:
+            _check_date_order(report, file_rel, "created_at/review.last_reviewed_at", created_at, last_reviewed_at)
+            _check_date_order(report, file_rel, "review.last_reviewed_at/updated_at", last_reviewed_at, updated_at)
+
+
 def check_no_unwanted_binaries(report: Report, root: Path) -> None:
     if not root.exists():
         return
@@ -982,6 +1115,7 @@ def run_checks(report: Report, objects: dict[str, dict[str, ResearchObject]], so
     check_decision_history(report, objects, objects["search_run"])
     check_extraction_verification(report, objects)
     check_temporal_chain(report, objects)
+    check_object_temporal_bounds(report, objects)
     check_promotion_records(report, objects, claim_ids)
     check_misc_consistency(report, objects)
 

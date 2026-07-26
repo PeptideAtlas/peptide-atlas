@@ -79,15 +79,22 @@ ACTIVE_SCREENING_DECISIONS = {"include", "pending", "awaiting_full_text", "uncer
 DEDUPLICATION_IDENTIFIER_FIELDS = ("doi", "pmid", "pmcid", "nct_id", "isbn")
 
 # Zentrale, wiederverwendbare Stage-/Decision-Matrix (siehe ADR-0043 im Decision Log): legt fest,
-# welche Screening-Entscheidungen an welcher Stufe fachlich sinnvoll sind. Gilt sowohl fuer
-# primary_decision als auch fuer die effektive decision jedes decision_history-Eintrags
-# (validate_research.py). Bewusst NICHT protokollabhaengig -- diese Zuordnung ist intrinsisch zum
-# Stufenbegriff selbst, nicht redaktionell je Vorhaben konfigurierbar.
+# welche Screening-Entscheidungen an welcher Stufe fachlich sinnvoll sind. Gilt fuer ALLE DREI
+# Entscheidungsebenen eines decision_history-Eintrags (validate_research.py, siehe ADR-0046):
+# primary_decision, second_review.reviewer_decision UND die effektive decision. Bewusst NICHT
+# protokollabhaengig -- diese Zuordnung ist intrinsisch zum Stufenbegriff selbst, nicht redaktionell
+# je Vorhaben konfigurierbar.
 #
 # - deduplication: der allererste Check auf Mehrfachfund. 'pending' (noch nicht geprueft),
 #   'include' (kein Duplikat, weiter zu title_abstract), 'duplicate' (Mehrfachfund, terminal fuer
 #   diesen Kandidaten), 'uncertain' (Duplikatstatus unklar). 'exclude' gehoert inhaltlich zum
-#   Titel-/Abstract-/Volltext-Screening, nicht zur reinen Duplikaterkennung.
+#   Titel-/Abstract-/Volltext-Screening, nicht zur reinen Duplikaterkennung. WICHTIG: diese Stufe
+#   unterstuetzt strukturell KEINE Adjudikation (validate_research.py erzwingt das) -- exclude ist
+#   hier nie zulaessig und 'duplicate' ist als adjudication.final_decision (auf include/exclude
+#   beschraenkt) nicht abbildbar; ein Dedup-Widerspruch bleibt daher immer 'uncertain' und wird durch
+#   einen neuen decision_history-Eintrag geloest, nie durch eine dritte Person an derselben Stufe
+#   (siehe ADR-0046). screening_policy.dual_reviewer_stages kann 'deduplication' deshalb schon
+#   schema-seitig nicht enthalten (common.schema.json#/$defs/dual_reviewable_screening_stage).
 # - title_abstract / full_text: inhaltliche Sichtung. 'include'/'exclude' plus
 #   'awaiting_full_text' (Volltext noch nicht beschafft) und 'uncertain'. Kein 'pending'
 #   (die Stufe wurde ja bereits begonnen) und kein 'duplicate' (das gehoert zu deduplication).

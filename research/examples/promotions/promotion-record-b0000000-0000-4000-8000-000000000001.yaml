@@ -7,7 +7,7 @@ candidate_working_id: candidate-binds-placeholder-receptor
 promotion_status: rejected
 review:
   last_reviewed_at: "2026-07-24"
-  reviewers: ["reviewer-2"]
+  reviewers: ["reviewer-2", "reviewer-3"]
 canonical_claim_id: null
 decision_rationale: >
   Platzhalterbeispiel: eine erste Pruefung ergab, dass die Fundstelle allein nicht ausreicht, um einen

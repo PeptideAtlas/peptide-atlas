@@ -26,6 +26,8 @@ second_review: &id001
   reviewer_decision: include
   adjudication: null
   notes: null
+  reviewer_decision_reason: null
+  reviewer_duplicate_of: null
 decision_history:
 - sequence: 1
   stage: final

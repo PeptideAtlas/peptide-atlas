@@ -30,6 +30,8 @@ second_review: &id001
     final_decision: pending
     rationale: Klarer Konsens nach Drittpruefung.
   notes: null
+  reviewer_decision_reason: wrong_substance
+  reviewer_duplicate_of: null
 decision_history:
 - sequence: 1
   stage: final
@@ -41,6 +43,8 @@ decision_history:
   decided_at: '2026-01-02'
   full_text_status: obtained
   second_review: *id001
+  primary_decision_reason: null
+  primary_duplicate_of: null
 canonical_source_id: null
 created_at: '2026-01-01'
 updated_at: '2026-01-02'

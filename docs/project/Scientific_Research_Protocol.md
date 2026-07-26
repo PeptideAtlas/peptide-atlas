@@ -174,8 +174,29 @@ genau dieser Fehler wurde in Runde 4 behoben (ADR-0043) und wird durch einen ded
 Zusätzlich legt eine zentrale Stage-/Decision-Matrix (`tools/_researchlib.py::ALLOWED_DECISIONS_BY_STAGE`) fest,
 welche Entscheidungen an welcher Stufe fachlich zulässig sind — z. B. erlaubt `final` nur
 `include`/`exclude`/`uncertain`, nicht `pending`/`duplicate`/`awaiting_full_text`, die inhaltlich zu früheren
-Stufen gehören. Diese Matrix wird sowohl gegen `primary_decision` als auch gegen `decision` jedes Eintrags
-geprüft.
+Stufen gehören. Diese Matrix wird gegen **alle drei** Entscheidungsebenen geprüft: `primary_decision`,
+`second_review.reviewer_decision` und die effektive `decision` jedes Eintrags (seit Runde 5, ADR-0046 im
+[Decision Log](Decision_Log.md) — zuvor war nur `primary_decision`/`decision` abgedeckt, eine Zweitprüfung
+hätte an einer Stufe eine fachlich unzulässige Entscheidung eintragen können).
+
+**Jede** der drei Entscheidungsebenen speichert außerdem ihren eigenen Grund/Duplikatverweis, verlustfrei und
+unabhängig voneinander (ADR-0047): `primary_decision_reason`/`primary_duplicate_of` für die Erstentscheidung,
+`second_review.reviewer_decision_reason`/`second_review.reviewer_duplicate_of` für die Zweitprüfung, sowie
+`decision_reason`/`duplicate_of` (siehe Abschnitt 11) für die effektive Entscheidung. Für jede Ebene gilt
+unabhängig dieselbe Regel: der Grund ist Pflicht (nicht `null`) genau dann, wenn die zugehörige Entscheidung
+`exclude` ist, und der Duplikatverweis ist Pflicht genau dann, wenn sie `duplicate` ist. So bleibt z. B. die
+Begründung einer ursprünglich ausgeschlossenen, später durch Adjudikation zu `include` überstimmten
+Erstentscheidung vollständig nachvollziehbar, statt beim Überschreiben der effektiven Entscheidung verloren zu
+gehen. `primary_duplicate_of`/`reviewer_duplicate_of` werden nur schema-seitig auf Formatgültigkeit geprüft,
+nicht referenziell — anders als das effektive `duplicate_of` (siehe Abschnitt 34, bekannte Grenze).
+
+**`deduplication` unterstützt strukturell keine Adjudikation** (ADR-0046): `adjudication.final_decision` ist auf
+`include`/`exclude` beschränkt, aber an der Stufe `deduplication` ist `exclude` fachlich nie zulässig und
+`duplicate` als bestätigtes Adjudikationsergebnis lässt sich damit nicht abbilden. Ein Widerspruch zwischen
+Erst- und Zweitprüfung an dieser Stufe bleibt deshalb immer `decision: uncertain` und wird durch einen
+**neuen**, späteren `decision_history`-Eintrag aufgelöst (z. B. nach erneuter Prüfung der Identifikatoren),
+nicht durch eine dritte Person an derselben Stufe. `screening_policy.dual_reviewer_stages` kann `deduplication`
+schema-seitig gar nicht erst enthalten.
 
 ## 9a. Vollständige Screening-Historie
 
@@ -202,6 +223,21 @@ Projektion), aber nicht technisch erzwingen kann, dass ein früherer Eintrag nie
 ergänzt wurde — anders als `research/search_runs/**`, das zusätzlich durch
 `tools/check_research_immutability.py` in CI abgesichert ist (Abschnitt 7), gibt es für `decision_history[]`
 keinen entsprechenden Git-Diff-Schutz.
+
+## 9d. Objektinterne zeitliche Vollständigkeit
+
+Für alle fünf Research-Objektarten (Protokoll, Suchlauf, Screening-Datensatz, Extraktion, Promotion) gilt
+dieselbe Konvention (ADR-0048 im [Decision Log](Decision_Log.md)): `created_at` ist der Zeitpunkt, zu dem
+dieser Recherche-Datensatz (der Fall/Vorgang) angelegt wurde — typischerweise **vor** den darin dokumentierten
+Ereignissen (ein Screening-Datensatz wird angelegt, sobald ein Kandidat gefunden wurde; die eigentliche
+Entscheidung folgt später). `updated_at` ist der Zeitpunkt der letzten Bearbeitung und muss deshalb mindestens
+so aktuell sein wie **jedes** im Datensatz selbst gespeicherte Ereignisdatum. Der Validator prüft
+`created_at <= Ereignisdatum <= updated_at` für: jeden `decision_history[].decided_at` sowie, wo vorhanden,
+`second_review.reviewed_at` und `second_review.adjudication.resolved_at` (Screening); `extracted_at` und, wo
+gesetzt, `verified_at` (Extraktion); `review.last_reviewed_at`, wo nicht `null` (Promotion und Protokoll); das
+Kalenderdatum aus `executed_at` (Suchlauf). Diese objektinterne Prüfung ergänzt die bereits in ADR-0044
+(Abschnitt 33) beschriebene objektübergreifende Kette — ein Objekt kann diese Kette erfüllen und trotzdem
+intern inkonsistent sein, wenn sein eigenes `updated_at` vor einem selbst dokumentierten Ereignis liegt.
 
 ## 9. Titel-/Abstract-Screening
 
@@ -419,22 +455,33 @@ Abschnitt 13 des ursprünglichen Auftrags sowie [Evidence Curation Workflow](Evi
 Diese Kette ist seit ADR-0037 maschinenlesbar: ein `promotion_record` (Schema:
 `schemas/research_promotion_record.schema.json`, `research/promotions/`) verweist auf `extraction_record_id`
 (muss `extraction_status: verified` sein) und `candidate_working_id` (muss im referenzierten Extraktionsdatensatz
-vorkommen) und trägt `promotion_status`. Nur die Zustände `approved_for_creation` und `promoted` erfordern
-dokumentierte Reviewer und eine `decision_rationale` — und dürfen, wie jede Aktivierung eines kanonischen Claims,
-**nie** automatisiert durch Automatisierung/KI gesetzt werden (ADR-0035). `promoted` erfordert eine gesetzte
+vorkommen) und trägt `promotion_status`. Die drei **endgültigen** Zustände — `approved_for_creation`, `promoted`
+**und `rejected`** — erfordern dieselbe Mindest-Audit-Spur: dokumentierte Reviewer, ein Reviewdatum und eine
+nicht-leere `decision_rationale` (ADR-0049 im [Decision Log](Decision_Log.md) — eine Ablehnung ist eine ebenso
+konsequenzreiche wissenschaftliche/redaktionelle Entscheidung wie eine Freigabe und muss ebenso nachvollziehbar
+sein). `approved_for_creation`/`promoted` dürfen, wie jede Aktivierung eines kanonischen Claims, **nie**
+automatisiert durch Automatisierung/KI gesetzt werden (ADR-0035). `promoted` erfordert eine gesetzte
 `canonical_claim_id`, die tatsächlich unter `data/claims/**` existiert; `rejected` darf keine tragen. Pro
 Kandidat ist höchstens ein aktiver (nicht `rejected`/`withdrawn`) `promotion_record` gleichzeitig zulässig.
 Ein `promotion_record` darf sich zudem nur auf eine Extraktion mit `extraction_status: verified` beziehen —
 `self_checked` (Abschnitt 27a) ist strukturell nie promotion-fähig.
 
 Setzt das referenzierte Protokoll `claim_promotion_policy.requires_second_review: true`, erzwingt der Validator
-zusätzlich, dass `promotion_status: approved_for_creation`/`promoted` mindestens **zwei unterschiedliche,
-nicht-leere** Einträge in `review.reviewers` tragen (ADR-0041). **Ausdrückliche Grenze dieser Prüfung:** Sie
-stellt technisch nur sicher, dass zwei unterschiedliche *Kürzel* eingetragen sind — sie kann nicht
-maschinenlesbar verifizieren, dass es sich dabei tatsächlich um zwei unterschiedliche *menschliche* Personen
-handelt (im Unterschied zu Automatisierung/KI), da Phase 4A **keine** maschinenlesbare Akteur-Registry
-(human/automation/ai_assistant/service) einführt. Diese Garantie bleibt organisatorisch — durch
-Reviewprozess und Repository-Zugriffskontrolle — abgesichert, nicht durch das Schema (siehe Abschnitt 34).
+zusätzlich, dass **jede** der drei endgültigen Promotion-Entscheidungen —
+`approved_for_creation`/`promoted`/`rejected` — mindestens **zwei unterschiedliche, nicht-leere** Einträge in
+`review.reviewers` trägt (ADR-0041, symmetrisch auf `rejected` erweitert durch ADR-0049). **Ausdrückliche
+Grenze dieser Prüfung:** Sie stellt technisch nur sicher, dass zwei unterschiedliche *Kürzel* eingetragen sind
+— sie kann nicht maschinenlesbar verifizieren, dass es sich dabei tatsächlich um zwei unterschiedliche
+*menschliche* Personen handelt (im Unterschied zu Automatisierung/KI), da Phase 4A **keine** maschinenlesbare
+Akteur-Registry (human/automation/ai_assistant/service) einführt. Diese Garantie bleibt organisatorisch — durch
+Reviewprozess und Repository-Zugriffskontrolle — abgesichert, nicht durch das Schema (siehe Abschnitt 34). Alle
+Research-Akteursfelder (`screened_by`, `decided_by`, `second_review.reviewed_by`,
+`adjudication.resolved_by`, `extracted_by`, `verified_by`, `promotion.review.reviewers[]`,
+`protocol.review.reviewers[]`) folgen seit ADR-0050 einer restriktiven, schema-seitig erzwungenen Kürzel-Syntax
+(`common.schema.json#/$defs/research_actor_id`, `^[a-z0-9][a-z0-9._-]*$`) — das verhindert, dass eine triviale
+Leerzeichen- oder Großschreibungsvariante eine Gleichheits- oder Unabhängigkeitsprüfung (z. B.
+`second_review.reviewed_by != decided_by`) umgeht, beweist aber weiterhin **nicht**, dass zwei unterschiedliche
+Kürzel zwei unterschiedliche menschliche Personen sind.
 
 ## 30. Aktualisierungen und Rechercheanläufe
 
@@ -478,7 +525,9 @@ vor `extraction.extracted_at` liegen, `extracted_at` vor `verified_at`, `verifie
 und `promotion.created_at` vor `promotion.updated_at`. Für `promotion_status`
 `approved_for_creation`/`promoted`/`rejected` gilt zusätzlich: `verified_at` vor `review.last_reviewed_at` vor
 `updated_at` (für `proposed`/`in_review` nicht anwendbar, da `review.last_reviewed_at` dort typischerweise noch
-`null` ist). Jede Ausschlussentscheidung trägt einen kontrollierten Grund. Jeder Kandidatenclaim trägt eine
+`null` ist). Zusätzlich zu dieser objektübergreifenden Kette liegt jedes von einem Objekt selbst dokumentierte
+Ereignisdatum innerhalb von dessen eigenem `[created_at, updated_at]`-Intervall (objektinterne Vollständigkeit,
+siehe Abschnitt 9d, ADR-0048). Jede Ausschlussentscheidung trägt einen kontrollierten Grund. Jeder Kandidatenclaim trägt eine
 präzise Fundstelle. In der Summe lässt sich für jeden künftigen kanonischen Claim lückenlos zurückverfolgen: aus
 welchem Suchlauf er stammt, wer ihn wann geprüft hat, und welche konkrete Textstelle ihn stützt — auch bei
 100.000 Quellen, weil jeder Schritt strukturiert (nicht als Fließtext) und maschinell validierbar
@@ -495,13 +544,23 @@ maschinenlesbar sicherstellt:
   Status-Feld, `second_review.reviewer_decision` nicht `null`, `second_review.adjudication.final_decision`
   nur `include`/`exclude`, `decision_reason`/`duplicate_of` je `decision_history`-Eintrag konsistent zur
   jeweiligen `decision`, `promoted`/`rejected`-Bedingungen an `canonical_claim_id`,
-  `promotion_record.review.reviewers` eindeutig und nicht-leer (`uniqueItems` + Pattern, ADR-0045).
+  `promotion_record.review.reviewers` eindeutig und nicht-leer (`uniqueItems` + Pattern, ADR-0045),
+  `primary_decision_reason`/`primary_duplicate_of` und `second_review.reviewer_decision_reason`/
+  `reviewer_duplicate_of` je konsistent zur zugehörigen Entscheidungsebene (ADR-0047),
+  `screening_policy.dual_reviewer_stages` kann `deduplication` gar nicht erst enthalten (ADR-0046),
+  `promotion_status: rejected` erfordert dieselbe Mindest-Audit-Spur wie `approved_for_creation`/`promoted`
+  (ADR-0049), alle Research-Akteursfelder folgen der `research_actor_id`-Kürzel-Syntax (ADR-0050).
 - **Validator-seitig erzwungen** (`tools/validate_research.py`, blockiert Pull Requests via CI, aber nicht
   außerhalb eines CI-Laufs, z. B. bei einem direkten Push ohne PR): Protokoll-/Referenzkonsistenz,
   Identifier-Deduplizierung, Screening-Workflow inkl. jedes `decision_history`-Eintrags (Stage-/
-  Decision-Matrix, `primary_decision`/`decision`-Konsistenz, ADR-0043), terminale Extraktionsfähigkeit,
-  Verifikationsunabhängigkeit, zeitliche Provenienzkette Screening→Extraktion→Verifikation→Promotion
-  (ADR-0044), Claim-Promotion-Kette inkl. `requires_second_review`-Reviewerzahl.
+  Decision-Matrix gegen alle drei Entscheidungsebenen — `primary_decision`, `second_review.reviewer_decision`,
+  effektive `decision` —, `primary_decision`/`decision`-Konsistenz, ADR-0043/ADR-0046), keine Adjudikation an
+  der Stufe `deduplication` (ADR-0046), terminale Extraktionsfähigkeit, Verifikationsunabhängigkeit, zeitliche
+  Provenienzkette Screening→Extraktion→Verifikation→Promotion objektübergreifend (ADR-0044) UND objektintern
+  (`created_at <= Ereignisdatum <= updated_at` je Objekt, ADR-0048), `screening_policy.dual_reviewer_stages`
+  als Teilmenge von `screening_policy.stages` (ADR-0051), Claim-Promotion-Kette inkl.
+  `requires_second_review`-Reviewerzahl symmetrisch für `approved_for_creation`/`promoted`/`rejected`
+  (ADR-0041/ADR-0049).
 - **CI-seitig geprüft, mit dokumentierter Lücke**: `tools/check_research_immutability.py` (ADR-0038/ADR-0042)
   vergleicht nur den Nettounterschied zum Merge-Base mit einem einzelnen Basis-Ref und wird übersprungen, wenn
   dieser nicht auflösbar ist (z. B. ein lokaler Push ohne Pull-Request-Kontext) — er erkennt keine Manipulation,
@@ -515,11 +574,15 @@ maschinenlesbar sicherstellt:
   Studienzusammenführung; inhaltliche Richtigkeit von Beobachtungen, Paraphrasen und Kandidatenclaims.
 - **Organisatorisch kontrolliert, nicht technisch überprüfbar**: Ob ein Reviewer-, Adjudikator- oder
   Promotion-Reviewer-**Kürzel** tatsächlich eine andere *menschliche* Person bezeichnet (statt z. B. zweier
-  unterschiedlicher Automatisierungsläufe), lässt sich mit den in Phase 4A verwendeten freien String-Feldern
-  **nicht** maschinenlesbar verifizieren — Phase 4A führt bewusst **keine** Actor-Registry
-  (human/automation/ai_assistant/service) ein (siehe Abschnitt 29, ADR-0041 „Alternativen"). Diese Garantie
-  bleibt organisatorisch, durch Reviewprozess und Repository-Zugriffskontrolle abgesichert. Jede Dokumentation,
-  die eine stärkere (technisch erzwungene) Garantie behauptet, ist als Fehler zu melden.
+  unterschiedlicher Automatisierungsläufe), lässt sich mit den in Phase 4A verwendeten Kürzelfeldern **nicht**
+  maschinenlesbar verifizieren — Phase 4A führt bewusst **keine** Actor-Registry
+  (human/automation/ai_assistant/service) ein (siehe Abschnitt 29, ADR-0041 „Alternativen"). Die seit ADR-0050
+  restriktive `research_actor_id`-Syntax (`^[a-z0-9][a-z0-9._-]*$`) ändert daran nichts: sie stellt nur sicher,
+  dass zwei unterschiedliche Kürzel syntaktisch stabil unterscheidbar sind (keine Leerzeichen-/
+  Großschreibungsvarianten mehr), beweist aber weiterhin nicht, dass es sich um zwei unterschiedliche
+  menschliche Personen handelt. Diese Garantie bleibt organisatorisch, durch Reviewprozess und
+  Repository-Zugriffskontrolle abgesichert. Jede Dokumentation, die eine stärkere (technisch erzwungene)
+  Garantie behauptet, ist als Fehler zu melden.
 - **Derzeit nicht technisch überprüfbar / bewusst nicht implementiert**: keine automatisierte Literaturrecherche,
   keine automatische Quellenabfrage über externe APIs — jeder Suchlauf wird manuell ausgeführt und
   protokolliert; kein PDF-Download oder Volltextarchivierung im Repository; die Identifier-Deduplizierung

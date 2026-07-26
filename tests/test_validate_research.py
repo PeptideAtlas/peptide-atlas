@@ -164,6 +164,42 @@ INVALID_SCENARIOS = {
     # Round 4 -- Punkt 4: Promotion-Reviewer wirklich eindeutig und ehrlich.
     "promotion_three_entries_with_duplicate_reviewer": "has non-unique elements",
     "promotion_whitespace_only_reviewer": "does not match",
+    # Round 5 -- Punkt 1: Stage-/Decision-Matrix auch auf second_review.reviewer_decision, keine
+    # Adjudikation an der Stufe deduplication.
+    "final_second_reviewer_pending": "is not an allowed decision for stage 'final'",
+    "final_second_reviewer_duplicate": "is not an allowed decision for stage 'final'",
+    "final_second_reviewer_awaiting_full_text": "is not an allowed decision for stage 'final'",
+    "second_reviewer_decision_not_allowed_for_stage": "is not an allowed decision for stage 'title_abstract'",
+    "dedup_adjudication_not_supported": "adjudication is not supported for stage 'deduplication'",
+    # Round 5 -- Punkt 2: vollstaendige, verlustfreie Drei-Ebenen-Entscheidungsprovenienz.
+    "primary_exclude_without_primary_reason": "is not one of ['wrong_substance'",
+    "primary_non_exclude_with_primary_reason": "is not of type 'null'",
+    "primary_duplicate_without_primary_target": "is not of type 'string'",
+    "second_review_exclude_without_reason": "is not one of ['wrong_substance'",
+    "second_review_non_exclude_with_reason": "is not of type 'null'",
+    "second_review_duplicate_without_target": "is not of type 'string'",
+    # Round 5 -- Punkt 3: created_at/updated_at gegen jedes im Objekt dokumentierte Ereignis.
+    "screening_updated_before_primary_decision": "out of order",
+    "screening_updated_before_second_review": "out of order",
+    "screening_updated_before_adjudication": "out of order",
+    "extraction_updated_before_extracted_at": "out of order",
+    "extraction_updated_before_verified_at": "out of order",
+    "promotion_updated_before_review": "out of order",
+    "search_run_updated_before_execution": "out of order",
+    "protocol_updated_before_review": "out of order",
+    # Round 5 -- Punkt 4: rejected Promotions vollstaendig auditierbar.
+    "rejected_without_review_date": "is not of type 'string'",
+    "rejected_without_reviewer": "should be non-empty",
+    "rejected_without_rationale": "is not of type 'string'",
+    "rejected_single_reviewer_when_second_review_required": "requires at least two distinct reviewers",
+    # Round 5 -- Punkt 5: stabile Research-Actor-IDs ohne Actor Registry.
+    "screening_reviewer_whitespace_only": "does not match",
+    "screening_reviewer_trailing_space": "does not match",
+    "adjudicator_leading_space": "does not match",
+    "extractor_whitespace_only": "does not match",
+    "verifier_trailing_space": "is not valid under any of the given schemas",
+    # Round 5 -- Punkt 6: dual_reviewer_stages muss Teilmenge von stages sein.
+    "dual_reviewer_stage_not_in_stages": "is not among screening_policy.stages",
 }
 
 
@@ -272,6 +308,27 @@ PRECISE_INVALID_SCENARIOS = {
     "promotion_three_entries_with_duplicate_reviewer": (
         "research/promotions/promotion-record-70000000-0000-4000-8000-000000000001.yaml",
         "$.review.reviewers",
+    ),
+    # Round 5 -- Punkt 1: kritische Stage-/Decision-Matrix-Faelle mit exakter Datei-/Pfadpruefung.
+    "final_second_reviewer_pending": (
+        "research/screening/screening-record-50000000-0000-4000-8000-000000000001.yaml",
+        "$.decision_history[0].second_review.reviewer_decision",
+    ),
+    "final_second_reviewer_duplicate": (
+        "research/screening/screening-record-50000000-0000-4000-8000-000000000001.yaml",
+        "$.decision_history[0].second_review.reviewer_decision",
+    ),
+    "final_second_reviewer_awaiting_full_text": (
+        "research/screening/screening-record-50000000-0000-4000-8000-000000000001.yaml",
+        "$.decision_history[0].second_review.reviewer_decision",
+    ),
+    "second_reviewer_decision_not_allowed_for_stage": (
+        "research/screening/screening-record-50000000-0000-4000-8000-000000000001.yaml",
+        "$.decision_history[0].second_review.reviewer_decision",
+    ),
+    "dedup_adjudication_not_supported": (
+        "research/screening/screening-record-50000000-0000-4000-8000-000000000001.yaml",
+        "$.decision_history[0].second_review.adjudication",
     ),
 }
 
