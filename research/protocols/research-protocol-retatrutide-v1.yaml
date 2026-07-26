@@ -11,7 +11,7 @@ subject:
       Dieses Dokument enthaelt ausdruecklich KEINE realen Studienergebnisse, Wirksamkeits-
       zahlen, Sicherheitsraten oder Pharmakokinetikwerte -- nur die geplante Suchstrategie
       und die Bewertungsregeln.
-status: draft
+status: approved
 version: 1
 objectives:
   - de: >
@@ -238,8 +238,11 @@ amendment_policy:
       Ein-/Ausschlusskriterien) werden als neue Version angelegt (research-protocol-retatrutide-v2.yaml
       usw.), nicht als stille Ueberschreibung dieser Datei.
 created_at: "2026-07-24"
-updated_at: "2026-07-25"
+updated_at: "2026-07-26"
 review:
-  last_reviewed_at: null
-  reviewers: []
-  approval_decision: null
+  last_reviewed_at: "2026-07-26"
+  reviewers:
+    - cso-chatgpt
+  approval_decision: >
+    Wissenschaftlich und architektonisch für die kontrollierte Ausführung
+    der Phase-4B-Recherche gemäß Retatrutid-Rechercheprotokoll v1 freigegeben.
