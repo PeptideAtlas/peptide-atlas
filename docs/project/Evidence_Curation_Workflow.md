@@ -99,8 +99,8 @@ extraktionsfähig** — `full_text` dokumentiert nur die Volltextbewertung (sieh
 | **Ausgabe** | `decision_stage: final` — die **einzige extraktionsfähige Stufe** (ADR-0042). |
 | **Rolle** | Zweitprüfer:in (siehe `screening_policy.dual_reviewer_stages`, typischerweise `final`). |
 | **Erforderliche Prüfungen** | Ist `final` in `dual_reviewer_stages` aufgeführt, ist `second_review` mit einer expliziten, eigenständigen `reviewer_decision` Pflicht, `second_review.reviewed_by` ≠ `screened_by` (Reviewer-Unabhängigkeit) — beides von `tools/validate_research.py` erzwungen. `full_text_status: obtained` bleibt Voraussetzung für ein terminales `include`. |
-| **Abbruchkriterien** | Widerspricht `second_review.reviewer_decision` der Erstentscheidung ohne gültige Adjudikation, muss die Entscheidung `uncertain` bleiben ([Scientific Research Protocol](Scientific_Research_Protocol.md), Abschnitt 10a) — und ist damit nicht extraktionsfähig. |
-| **Gespeicherte Provenienz** | `second_review.reviewed_by`/`reviewed_at`/`reviewer_decision`/`decision_confirmed`, ggf. `second_review.adjudication`; neuer Eintrag in `decision_history[]` mit `stage: final`. |
+| **Abbruchkriterien** | Widerspricht `second_review.reviewer_decision` der `primary_decision` (Erstentscheidung, siehe [Scientific Research Protocol](Scientific_Research_Protocol.md), Abschnitt 9c) ohne gültige Adjudikation, muss die effektive `decision` `uncertain` bleiben (Abschnitt 10a) — die `primary_decision` selbst bleibt dabei erhalten. Ein solcher Kandidat ist nicht extraktionsfähig. |
+| **Gespeicherte Provenienz** | `second_review.reviewed_by`/`reviewed_at`/`reviewer_decision`/`decision_confirmed`, ggf. `second_review.adjudication`; neuer Eintrag in `decision_history[]` mit `stage: final`, `primary_decision` und effektiver `decision`. |
 | **Mögliche Statuswerte** | `include` \| `exclude` \| `uncertain`. |
 
 ## 5. Terminale Bestätigung → Eingeschlossene Quelle
@@ -122,7 +122,7 @@ extraktionsfähig** — `full_text` dokumentiert nur die Volltextbewertung (sieh
 | **Ausgabe** | Ein neuer `extraction_record` mit `extraction_status: draft`, verknüpft über `screening_record_id`. |
 | **Rolle** | Rechercheur:in (Extraktion kann durch Automatisierung/KI vorstrukturiert werden — Textstellen als Kandidaten markieren). |
 | **Erforderliche Prüfungen** | Jede Beobachtung als kurze Paraphrase mit präziser Fundstelle (`schemas/common.schema.json#/$defs/observation_entry`, technisch auf 600 Zeichen begrenzt). |
-| **Abbruchkriterien** | Keine langen wörtlichen Textübernahmen (siehe [Scientific Research Protocol](Scientific_Research_Protocol.md), Abschnitt 32). `candidate_claims[]` dürfen keine kanonische Claim-ID vortäuschen und tragen kein Status-Feld. |
+| **Abbruchkriterien** | Keine langen wörtlichen Textübernahmen (siehe [Scientific Research Protocol](Scientific_Research_Protocol.md), Abschnitt 32). `candidate_claims[]` dürfen keine kanonische Claim-ID vortäuschen und tragen kein Status-Feld. `extracted_at` darf nicht vor Abschluss der terminalen Screening-Entscheidung (inkl. Zweitprüfung/Adjudikation) liegen (zeitliche Provenienzkette, ADR-0044). |
 | **Gespeicherte Provenienz** | `extracted_by`, `extracted_at`, je Beobachtung ein `locator`. |
 | **Mögliche Statuswerte** | `draft` → `awaiting_verification`. |
 

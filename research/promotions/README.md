@@ -15,11 +15,14 @@ search_run → screening_record → extraction_record → promotion_record → k
   nicht-leere `decision_rationale` — und dürfen **nie** automatisiert durch Automatisierung/KI gesetzt
   werden (siehe [Evidence Curation Workflow](../../docs/project/Evidence_Curation_Workflow.md), ADR-0035,
   ADR-0037 im [Decision Log](../../docs/project/Decision_Log.md)).
-- Setzt das referenzierte Protokoll `claim_promotion_policy.requires_second_review: true`, prüft der
-  Validator zusätzlich, dass `review.reviewers` mindestens **zwei unterschiedliche, nicht-leere**
-  Kürzel enthält (ADR-0041). **Grenze:** Diese Prüfung stellt nur sicher, dass zwei unterschiedliche
-  Kürzel eingetragen sind — sie kann nicht maschinell verifizieren, dass es sich dabei tatsächlich um
-  zwei unterschiedliche *menschliche* Personen handelt. Diese Garantie bleibt in Phase 4A
+- `review.reviewers` ist **schema-seitig** auf Eindeutigkeit (`uniqueItems`) und Nicht-Leerheit (mindestens ein
+  Nicht-Leerzeichen-Zeichen je Eintrag) geprüft — eigenständig definiert in diesem Schema, nicht über das
+  gemeinsame `common.schema.json#/$defs/review_block` (das andere Objektarten unverändert weiterverwenden,
+  siehe ADR-0045 im [Decision Log](../../docs/project/Decision_Log.md)). Setzt das referenzierte Protokoll
+  `claim_promotion_policy.requires_second_review: true`, prüft der Validator zusätzlich die **Mindestanzahl**
+  (mindestens zwei Kürzel, ADR-0041). **Grenze:** Schema und Validator prüfen nur die Kürzel selbst
+  (Eindeutigkeit, keine Leerstrings, Mindestanzahl) — sie können nicht maschinell verifizieren, dass es sich
+  dabei tatsächlich um zwei unterschiedliche *menschliche* Personen handelt. Diese Garantie bleibt in Phase 4A
   organisatorisch, durch Reviewprozess und Repository-Zugriffskontrolle abgesichert, nicht durch das
   Schema (siehe Abschnitt „Bekannte Grenzen" im
   [Scientific Research Protocol](../../docs/project/Scientific_Research_Protocol.md)).
@@ -29,5 +32,8 @@ search_run → screening_record → extraction_record → promotion_record → k
   tatsächlich existiert. `promotion_status: rejected` darf keine `canonical_claim_id` tragen.
 - Ein Kandidatenclaim darf nicht unbemerkt mehrfach zu verschiedenen aktiven Promotionen führen (vom
   Validator geprüft, siehe `tools/validate_research.py`).
+- Zeitliche Reihenfolge (ADR-0044): `extraction.verified_at <= created_at <= updated_at`; bei
+  `approved_for_creation`/`promoted`/`rejected` zusätzlich `verified_at <= review.last_reviewed_at <=
+  updated_at`.
 - Dieser Datensatz selbst ist **kein** kanonisches Wissensobjekt und fließt nicht in `build/catalog.json`
   oder `build/graph.json` ein (siehe ADR-0033).

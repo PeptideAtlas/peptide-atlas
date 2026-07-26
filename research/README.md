@@ -61,10 +61,12 @@ die kanonische Datenebene (`canonical_source_id` muss unter `data/sources/**`, `
 Protokollkonsistenz (Version/ID, Freigabestatus, ein Suchlauf darf nur eine unter
 `planned_information_sources[]` freigegebene Datenbank verwenden, protokollübergreifende Referenzen inkl. der
 gesamten `duplicate_of`-Kette), echte Identifier-Deduplizierung, den vollständigen Screening-Workflow (JEDER
-`decision_history`-Eintrag wird geprüft, nicht nur der aktuelle Zustand: Dual-Reviewer-Pflicht, wechselseitig
-konsistente Erst-/Zweit-/Adjudikationsentscheidung, Volltextregeln, terminale Extraktionsfähigkeit) und die
-Claim-Promotion-Kette (inkl. `claim_promotion_policy.requires_second_review`). `check_research_immutability.py`
-prüft zusätzlich, dass bereits committete `search_run`-Dateien nicht rückwirkend verändert werden (nur
+`decision_history`-Eintrag wird geprüft, nicht nur der aktuelle Zustand: Stage-/Decision-Matrix, strukturell
+getrennte `primary_decision`/effektive `decision`, Dual-Reviewer-Pflicht, wechselseitig konsistente
+Zweitentscheidung/Adjudikation, Volltextregeln, terminale Extraktionsfähigkeit), die zeitliche Provenienzkette
+objektübergreifend (Screening → Extraktion → Verifikation → Promotion) und die Claim-Promotion-Kette (inkl.
+`claim_promotion_policy.requires_second_review`). `check_research_immutability.py` prüft zusätzlich, dass
+bereits committete `search_run`-Dateien nicht rückwirkend verändert werden (nur
 `status`/`updated_at`/`review`/`notes` dürfen sich ändern). Alle drei Validatoren laufen in CI (siehe
 `.github/workflows/ci.yml`).
 
