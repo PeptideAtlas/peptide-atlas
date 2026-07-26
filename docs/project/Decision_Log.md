@@ -1034,6 +1034,31 @@ Kurze, strukturierte Architecture Decision Records (ADRs): Kontext, Entscheidung
   verletzten die neue Regel (die betroffenen Runde-5B-Fixtures verwendeten bereits konsistente
   Zielwerte).
 
+### ADR-0054: Formale Freigabe des Retatrutid-Rechercheprotokolls v1 (Phase 4B-0)
+
+- **Status:** Entschieden
+- **Datum:** 2026-07-26
+- **Kontext:** `research-protocol-retatrutide-v1.yaml` lag seit Phase 4A als vollständig
+  ausgearbeitetes, aber unfreigegebenes Protokoll (`status: draft`) vor. Phase 4B (die
+  eigentliche, reale Recherche zu Retatrutid) darf laut Protokoll und Scientific Research
+  Protocol erst nach formalem Review und Freigabe des Protokolls beginnen.
+- **Entscheidung:** Das Protokoll wurde ausschließlich in seinen formalen Freigabefeldern
+  geändert (`status: draft` → `approved`, `updated_at`, `review.last_reviewed_at`,
+  `review.reviewers`, `review.approval_decision`). Freigebende Projektrolle ist
+  `cso-chatgpt` — dies bezeichnet ausdrücklich den KI-basierten Chief Scientific Officer des
+  Projekts, keine menschliche Person. Forschungsfragen, Suchbegriffe, Ein-/Ausschlusskriterien,
+  Quellenprioritäten, Dedup-/Screening-/Extraktions-/Evidenzregeln bleiben unverändert. Diese
+  Freigabe erlaubt ausschließlich die kontrollierte Recherche gemäß dem bestehenden Protokoll
+  (Search Runs, Screening, Extraktion). Sie erlaubt **keine** automatische Übernahme von
+  Research-Daten in kanonische Claims, den Katalog oder den Knowledge Graph — jede Promotion
+  bleibt an `claim_promotion_policy` (Second Review) gebunden, `research/**` fließt weiterhin
+  nicht automatisch in Katalog/Graph.
+- **Konsequenzen:** Phase 4B-0 (Protokollfreigabe) ist damit abgeschlossen. Die reale
+  Recherche (Search Runs, Screening, Extraktion) ist ab diesem Zeitpunkt protokollkonform
+  zulässig, wurde aber im Rahmen dieser Änderung selbst noch nicht begonnen — es wurden keine
+  Search-Run-, Screening-, Extraction- oder Promotion-Datensätze angelegt und keine realen
+  Quellen, Studien oder Claims ergänzt.
+
 ## Format für neue Einträge
 
 ```markdown
