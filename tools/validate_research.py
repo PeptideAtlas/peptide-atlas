@@ -19,17 +19,23 @@ Prueft (Ueberblick, siehe die einzelnen check_*-Funktionen fuer Details):
   duplicate_of bleibt innerhalb desselben Protokolls (inkl. gesamter Kette).
 - Deduplizierung: echte normalisierte DOI/PMID/PMCID/NCT-ID/ISBN-Kollisionserkennung.
 - Screening-Workflow: JEDER decision_history-Eintrag (nicht nur der aktuelle Zustand) wird
-  gegen dieselben Invarianten geprueft -- Stufe im Protokoll vorgesehen, Dual-Reviewer-Pflicht,
-  Reviewer-/Adjudikator-Unabhaengigkeit, explizite und konsistente Zweitentscheidung,
-  Konfliktloesung, Volltextvollstaendigkeit, Datumsreihenfolge. Extraktion ist nur fuer einen
-  screening_record zulaessig, dessen Einschluss terminal (decision_stage: final), vollstaendig
-  volltextgeprueft und frei von ungeloesten Zweitpruefungskonflikten ist.
+  gegen dieselben Invarianten geprueft -- Stufe im Protokoll vorgesehen, Stage-/Decision-Matrix
+  (ADR-0043), Dual-Reviewer-Pflicht, Reviewer-/Adjudikator-Unabhaengigkeit, konsistente
+  primary_decision/reviewer_decision/decision_confirmed/adjudication-Semantik (ADR-0043),
+  Volltextvollstaendigkeit, Datumsreihenfolge (inkl. gegen JEDEN referenzierten Suchlauf).
+  Extraktion ist nur fuer einen screening_record zulaessig, dessen Einschluss terminal
+  (decision_stage: final), vollstaendig volltextgeprueft und frei von ungeloesten
+  Zweitpruefungskonflikten ist.
 - Extraktionsverifikation: verified_by != extracted_by wird IMMER erzwungen, sobald
   extraction_status: verified (siehe ADR-0040) -- keine protokollabhaengige Ausnahme mehr.
+- Zeitliche Provenienzkette (ADR-0044): terminale Screening-Entscheidung/-Zweitpruefung/
+  -Adjudikation <= extracted_at <= verified_at <= promotion.created_at/review.last_reviewed_at
+  <= promotion.updated_at.
 - Claim-Promotion: vollstaendige Kettenpruefung inkl. claim_promotion_policy.requires_second_review
-  (mindestens zwei unterschiedliche, nicht-leere Reviewer bei approved_for_creation/promoted).
-- Sonstige Konsistenz: Eindeutigkeit, Datumsreihenfolge (inkl. screened_at gegen JEDEN
-  referenzierten Suchlauf, nicht nur den fruehesten), sichere export_reference.
+  (mindestens zwei unterschiedliche, nicht-leere Reviewer bei approved_for_creation/promoted;
+  Eindeutigkeit/Nicht-Leerheit selbst ist schema-seitig erzwungen, siehe
+  research_promotion_record.schema.json).
+- Sonstige Konsistenz: Eindeutigkeit, Datumsreihenfolge, sichere export_reference.
 - Dateiebene: keine unerwuenschten Binaerdateien, research/examples/** als eigener Namensraum.
 
 Exitcode 0 bei Erfolg (nur WARNINGs erlaubt), Exitcode 1 bei mindestens einem ERROR. Keine
@@ -59,6 +65,7 @@ from _datalib import (  # noqa: E402
 )
 from _researchlib import (  # noqa: E402
     ACTIVE_SCREENING_DECISIONS,
+    ALLOWED_DECISIONS_BY_STAGE,
     DEDUPLICATION_IDENTIFIER_FIELDS,
     NORMALIZERS,
     RESEARCH_DIR,
@@ -171,19 +178,25 @@ def load_canonical_reference_sets(data_root: Path) -> tuple[set[str], set[str], 
     return source_ids, study_ids, claim_ids
 
 
-def _screening_conflict_is_unresolved(second_review: dict | None, decision: str) -> bool:
-    """True, wenn eine Zweitpruefung der Erstentscheidung widerspricht (reviewer_decision !=
-    decision) UND keine gueltige Adjudikation (deren final_decision der aktuellen decision
-    entspricht) vorliegt. Wird sowohl fuer die Extraktionsfaehigkeit (Abschnitt 9b) als auch
-    implizit ueber _check_decision_snapshot fuer jeden decision_history-Eintrag genutzt."""
+def _screening_conflict_is_unresolved(second_review: dict | None, primary_decision: str) -> bool:
+    """True, wenn eine Zweitpruefung der PRIMARY-Entscheidung widerspricht (reviewer_decision !=
+    primary_decision) UND keine Adjudikation vorliegt. Vergleicht bewusst gegen primary_decision,
+    NICHT gegen die effektive decision (das war die in Runde 4 behobene Modellierungsluecke, siehe
+    ADR-0043) -- ein Vergleich gegen die effektive decision wuerde einen bereits geloesten
+    Widerspruch nie als aufgeloest erkennen koennen, wenn adjudication.final_decision zufaellig
+    dem reviewer_decision entspricht."""
     if not second_review:
         return False
-    if second_review.get("reviewer_decision") == decision:
+    if second_review.get("reviewer_decision") == primary_decision:
         return False
-    adjudication = second_review.get("adjudication")
-    if adjudication is None:
-        return True
-    return adjudication.get("final_decision") != decision
+    return second_review.get("adjudication") is None
+
+
+def _terminal_primary_decision(screening_data: dict) -> str | None:
+    history = screening_data.get("decision_history") or []
+    if history:
+        return history[-1].get("primary_decision")
+    return screening_data.get("decision")
 
 
 def _screening_is_extraction_eligible(screening_obj: ResearchObject, protocol: ResearchObject | None) -> tuple[bool, str]:
@@ -213,7 +226,8 @@ def _screening_is_extraction_eligible(screening_obj: ResearchObject, protocol: R
             f"stage '{TERMINAL_SCREENING_STAGE}' is a dual-reviewer stage for this protocol, but no "
             "second_review is recorded"
         )
-    if _screening_conflict_is_unresolved(second_review, data.get("decision")):
+    primary_decision = _terminal_primary_decision(data)
+    if _screening_conflict_is_unresolved(second_review, primary_decision):
         return False, (
             "second_review disagrees with the primary decision and the conflict is not resolved via a "
             "valid adjudication"
@@ -457,10 +471,13 @@ def _check_decision_snapshot(
 ) -> None:
     """Prueft EINEN Entscheidungs-Snapshot (einen decision_history[]-Eintrag) gegen die
     vollstaendigen Workflow-Invarianten. Da die Top-Level-Felder eine geprueft konsistente
-    Projektion des LETZTEN decision_history-Eintrags sind (siehe check_decision_history), deckt
-    der Aufruf dieser Funktion fuer JEDEN Eintrag automatisch auch den aktuellen Zustand ab --
-    es gibt bewusst keine separate Nur-Top-Level-Pruefung mehr (siehe Round-3-Review, Punkt 3)."""
+    Projektion der EFFEKTIVEN Werte des LETZTEN decision_history-Eintrags sind (siehe
+    check_decision_history), deckt der Aufruf dieser Funktion fuer JEDEN Eintrag automatisch auch
+    den aktuellen Zustand ab. Trennt strukturell primary_decision (Erstentscheidung, bleibt bei
+    einem ungeloesten Widerspruch als decision: uncertain erhalten) von decision (effektiver,
+    ggf. adjudizierter Zustand) -- siehe ADR-0043."""
     stage = entry.get("stage")
+    primary_decision = entry.get("primary_decision")
     decision = entry.get("decision")
     decided_by = entry.get("decided_by")
     decided_at = entry.get("decided_at")
@@ -480,11 +497,26 @@ def _check_decision_snapshot(
             f"stage '{stage}' is not among screening_policy.stages of protocol '{protocol_id}'",
         )
 
-    if stage in dual_reviewer_stages and decision in ("include", "exclude") and second_review is None:
+    allowed_decisions = ALLOWED_DECISIONS_BY_STAGE.get(stage)
+    if allowed_decisions is not None:
+        if primary_decision not in allowed_decisions:
+            report.error(
+                file_rel, f"{entry_label}.primary_decision",
+                f"'{primary_decision}' is not an allowed decision for stage '{stage}' "
+                f"(allowed: {sorted(allowed_decisions)})",
+            )
+        if decision not in allowed_decisions:
+            report.error(
+                file_rel, f"{entry_label}.decision",
+                f"'{decision}' is not an allowed decision for stage '{stage}' "
+                f"(allowed: {sorted(allowed_decisions)})",
+            )
+
+    if stage in dual_reviewer_stages and primary_decision in ("include", "exclude") and second_review is None:
         report.error(
             file_rel, f"{entry_label}.second_review",
-            f"stage '{stage}' is a dual-reviewer stage for protocol '{protocol_id}' -- a final "
-            f"'{decision}' decision requires second_review",
+            f"stage '{stage}' is a dual-reviewer stage for protocol '{protocol_id}' -- a primary "
+            f"'{primary_decision}' decision requires second_review",
         )
 
     if second_review:
@@ -497,24 +529,37 @@ def _check_decision_snapshot(
 
         reviewer_decision = second_review.get("reviewer_decision")
         decision_confirmed = second_review.get("decision_confirmed")
-        decisions_agree = reviewer_decision == decision
+        decisions_agree = reviewer_decision == primary_decision
         if decision_confirmed != decisions_agree:
             report.error(
                 file_rel, f"{entry_label}.second_review.decision_confirmed",
                 f"decision_confirmed ({decision_confirmed!r}) is inconsistent with whether reviewer_decision "
-                f"('{reviewer_decision}') actually agrees with the primary decision ('{decision}') -- "
-                "decision_confirmed must be a correct, validated projection of that comparison",
+                f"('{reviewer_decision}') actually agrees with the PRIMARY decision ('{primary_decision}') -- "
+                "decision_confirmed must be a validated projection of that comparison, not of the effective "
+                "decision",
             )
 
         adjudication = second_review.get("adjudication")
-        if not decisions_agree:
+        if decisions_agree:
+            if adjudication is not None:
+                report.error(
+                    file_rel, f"{entry_label}.second_review.adjudication",
+                    "adjudication is not allowed when reviewer_decision agrees with primary_decision -- there "
+                    "is no conflict to resolve",
+                )
+            if decision != primary_decision:
+                report.error(
+                    file_rel, f"{entry_label}.decision",
+                    f"decision ('{decision}') must equal primary_decision ('{primary_decision}') when "
+                    "reviewer_decision agrees with it (no conflict to adjudicate)",
+                )
+        else:
             if adjudication is None:
                 if decision != "uncertain":
                     report.error(
                         file_rel, f"{entry_label}.decision",
-                        "second_review.reviewer_decision disagrees with the primary decision and no "
-                        "adjudication is recorded -- decision must stay 'uncertain' until the conflict is "
-                        "resolved",
+                        "second_review.reviewer_decision disagrees with primary_decision and no adjudication "
+                        "is recorded -- decision must stay 'uncertain' until the conflict is resolved",
                     )
             else:
                 resolved_by = adjudication.get("resolved_by")
@@ -528,8 +573,8 @@ def _check_decision_snapshot(
                 if final_decision != decision:
                     report.error(
                         file_rel, f"{entry_label}.second_review.adjudication.final_decision",
-                        f"adjudication.final_decision ('{final_decision}') must match this entry's decision "
-                        f"('{decision}')",
+                        f"adjudication.final_decision ('{final_decision}') must match this entry's effective "
+                        f"decision ('{decision}')",
                     )
                 resolved_at = adjudication.get("resolved_at")
                 reviewed_at = second_review.get("reviewed_at")
@@ -547,6 +592,13 @@ def _check_decision_snapshot(
                 f"second_review.reviewed_at ('{reviewed_at}') is before the primary decision date "
                 f"('{decided_at}')",
             )
+    else:
+        if decision != primary_decision:
+            report.error(
+                file_rel, f"{entry_label}.decision",
+                f"without second_review, decision ('{decision}') must equal primary_decision "
+                f"('{primary_decision}')",
+            )
 
     if stage in FULL_TEXT_REQUIRING_STAGES and decision == "include" and full_text_status != "obtained":
         report.error(
@@ -556,7 +608,9 @@ def _check_decision_snapshot(
         )
 
 
-def check_decision_history(report: Report, objects: dict[str, dict[str, ResearchObject]]) -> None:
+def check_decision_history(
+    report: Report, objects: dict[str, dict[str, ResearchObject]], search_runs: dict[str, ResearchObject]
+) -> None:
     protocols = objects["protocol"]
     for obj in objects["screening_record"].values():
         file_rel = relative(obj.path)
@@ -566,6 +620,7 @@ def check_decision_history(report: Report, objects: dict[str, dict[str, Research
 
         protocol_id = obj.data.get("protocol_id")
         protocol = protocols.get(protocol_id)
+        search_run_ids = obj.data.get("search_run_ids") or []
 
         expected_sequence = 1
         prev_stage_index = -1
@@ -601,6 +656,20 @@ def check_decision_history(report: Report, objects: dict[str, dict[str, Research
             if decided_at is not None:
                 prev_decided_at = decided_at
 
+            for search_run_id in search_run_ids:
+                search_run = search_runs.get(search_run_id)
+                if search_run is None:
+                    continue
+                executed_date = (search_run.data.get("executed_at") or "")[:10]
+                if executed_date and decided_at and decided_at < executed_date:
+                    report.error(
+                        file_rel, entry_label + ".decided_at",
+                        f"decided_at ('{decided_at}') is before the executed_at date of referenced search "
+                        f"run '{search_run_id}' ('{executed_date}') -- a screening decision cannot predate "
+                        "a search run it is supposedly based on; a legitimate later rediscovery should "
+                        "create a new screening_record instead of retroactively extending search_run_ids",
+                    )
+
             _check_decision_snapshot(report, file_rel, protocol, protocol_id, entry, entry_label)
 
         last = history[-1]
@@ -611,6 +680,8 @@ def check_decision_history(report: Report, objects: dict[str, dict[str, Research
             mismatches.append("decision_stage")
         if last.get("decision_reason") != obj.data.get("decision_reason"):
             mismatches.append("decision_reason")
+        if last.get("duplicate_of") != obj.data.get("duplicate_of"):
+            mismatches.append("duplicate_of")
         if last.get("decided_by") != obj.data.get("screened_by"):
             mismatches.append("screened_by")
         if last.get("decided_at") != obj.data.get("screened_at"):
@@ -645,6 +716,80 @@ def check_extraction_verification(report: Report, objects: dict[str, dict[str, R
                 "extraction_status: self_checked for a single-person technical pass instead (which can "
                 "never be promoted)",
             )
+
+
+def check_temporal_chain(report: Report, objects: dict[str, dict[str, ResearchObject]]) -> None:
+    """Prueft die zeitliche Provenienzkette objektuebergreifend (siehe ADR-0044):
+
+    terminale Screening-Entscheidung/-Zweitpruefung/-Adjudikation
+        <= extraction.extracted_at <= extraction.verified_at
+        <= promotion.created_at <= promotion.updated_at
+
+    Fuer promotion_status approved_for_creation/promoted/rejected zusaetzlich:
+        extraction.verified_at <= promotion.review.last_reviewed_at <= promotion.updated_at
+
+    Fuer proposed/in_review gilt diese zweite Regel nicht: review.last_reviewed_at ist in diesen
+    Stadien typischerweise noch null (kein Review hat stattgefunden), das ist kein Fehler."""
+    screening = objects["screening_record"]
+    extractions = objects["extraction_record"]
+
+    for obj in extractions.values():
+        file_rel = relative(obj.path)
+        data = obj.data
+        screening_obj = screening.get(data.get("screening_record_id"))
+        if screening_obj is None:
+            continue
+        s_data = screening_obj.data
+        second_review = s_data.get("second_review") or {}
+        adjudication = second_review.get("adjudication") or {}
+        # Die spaeteste bekannte "Einschlussfreigabe" dieses terminalen Zustands: Adjudikation,
+        # sonst Zweitpruefung, sonst die reine Erstentscheidung -- in dieser Prioritaet, weil
+        # jede Stufe (wo vorhanden) bereits per Datumsreihenfolge >= der vorherigen sein muss.
+        effective_start = adjudication.get("resolved_at") or second_review.get("reviewed_at") or s_data.get("screened_at")
+        extracted_at = data.get("extracted_at")
+        if effective_start and extracted_at and extracted_at < effective_start:
+            report.error(
+                file_rel, "$.extracted_at",
+                f"extracted_at ('{extracted_at}') is before the terminal screening inclusion for "
+                f"'{screening_obj.id}' was completed ('{effective_start}') -- an extraction cannot predate "
+                "its own scientific inclusion decision",
+            )
+
+    for obj in objects["promotion_record"].values():
+        file_rel = relative(obj.path)
+        data = obj.data
+        extraction_obj = extractions.get(data.get("extraction_record_id"))
+        if extraction_obj is None:
+            continue
+        verified_at = extraction_obj.data.get("verified_at")
+        created_at = data.get("created_at")
+        updated_at = data.get("updated_at")
+        if verified_at and created_at and created_at < verified_at:
+            report.error(
+                file_rel, "$.created_at",
+                f"created_at ('{created_at}') is before the referenced extraction's verified_at "
+                f"('{verified_at}')",
+            )
+        if verified_at and updated_at and updated_at < verified_at:
+            report.error(
+                file_rel, "$.updated_at",
+                f"updated_at ('{updated_at}') is before the referenced extraction's verified_at "
+                f"('{verified_at}')",
+            )
+
+        if data.get("promotion_status") in ("approved_for_creation", "promoted", "rejected"):
+            last_reviewed_at = (data.get("review") or {}).get("last_reviewed_at")
+            if verified_at and last_reviewed_at and last_reviewed_at < verified_at:
+                report.error(
+                    file_rel, "$.review.last_reviewed_at",
+                    f"review.last_reviewed_at ('{last_reviewed_at}') is before the referenced extraction's "
+                    f"verified_at ('{verified_at}')",
+                )
+            if last_reviewed_at and updated_at and updated_at < last_reviewed_at:
+                report.error(
+                    file_rel, "$.updated_at",
+                    f"updated_at ('{updated_at}') is before review.last_reviewed_at ('{last_reviewed_at}')",
+                )
 
 
 def check_promotion_records(
@@ -702,15 +847,17 @@ def check_promotion_records(
                 and (protocol.data.get("claim_promotion_policy") or {}).get("requires_second_review")
             )
             if requires_second_review:
+                # Eindeutigkeit und Nicht-Leerheit der einzelnen Kuerzel sind bereits
+                # schema-seitig erzwungen (uniqueItems + Nicht-Leerzeichen-Pattern, siehe
+                # research_promotion_record.schema.json) -- hier wird nur noch die
+                # protokollabhaengige Mindestanzahl geprueft.
                 reviewers = (data.get("review") or {}).get("reviewers") or []
-                non_empty = [r for r in reviewers if r]
-                distinct = set(non_empty)
-                if len(non_empty) != len(reviewers) or len(distinct) < 2:
+                if len(reviewers) < 2:
                     report.error(
                         file_rel, "$.review.reviewers",
                         f"protocol '{data.get('protocol_id')}' has claim_promotion_policy."
                         f"requires_second_review: true -- promotion_status '{promotion_status}' requires at "
-                        f"least two distinct, non-empty reviewers, got {reviewers!r}",
+                        f"least two distinct reviewers, got {reviewers!r}",
                     )
 
     for (extraction_id, candidate_working_id), records in active_by_candidate.items():
@@ -801,19 +948,6 @@ def check_misc_consistency(report: Report, objects: dict[str, dict[str, Research
         _check_unique(report, file_rel, "$.search_run_ids", data.get("search_run_ids") or [])
         _check_date_order(report, file_rel, "created_at/updated_at", data.get("created_at"), data.get("updated_at"))
 
-        screened_at = data.get("screened_at")
-        for search_run_id in data.get("search_run_ids") or []:
-            search_run = search_runs.get(search_run_id)
-            if search_run is None:
-                continue
-            executed_date = (search_run.data.get("executed_at") or "")[:10]
-            if executed_date and screened_at and screened_at < executed_date:
-                report.error(
-                    file_rel, "$.screened_at",
-                    f"screened_at ('{screened_at}') is before the executed_at date of referenced search run "
-                    f"'{search_run_id}' ('{executed_date}')",
-                )
-
     for obj in objects["extraction_record"].values():
         file_rel = relative(obj.path)
         data = obj.data
@@ -845,8 +979,9 @@ def run_checks(report: Report, objects: dict[str, dict[str, ResearchObject]], so
     check_research_references(report, objects, source_ids, study_ids)
     check_protocol_version_matches_id(report, objects["protocol"])
     check_deduplication(report, objects)
-    check_decision_history(report, objects)
+    check_decision_history(report, objects, objects["search_run"])
     check_extraction_verification(report, objects)
+    check_temporal_chain(report, objects)
     check_promotion_records(report, objects, claim_ids)
     check_misc_consistency(report, objects)
 

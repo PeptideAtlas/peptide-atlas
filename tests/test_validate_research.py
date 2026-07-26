@@ -117,7 +117,7 @@ INVALID_SCENARIOS = {
     "second_review_conflict_without_adjudication": "must stay 'uncertain'",
     "adjudicator_equals_first_reviewer": "must be a third person",
     "adjudicator_equals_second_reviewer": "must be a third person",
-    "final_decision_differs_from_adjudication": "must match this entry's decision",
+    "final_decision_differs_from_adjudication": "must match this entry's effective decision",
     # Round 3 -- Punkt 4: duplicate_of nur innerhalb desselben Protokolls.
     "duplicate_of_cross_protocol": "belongs to a different protocol",
     "duplicate_of_cycle": "cyclical duplicate_of chain detected",
@@ -125,9 +125,9 @@ INVALID_SCENARIOS = {
     "duplicate_of_self": "cannot mark itself as duplicate_of",
     "duplicate_chain_cross_protocol": "which belongs to a different protocol",
     # Round 3 -- Punkt 5: claim_promotion_policy.requires_second_review.
-    "promotion_policy_requires_two_reviewers": "requires at least two distinct, non-empty reviewers",
-    "promotion_single_reviewer_when_two_required": "requires at least two distinct, non-empty reviewers",
-    "promotion_duplicate_reviewers": "requires at least two distinct, non-empty reviewers",
+    "promotion_policy_requires_two_reviewers": "requires at least two distinct reviewers",
+    "promotion_single_reviewer_when_two_required": "requires at least two distinct reviewers",
+    "promotion_duplicate_reviewers": "has non-unique elements",
     # Round 3 -- Punkt 6: Bedeutung von extraction_status: verified.
     "verified_same_as_extractor": "requires verified_by to differ from extracted_by",
     "self_verified_extraction_cannot_be_promoted": "got 'self_checked'",
@@ -136,6 +136,34 @@ INVALID_SCENARIOS = {
     # Round 3 -- Punkt 8: search_run.database muss geplant sein.
     "search_run_database_not_planned": "is not among protocol",
     "duplicate_planned_database_entry": "duplicate value 'pubmed'",
+    # Round 4 -- Punkt 1: Erst-/Zweit-/Endentscheidung strukturell getrennt.
+    "effective_decision_differs_from_uncontested_primary": "must equal primary_decision",
+    "decision_confirmed_compares_against_effective_instead_of_primary": (
+        "decision_confirmed (True) is inconsistent with whether reviewer_decision ('exclude') actually "
+        "agrees with the PRIMARY decision ('include')"
+    ),
+    "adjudication_present_when_reviews_agree": "adjudication is not allowed when reviewer_decision agrees",
+    "adjudication_effective_decision_mismatch": "must match this entry's effective decision",
+    "missing_primary_decision": "'primary_decision' is a required property",
+    # Round 4 -- Punkt 2: Stage-/Decision-Matrix und historische Ausschluss-/Duplikatregeln.
+    "final_pending_invalid": "is not an allowed decision for stage 'final'",
+    "final_awaiting_full_text_invalid": "is not an allowed decision for stage 'final'",
+    "final_duplicate_invalid": "is not an allowed decision for stage 'final'",
+    "adjudication_pending_invalid": "'pending' is not one of ['include', 'exclude']",
+    "adjudication_uncertain_invalid": "'uncertain' is not one of ['include', 'exclude']",
+    "historical_exclude_without_reason": "is not one of ['wrong_substance'",
+    "historical_non_exclude_with_reason": "is not of type 'null'",
+    "historical_duplicate_without_target": "is not of type 'string'",
+    # Round 4 -- Punkt 3: zeitliche Provenienzkette objektuebergreifend.
+    "extraction_before_terminal_decision": "an extraction cannot predate its own scientific inclusion decision",
+    "extraction_before_second_review": "an extraction cannot predate its own scientific inclusion decision",
+    "extraction_before_adjudication": "an extraction cannot predate its own scientific inclusion decision",
+    "verification_before_extraction": "out of order",
+    "promotion_created_before_verification": "is before the referenced extraction's verified_at",
+    "promotion_reviewed_before_verification": "is before the referenced extraction's verified_at",
+    # Round 4 -- Punkt 4: Promotion-Reviewer wirklich eindeutig und ehrlich.
+    "promotion_three_entries_with_duplicate_reviewer": "has non-unique elements",
+    "promotion_whitespace_only_reviewer": "does not match",
 }
 
 
@@ -215,11 +243,35 @@ PRECISE_INVALID_SCENARIOS = {
     ),
     "screened_at_before_later_search_run": (
         "research/screening/screening-record-50000000-0000-4000-8000-000000000001.yaml",
-        "$.screened_at",
+        "$.decision_history[0].decided_at",
     ),
     "search_run_database_not_planned": (
         "research/search_runs/search-run-40000000-0000-4000-8000-000000000001.yaml",
         "$.database",
+    ),
+    "decision_confirmed_compares_against_effective_instead_of_primary": (
+        "research/screening/screening-record-50000000-0000-4000-8000-000000000001.yaml",
+        "$.decision_history[0].second_review.decision_confirmed",
+    ),
+    "adjudication_present_when_reviews_agree": (
+        "research/screening/screening-record-50000000-0000-4000-8000-000000000001.yaml",
+        "$.decision_history[0].second_review.adjudication",
+    ),
+    "final_duplicate_invalid": (
+        "research/screening/screening-record-50000000-0000-4000-8000-000000000001.yaml",
+        "$.decision_history[0].decision",
+    ),
+    "extraction_before_terminal_decision": (
+        "research/extractions/extraction-record-60000000-0000-4000-8000-000000000001.yaml",
+        "$.extracted_at",
+    ),
+    "promotion_created_before_verification": (
+        "research/promotions/promotion-record-70000000-0000-4000-8000-000000000001.yaml",
+        "$.created_at",
+    ),
+    "promotion_three_entries_with_duplicate_reviewer": (
+        "research/promotions/promotion-record-70000000-0000-4000-8000-000000000001.yaml",
+        "$.review.reviewers",
     ),
 }
 

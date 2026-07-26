@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "research_promotion_record.schema.json",
   "title": "Research Promotion Record",
-  "description": "Macht die Kette von einem verifizierten Kandidatenclaim (extraction_record.candidate_claims[]) zu einem spaeter angelegten kanonischen Claim unter data/claims/** maschinenlesbar (siehe ADR-0037). Ein promotion_record selbst ist KEIN kanonisches Wissensobjekt und erzeugt NIE selbststaendig einen Claim -- approved_for_creation/promoted duerfen laut Scientific Research Protocol nie automatisiert durch Automatisierung/KI gesetzt werden, sondern erfordern eine dokumentierte menschliche wissenschaftliche Entscheidung.",
+  "description": "Macht die Kette von einem verifizierten Kandidatenclaim (extraction_record.candidate_claims[]) zu einem spaeter angelegten kanonischen Claim unter data/claims/** maschinenlesbar (siehe ADR-0037). Ein promotion_record selbst ist KEIN kanonisches Wissensobjekt und erzeugt NIE selbststaendig einen Claim -- approved_for_creation/promoted duerfen laut Scientific Research Protocol nie automatisiert durch Automatisierung/KI gesetzt werden, sondern erfordern eine dokumentierte Entscheidung mit mindestens zwei unterschiedlichen Reviewer-Kuerzeln, sofern das Protokoll requires_second_review verlangt. Schema und Validator pruefen dabei nur die Kuerzel selbst (Eindeutigkeit, keine Leerstrings) -- OB diese Kuerzel tatsaechlich unterschiedliche MENSCHLICHE Personen bezeichnen, ist in Phase 4A eine organisatorische, nicht maschinenlesbar ueberpruefbare Frage (siehe ADR-0041, Scientific Research Protocol Abschnitt 34).",
   "type": "object",
   "properties": {
     "schema_version": { "$ref": "common.schema.json#/$defs/schema_version" },
@@ -25,7 +25,24 @@
       "description": "Muss einem candidate_claims[].working_id im referenzierten extraction_record entsprechen (vom Validator geprueft)."
     },
     "promotion_status": { "$ref": "common.schema.json#/$defs/promotion_status" },
-    "review": { "$ref": "common.schema.json#/$defs/review_block" },
+    "review": {
+      "type": "object",
+      "description": "Promotion-spezifisch strenger als das gemeinsame review_block aus common.schema.json (dort unveraendert, um andere Objektarten nicht zu beruehren): reviewers duerfen keine Duplikate und keine leeren/nur-Leerzeichen-Eintraege enthalten (schema-seitig erzwungen). Ob zwei unterschiedliche Kuerzel tatsaechlich zwei unterschiedliche MENSCHLICHE Personen sind, bleibt organisatorisch kontrolliert (siehe ADR-0041).",
+      "properties": {
+        "last_reviewed_at": { "$ref": "common.schema.json#/$defs/date_or_null" },
+        "reviewers": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": ".*\\S.*",
+            "description": "Mindestens ein Nicht-Leerzeichen-Zeichen -- ein leerer oder nur aus Leerzeichen bestehender Reviewer-Kuerzel ist ungueltig."
+          }
+        }
+      },
+      "additionalProperties": false,
+      "required": ["last_reviewed_at", "reviewers"]
+    },
     "canonical_claim_id": {
       "type": ["string", "null"],
       "pattern": "^claim-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$",

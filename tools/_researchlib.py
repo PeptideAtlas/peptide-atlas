@@ -78,6 +78,29 @@ ACTIVE_SCREENING_DECISIONS = {"include", "pending", "awaiting_full_text", "uncer
 # Protokoll, das nur die redaktionelle Prioritaet bei der Studienzuordnung betrifft).
 DEDUPLICATION_IDENTIFIER_FIELDS = ("doi", "pmid", "pmcid", "nct_id", "isbn")
 
+# Zentrale, wiederverwendbare Stage-/Decision-Matrix (siehe ADR-0043 im Decision Log): legt fest,
+# welche Screening-Entscheidungen an welcher Stufe fachlich sinnvoll sind. Gilt sowohl fuer
+# primary_decision als auch fuer die effektive decision jedes decision_history-Eintrags
+# (validate_research.py). Bewusst NICHT protokollabhaengig -- diese Zuordnung ist intrinsisch zum
+# Stufenbegriff selbst, nicht redaktionell je Vorhaben konfigurierbar.
+#
+# - deduplication: der allererste Check auf Mehrfachfund. 'pending' (noch nicht geprueft),
+#   'include' (kein Duplikat, weiter zu title_abstract), 'duplicate' (Mehrfachfund, terminal fuer
+#   diesen Kandidaten), 'uncertain' (Duplikatstatus unklar). 'exclude' gehoert inhaltlich zum
+#   Titel-/Abstract-/Volltext-Screening, nicht zur reinen Duplikaterkennung.
+# - title_abstract / full_text: inhaltliche Sichtung. 'include'/'exclude' plus
+#   'awaiting_full_text' (Volltext noch nicht beschafft) und 'uncertain'. Kein 'pending'
+#   (die Stufe wurde ja bereits begonnen) und kein 'duplicate' (das gehoert zu deduplication).
+# - final: die einzige terminale, extraktionsfaehige Stufe (siehe Abschnitt 9b) -- nur noch
+#   'include'/'exclude'/'uncertain'. Kein 'awaiting_full_text' (das waere kein finaler Zustand
+#   mehr) und kein 'pending'/'duplicate'.
+ALLOWED_DECISIONS_BY_STAGE = {
+    "deduplication": {"pending", "include", "duplicate", "uncertain"},
+    "title_abstract": {"include", "exclude", "awaiting_full_text", "uncertain"},
+    "full_text": {"include", "exclude", "awaiting_full_text", "uncertain"},
+    "final": {"include", "exclude", "uncertain"},
+}
+
 
 def normalize_nct_id(value: str) -> str:
     """Kanonisiert eine ClinicalTrials.gov-NCT-ID fuer die Duplikaterkennung.
