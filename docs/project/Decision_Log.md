@@ -64,6 +64,7 @@ Kurze, strukturierte Architecture Decision Records (ADRs): Kontext, Entscheidung
 | ADR-0050 | Stabile Research-Actor-ID-Syntax (`research_actor_id`) ohne Actor-Registry | Entschieden (Phase 4A, Review-Härtung Runde 5) | Alle Research-Akteursfelder verwendeten bislang ein reines `minLength: 1`-Feld — Leerzeichenvarianten oder Groß-/Kleinschreibung hätten Gleichheits-/Unabhängigkeitsprüfungen (z. B. Zweitprüfer ≠ Erstprüfer) unterlaufen können. Ausführliches ADR siehe unten. |
 | ADR-0051 | `screening_policy.dual_reviewer_stages` muss Teilmenge von `screening_policy.stages` sein | Entschieden (Phase 4A, Review-Härtung Runde 5) | Ein Protokoll konnte bislang eine Zweitprüferstufe verlangen, die gar nicht als Screening-Stufe konfiguriert war. Ausführliches ADR siehe unten. |
 | ADR-0052 | Historische Duplikatverweise referenziell geprüft; unterschiedliche Duplikatziele als Konflikt behandelt | Entschieden (Phase 4A, Review-Härtung Runde 5B) | `primary_duplicate_of`, `second_review.reviewer_duplicate_of` und `decision_history[].duplicate_of` waren bislang nur formatgeprüft, nicht referenziell — ein Verweis auf einen nicht existierenden, protokollfremden oder den eigenen Datensatz blieb unbemerkt. Zusätzlich zählte eine übereinstimmende `duplicate`-Entscheidung als „bestätigt", auch wenn Erst- und Zweitprüfung unterschiedliche Hauptdatensätze meinten. Ausführliches ADR siehe unten. |
+| ADR-0053 | Effektives `duplicate_of` deterministisch an das bestätigte Duplikatziel gebunden | Entschieden (Phase 4A, Review-Härtung Runde 5C) | ADR-0052 prüfte `primary_duplicate_of == second_review.reviewer_duplicate_of` bei bestätigtem Konsens, aber nicht, dass die effektive `duplicate_of` tatsächlich dieses bestätigte Ziel bindet — ein davon abweichender, sonst gültiger dritter Hauptdatensatz blieb unbemerkt möglich. Ausführliches ADR siehe unten. |
 
 ## Ausführliche ADRs
 
@@ -983,6 +984,55 @@ Kurze, strukturierte Architecture Decision Records (ADRs): Kontext, Entscheidung
   Platzhalter-Datensatz und wurde um einen echten, protokollinternen Zieldatensatz ergänzt.
 - **Migrationsstrategie:** Nicht zutreffend für Produktivdaten. Ein Test-Fixture wurde im selben Commit
   korrigiert (siehe oben).
+
+### ADR-0053: Effektives `duplicate_of` deterministisch an das bestätigte Duplikatziel gebunden
+
+- **Status:** Entschieden
+- **Datum:** 2026-07-26
+- **Kontext:** ADR-0052 prüfte bei einer bestätigten `duplicate`-Übereinstimmung
+  (`decision_confirmed: true`), dass `primary_duplicate_of == second_review.reviewer_duplicate_of`
+  gilt — stellte aber nicht sicher, dass die **effektive** `duplicate_of` dieses bestätigte Ziel
+  tatsächlich übernimmt. Ein Datensatz konnte also z. B. `primary_duplicate_of: A`,
+  `second_review.reviewer_duplicate_of: A` (beide einig, `decision_confirmed: true`) tragen, während
+  die effektive `duplicate_of` unbemerkt auf einen dritten, ansonsten vollständig gültigen
+  Screening-Datensatz `C` zeigte. Dieselbe Lücke bestand ohne Zweitprüfung: `primary_decision:
+  duplicate` mit `primary_duplicate_of: A`, aber effektive `duplicate_of: B`, ohne dass irgendeine
+  Prüfung das als Widerspruch erkannte.
+- **Entscheidung:** `_check_decision_snapshot` bindet das effektive `duplicate_of` jetzt
+  deterministisch an das durch die vorhandene Provenienz bestätigte Ziel:
+    - **Ohne Zweitprüfung:** bei `primary_decision: duplicate` muss `duplicate_of ==
+      primary_duplicate_of` gelten.
+    - **Mit bestätigtem Duplikatkonsens** (`reviewer_decision == primary_decision == 'duplicate'`
+      UND `reviewer_duplicate_of == primary_duplicate_of`, siehe ADR-0052): `duplicate_of` muss
+      ebenfalls diesem gemeinsamen Ziel entsprechen. Alle drei Ebenen — `primary_duplicate_of`,
+      `second_review.reviewer_duplicate_of`, effektive `duplicate_of` — müssen identisch sein.
+    - **Bei Zielkonflikt** (unterschiedliche Ziele, `decision_confirmed: false`): unverändert nach
+      ADR-0052/ADR-0046 — `decision` bleibt `uncertain`, `duplicate_of` bleibt `null` (bereits
+      schema-seitig erzwungen, da `duplicate_of` nur bei `decision: duplicate` gesetzt sein darf),
+      keine Adjudikation möglich, Auflösung nur durch einen neuen `decision_history`-Eintrag.
+- **Alternativen:**
+    1. *Keine zusätzliche Prüfung, da `primary_duplicate_of`/`reviewer_duplicate_of` bereits die
+       inhaltlich relevante Information tragen* — verworfen: die effektive `duplicate_of` ist das
+       Feld, das andere Prüfungen (Referenzintegrität, Top-Level-Projektion, künftige Auswertungen)
+       tatsächlich konsumieren; ein unbemerkter dritter Wert dort untergräbt die gesamte
+       Drei-Ebenen-Provenienz aus ADR-0047/ADR-0052.
+    2. *Effektives Ziel nur bei bestätigtem Konsens prüfen, den Fall ohne Zweitprüfung offen lassen*
+       — verworfen: der Reviewauftrag benennt beide Fälle ausdrücklich als gleichwertig zu schließende
+       Lücken; ohne Zweitprüfung ist die Erstentscheidung die einzige Quelle des effektiven Zustands,
+       eine Abweichung dort ist ebenso unbegründet.
+    3. *Deterministische Bindung in beiden Fällen (ohne Zweitprüfung, bei bestätigtem Konsens), Konflikt-
+       fall unverändert nach ADR-0052* — **gewählt**.
+- **Konsequenzen:** Ein effektives `duplicate_of`, das vom bestätigten Ziel abweicht, wird jetzt
+  zuverlässig zurückgewiesen — auch wenn der abweichende Wert selbst ein vollständig gültiger,
+  protokollinterner, existierender Screening-Datensatz ist (der reine Referenzcheck aus ADR-0052
+  allein hätte diesen Fall nicht erkannt). Vorher als „nur formatgeprüft, nicht referenziell"
+  dokumentierte Stellen in Schema-Beschreibungen und Projektdokumentation, die durch ADR-0052 bereits
+  überholt, aber nicht überall konsistent nachgezogen worden waren, wurden im selben Commit korrigiert
+  (`schemas/research_screening_record.schema.json`, Scientific Research Protocol Abschnitt 9c,
+  Evidence Curation Workflow, `research/screening/README.md`).
+- **Migrationsstrategie:** Nicht zutreffend für Produktivdaten. Keine bestehenden Test-Fixtures
+  verletzten die neue Regel (die betroffenen Runde-5B-Fixtures verwendeten bereits konsistente
+  Zielwerte).
 
 ## Format für neue Einträge
 

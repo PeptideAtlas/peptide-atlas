@@ -206,8 +206,14 @@ unabhängig dieselbe Regel: der Grund ist Pflicht (nicht `null`) genau dann, wen
 `exclude` ist, und der Duplikatverweis ist Pflicht genau dann, wenn sie `duplicate` ist. So bleibt z. B. die
 Begründung einer ursprünglich ausgeschlossenen, später durch Adjudikation zu `include` überstimmten
 Erstentscheidung vollständig nachvollziehbar, statt beim Überschreiben der effektiven Entscheidung verloren zu
-gehen. `primary_duplicate_of`/`reviewer_duplicate_of` werden nur schema-seitig auf Formatgültigkeit geprüft,
-nicht referenziell — anders als das effektive `duplicate_of` (siehe Abschnitt 34, bekannte Grenze).
+gehen. `primary_duplicate_of`/`second_review.reviewer_duplicate_of`/`decision_history[].duplicate_of` sind seit
+ADR-0052 referenziell geprüft (Ziel existiert als `screening_record`, gleiches `protocol_id`, kein
+Selbstverweis) — bewusst nur mit einem einzelnen Hop, ohne Kettenverfolgung; die vollständige Ketten-/
+Zyklensemantik bleibt auf die effektive Top-Level-`duplicate_of` beschränkt (siehe Abschnitt 8, Abschnitt 34).
+Zusätzlich bindet der Validator seit ADR-0053 das **effektive** `duplicate_of` deterministisch an das
+bestätigte Ziel: ohne Zweitprüfung muss `duplicate_of == primary_duplicate_of` gelten; bei bestätigtem
+Duplikatkonsens (`decision_confirmed: true` bei `duplicate`) müssen Erst-, Zweit- und effektives Duplikatziel
+identisch sein — ein davon abweichender dritter Hauptdatensatz ist ein Validierungsfehler.
 
 **`deduplication` unterstützt strukturell keine Adjudikation** (ADR-0046): `adjudication.final_decision` ist auf
 `include`/`exclude` beschränkt, aber an der Stufe `deduplication` ist `exclude` fachlich nie zulässig und

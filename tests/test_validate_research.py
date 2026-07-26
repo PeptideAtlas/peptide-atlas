@@ -211,6 +211,16 @@ INVALID_SCENARIOS = {
     "duplicate_reviews_same_decision_different_targets_not_confirmed": (
         "decision_confirmed (True) is inconsistent"
     ),
+    # Round 5C -- Punkt 1: effektives duplicate_of deterministisch an das bestaetigte Ziel gebunden.
+    "effective_duplicate_target_differs_from_primary_without_second_review": (
+        "effective duplicate_of must match the duplicate target confirmed"
+    ),
+    "effective_duplicate_target_differs_from_confirmed_duplicate_reviews": (
+        "effective duplicate_of must match the duplicate target confirmed"
+    ),
+    "effective_duplicate_target_points_to_valid_but_unreviewed_record": (
+        "effective duplicate_of must match the duplicate target confirmed"
+    ),
 }
 
 
@@ -369,6 +379,15 @@ PRECISE_INVALID_SCENARIOS = {
     "duplicate_reviews_same_decision_different_targets_not_confirmed": (
         "research/screening/screening-record-50000000-0000-4000-8000-000000000001.yaml",
         "$.decision_history[0].second_review.decision_confirmed",
+    ),
+    # Round 5C -- Punkt 1: kritische Faelle fuer die effektive duplicate_of-Bindung.
+    "effective_duplicate_target_differs_from_primary_without_second_review": (
+        "research/screening/screening-record-50000000-0000-4000-8000-000000000001.yaml",
+        "$.decision_history[0].duplicate_of",
+    ),
+    "effective_duplicate_target_differs_from_confirmed_duplicate_reviews": (
+        "research/screening/screening-record-50000000-0000-4000-8000-000000000001.yaml",
+        "$.decision_history[0].duplicate_of",
     ),
 }
 

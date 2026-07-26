@@ -49,6 +49,12 @@ nicht automatisch eine kanonische Quelle. Er dokumentiert die Ein-/Ausschlussent
   sich einig, dass es sich um ein Duplikat handelt, aber nicht, wessen Duplikat. Die effektive `decision`
   bleibt `uncertain`, `duplicate_of` bleibt `null`, bis ein neuer `decision_history`-Eintrag den Widerspruch
   auflöst (siehe ADR-0052 im [Decision Log](../../docs/project/Decision_Log.md)).
+- **Effektives Duplikatziel deterministisch gebunden:** Ohne Zweitprüfung muss die effektive `duplicate_of`
+  exakt `primary_duplicate_of` entsprechen. Bei bestätigtem Duplikatkonsens (`decision_confirmed: true` bei
+  `duplicate`) müssen Erst-, Zweit- und effektives Duplikatziel **identisch** sein — ein davon abweichender
+  dritter Hauptdatensatz in `duplicate_of` ist ein Validierungsfehler, selbst wenn dieser dritte Datensatz
+  selbst ein gültiger, existierender, protokollinterner Screening-Datensatz ist (siehe ADR-0053 im
+  [Decision Log](../../docs/project/Decision_Log.md)).
 - `decision_history[]` wird als **gesamtes** Array geprüft (jeder Eintrag, nicht nur der aktuelle Zustand,
   inkl. Datumsreihenfolge gegen jeden referenzierten Suchlauf) — ist aber ein manuell editierbares Feld
   innerhalb derselben Datei, **kein** unveränderliches, separates Event-Log (append-only ist redaktionelle

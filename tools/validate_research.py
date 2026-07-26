@@ -36,7 +36,11 @@ Prueft (Ueberblick, siehe die einzelnen check_*-Funktionen fuer Details):
   decision_confirmed bei reviewer_decision == primary_decision == 'duplicate' erfordert seit
   ADR-0052 zusaetzlich reviewer_duplicate_of == primary_duplicate_of -- zwei Pruefungen, die beide
   'duplicate' waehlen, aber unterschiedliche Hauptdatensaetze meinen, sind KEINE bestaetigte
-  Uebereinstimmung.
+  Uebereinstimmung. Seit ADR-0053 ist die EFFEKTIVE duplicate_of zusaetzlich deterministisch an das
+  bestaetigte Ziel gebunden: ohne Zweitpruefung muss duplicate_of == primary_duplicate_of gelten; bei
+  bestaetigtem Konsens muessen primary_duplicate_of, reviewer_duplicate_of UND die effektive
+  duplicate_of identisch sein -- ein davon abweichender, sonst gueltiger dritter Hauptdatensatz ist
+  ein Fehler.
   Extraktion ist nur fuer einen screening_record zulaessig, dessen Einschluss terminal
   (decision_stage: final), vollstaendig volltextgeprueft und frei von ungeloesten
   Zweitpruefungskonflikten ist.
@@ -569,6 +573,7 @@ def _check_decision_snapshot(
     primary_decision = entry.get("primary_decision")
     primary_duplicate_of = entry.get("primary_duplicate_of")
     decision = entry.get("decision")
+    effective_duplicate_of = entry.get("duplicate_of")
     decided_by = entry.get("decided_by")
     decided_at = entry.get("decided_at")
     full_text_status = entry.get("full_text_status")
@@ -669,6 +674,16 @@ def _check_decision_snapshot(
                     f"decision ('{decision}') must equal primary_decision ('{primary_decision}') when "
                     "reviewer_decision agrees with it (no conflict to adjudicate)",
                 )
+            if primary_decision == "duplicate" and effective_duplicate_of != primary_duplicate_of:
+                # ADR-0053: bei bestaetigtem Duplikatkonsens (Erst- und Zweitpruefung stimmen sowohl
+                # in der Entscheidung als auch im Ziel ueberein, siehe ADR-0052) muss das effektive
+                # duplicate_of GENAU dieses bestaetigte Ziel binden -- ein davon abweichender dritter
+                # Hauptdatensatz waere sonst unbemerkt moeglich.
+                report.error(
+                    file_rel, f"{entry_label}.duplicate_of",
+                    "effective duplicate_of must match the duplicate target confirmed by primary and "
+                    "second review",
+                )
         else:
             if adjudication is None:
                 if decision != "uncertain":
@@ -714,6 +729,15 @@ def _check_decision_snapshot(
                 file_rel, f"{entry_label}.decision",
                 f"without second_review, decision ('{decision}') must equal primary_decision "
                 f"('{primary_decision}')",
+            )
+        if primary_decision == "duplicate" and effective_duplicate_of != primary_duplicate_of:
+            # ADR-0053: ohne Zweitpruefung ist die Erstentscheidung die einzige Quelle des effektiven
+            # Zustands -- ein effektives duplicate_of, das vom primary_duplicate_of abweicht, ist
+            # damit strukturell unbegruendet.
+            report.error(
+                file_rel, f"{entry_label}.duplicate_of",
+                "effective duplicate_of must match the duplicate target confirmed by primary and "
+                "second review",
             )
 
     if stage in FULL_TEXT_REQUIRING_STAGES and decision == "include" and full_text_status != "obtained":

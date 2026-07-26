@@ -25,7 +25,7 @@
         "reviewer_duplicate_of": {
           "type": ["string", "null"],
           "pattern": "^screening-record-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$",
-          "description": "Der von der Zweitpruefung erfasste Duplikatverweis -- Pflicht (nicht null) wenn reviewer_decision 'duplicate' ist, muss null sein sonst. Nur schema-seitig auf Formatgueltigkeit geprueft, nicht referenziell (siehe ADR-0046)."
+          "description": "Der von der Zweitpruefung erfasste Duplikatverweis -- Pflicht (nicht null) wenn reviewer_decision 'duplicate' ist, muss null sein sonst. Vom Validator referenziell geprueft (Ziel existiert als screening_record, gleiches protocol_id, kein Selbstverweis -- ein einzelner Hop, keine Kettenverfolgung, siehe ADR-0052). Bei bestaetigtem Duplikatkonsens (decision_confirmed: true) muss dieser Wert zusaetzlich mit primary_duplicate_of UND der effektiven duplicate_of uebereinstimmen (ADR-0053)."
         },
         "adjudication": {
           "type": ["object", "null"],
@@ -184,7 +184,7 @@
           "primary_duplicate_of": {
             "type": ["string", "null"],
             "pattern": "^screening-record-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$",
-            "description": "Der von der Erstentscheidung erfasste Duplikatverweis -- Pflicht (nicht null) wenn primary_decision 'duplicate' ist, muss null sein sonst. Bleibt erhalten, auch wenn die effektive duplicate_of spaeter davon abweicht, siehe ADR-0046."
+            "description": "Der von der Erstentscheidung erfasste Duplikatverweis -- Pflicht (nicht null) wenn primary_decision 'duplicate' ist, muss null sein sonst. Bleibt bei einem ungeloesten Zielkonflikt (primary_duplicate_of != second_review.reviewer_duplicate_of) unveraendert erhalten, auch wenn die effektive duplicate_of in diesem Fall auf null zurueckfaellt (siehe ADR-0046). Vom Validator referenziell geprueft (ADR-0052) und -- ohne Zweitpruefung oder bei bestaetigtem Konsens -- deterministisch an die effektive duplicate_of gebunden (ADR-0053)."
           },
           "decided_by": { "$ref": "common.schema.json#/$defs/research_actor_id" },
           "decided_at": { "$ref": "common.schema.json#/$defs/date" },
