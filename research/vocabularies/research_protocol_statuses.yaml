@@ -1,0 +1,16 @@
+# Kontrolliertes Vokabular: status (research_protocol)
+schema_version: "1.0.0"
+values:
+  - value: draft
+    labels: { de: Entwurf, en: Draft }
+  - value: in_review
+    labels: { de: In Prüfung, en: In Review }
+  - value: approved
+    labels: { de: Freigegeben, en: Approved }
+    note_de: >
+      Erfordert mindestens ein Reviewdatum, mindestens einen Reviewer und eine dokumentierte
+      Freigabeentscheidung (review.approval_decision).
+  - value: superseded
+    labels: { de: Abgelöst, en: Superseded }
+  - value: withdrawn
+    labels: { de: Zurückgezogen, en: Withdrawn }

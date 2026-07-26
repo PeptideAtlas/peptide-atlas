@@ -1,0 +1,74 @@
+# Diese Daten sind ausschliesslich technische Platzhalter und keine medizinischen Aussagen.
+schema_version: "1.0.0"
+id: research-protocol-placeholder-substance-v1
+title: Platzhalter-Rechercheprotokoll
+subject:
+  working_name: Placeholder Substance
+  notes:
+    de: Rein technischer Platzhalter zur Illustration des Protokollschemas.
+version: 1
+status: approved
+objectives:
+  - de: Illustration des Rechercheprotokoll-Datenmodells anhand einer fiktiven Substanz.
+research_questions:
+  - id: rq-identity
+    topic: identity
+    question:
+      de: Wie lauten kanonischer Name und bestaetigte Synonyme der Platzhaltersubstanz?
+  - id: rq-mechanism
+    topic: mechanism
+    question:
+      de: An welche Platzhalterrezeptoren bindet die Substanz laut praeklinischen Modellen?
+scope:
+  description:
+    de: Rein technischer Beispielumfang, keine echte Recherche.
+  in_scope:
+    - Placeholder-Identitaetsfragen
+  out_of_scope:
+    - Echte medizinische Bewertung
+planned_information_sources:
+  - database: pubmed
+    role: primary
+    notes: null
+  - database: google_scholar
+    role: discovery_only
+    notes: Nur zur ergaenzenden Kandidatensuche, kein Wirksamkeitsnachweis.
+planned_search_concepts:
+  - placeholder substance
+  - placeholder receptor
+eligibility:
+  inclusion_criteria:
+    - Primaerstudien mit direktem Bezug zur Platzhaltersubstanz
+  exclusion_criteria:
+    - Haendlerseiten als alleiniger Beleg
+deduplication_policy:
+  description:
+    de: Platzhalter-Dedup-Regel für Testzwecke.
+  identifier_priority: [doi, pmid, pmcid]
+  manual_review_required: true
+screening_policy:
+  description:
+    de: Zweistufiges Platzhalter-Screening.
+  stages: [deduplication, title_abstract, full_text, final]
+  dual_reviewer_stages: [final]
+extraction_policy:
+  description:
+    de: Platzhalter-Extraktionsregel.
+  verification_required: true
+  fields_to_extract: [identity, mechanism]
+evidence_appraisal_policy:
+  description:
+    de: Bewertung erfolgt claim-basiert gemaess dem bestehenden Evidenzmodell (siehe data/README.md).
+claim_promotion_policy:
+  description:
+    de: Promotion in data/** erst nach zweitem Review.
+  requires_second_review: true
+amendment_policy:
+  description:
+    de: Aenderungen am Protokoll werden als neue Version (-v2, -v3, ...) angelegt.
+created_at: "2026-07-24"
+updated_at: "2026-07-24"
+review:
+  last_reviewed_at: "2026-07-24"
+  reviewers: ["reviewer-2"]
+  approval_decision: Platzhalterbeispiel freigegeben (rein technische Illustration).

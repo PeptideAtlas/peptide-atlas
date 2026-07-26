@@ -6,3 +6,8 @@ __pycache__/
 venv/
 build/
 .pytest_cache/
+
+# Lokaler Arbeitsbereich fuer Recherche-Rohdaten (Volltexte, Exporte) --
+# aus rechtlichen/technischen Gruenden nicht versioniert. Siehe research/raw/README.md.
+research/raw/*
+!research/raw/README.md

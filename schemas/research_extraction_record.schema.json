@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "research_extraction_record.schema.json",
+  "title": "Research Extraction Record",
+  "description": "Beobachtungen und Arbeitsnotizen aus einer eingeschlossenen Quelle, mit vorlaeufigen, ausdruecklich ungeprueften Kandidatenclaims. Erzeugt NIE automatisch einen aktiven kanonischen Claim unter data/claims/**.",
+  "type": "object",
+  "properties": {
+    "schema_version": { "$ref": "common.schema.json#/$defs/schema_version" },
+    "id": {
+      "type": "string",
+      "pattern": "^extraction-record-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$"
+    },
+    "protocol_id": {
+      "type": "string",
+      "pattern": "^research-protocol-[a-z0-9]+(-[a-z0-9]+)*-v[0-9]+$"
+    },
+    "screening_record_id": {
+      "type": "string",
+      "pattern": "^screening-record-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$"
+    },
+    "canonical_source_id": {
+      "type": ["string", "null"],
+      "pattern": "^source-[a-z0-9]+(-[a-z0-9]+)*$",
+      "description": "Darf erst gesetzt werden, wenn das Source-Objekt unter data/sources/** tatsaechlich existiert (vom Validator geprueft)."
+    },
+    "canonical_study_id": {
+      "type": ["string", "null"],
+      "pattern": "^study-[a-z0-9]+(-[a-z0-9]+)*$",
+      "description": "Darf erst gesetzt werden, wenn das Study-Objekt unter data/entities/studies/** tatsaechlich existiert (vom Validator geprueft)."
+    },
+    "extraction_status": { "$ref": "common.schema.json#/$defs/extraction_status" },
+    "source_locator": { "$ref": "common.schema.json#/$defs/locator" },
+    "bibliographic_observations": { "$ref": "#/$defs/observation_list" },
+    "study_observations": { "$ref": "#/$defs/observation_list" },
+    "population_observations": { "$ref": "#/$defs/observation_list" },
+    "intervention_observations": { "$ref": "#/$defs/observation_list" },
+    "comparator_observations": { "$ref": "#/$defs/observation_list" },
+    "outcome_observations": { "$ref": "#/$defs/observation_list" },
+    "safety_observations": { "$ref": "#/$defs/observation_list" },
+    "pharmacokinetic_observations": { "$ref": "#/$defs/observation_list" },
+    "mechanistic_observations": { "$ref": "#/$defs/observation_list" },
+    "limitations_observed": { "$ref": "#/$defs/observation_list" },
+    "candidate_claims": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "description": "Ein vorlaeufiger, ausdruecklich ungeprueter Kandidatenclaim. Traegt bewusst KEIN status-Feld -- additionalProperties:false verhindert strukturell, dass hier je ein aktiver/veroeffentlichter Claim-Status vorgetaeuscht werden kann.",
+        "properties": {
+          "working_id": {
+            "type": "string",
+            "pattern": "^candidate-[a-z0-9]+(-[a-z0-9]+)*$",
+            "description": "Lokaler Arbeits-Slug, ausdruecklich KEINE kanonische Claim-ID (die 'claim-<uuid4>'-Form ist hier nicht zulaessig)."
+          },
+          "claim_type_candidate": { "$ref": "common.schema.json#/$defs/claim_type" },
+          "predicate_candidate": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9]*(_[a-z0-9]+)*$",
+            "description": "Vorschlag fuer ein Praedikat. Nicht zwingend bereits in data/vocabularies/predicates.yaml enthalten -- ein neues Praedikat kann waehrend der Extraktion vorgeschlagen und erst bei der Promotion formal ergaenzt werden."
+          },
+          "statement_candidate": { "$ref": "common.schema.json#/$defs/short_paraphrase" },
+          "locator": {
+            "allOf": [{ "$ref": "common.schema.json#/$defs/locator" }],
+            "anyOf": [
+              { "required": ["page"], "properties": { "page": { "type": "string", "minLength": 1 } } },
+              { "required": ["table"], "properties": { "table": { "type": "string", "minLength": 1 } } },
+              { "required": ["figure"], "properties": { "figure": { "type": "string", "minLength": 1 } } },
+              { "required": ["section"], "properties": { "section": { "type": "string", "minLength": 1 } } }
+            ],
+            "description": "Praeziser Fundort ist fuer jeden Kandidatenclaim Pflicht: mindestens eines von page/table/figure/section muss ein nicht leerer Wert sein (ein rein aus null-Werten bestehender locator reicht nicht)."
+          },
+          "is_provisional": {
+            "const": true,
+            "description": "Muss immer true sein -- markiert den Kandidatenclaim ausdruecklich als vorlaeufig/ungeprueft."
+          }
+        },
+        "additionalProperties": false,
+        "required": ["working_id", "claim_type_candidate", "predicate_candidate", "statement_candidate", "locator", "is_provisional"]
+      }
+    },
+    "extracted_by": { "$ref": "common.schema.json#/$defs/research_actor_id" },
+    "extracted_at": { "$ref": "common.schema.json#/$defs/date" },
+    "verified_by": {
+      "anyOf": [
+        { "$ref": "common.schema.json#/$defs/research_actor_id" },
+        { "type": "null" }
+      ]
+    },
+    "verified_at": { "$ref": "common.schema.json#/$defs/date_or_null" },
+    "discrepancies": {
+      "type": "array",
+      "default": [],
+      "items": { "$ref": "common.schema.json#/$defs/short_paraphrase" }
+    },
+    "created_at": { "$ref": "common.schema.json#/$defs/date" },
+    "updated_at": { "$ref": "common.schema.json#/$defs/date" }
+  },
+  "$defs": {
+    "observation_list": {
+      "type": "array",
+      "default": [],
+      "items": { "$ref": "common.schema.json#/$defs/observation_entry" }
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "protocol_id",
+    "screening_record_id",
+    "canonical_source_id",
+    "canonical_study_id",
+    "extraction_status",
+    "source_locator",
+    "bibliographic_observations",
+    "study_observations",
+    "population_observations",
+    "intervention_observations",
+    "comparator_observations",
+    "outcome_observations",
+    "safety_observations",
+    "pharmacokinetic_observations",
+    "mechanistic_observations",
+    "limitations_observed",
+    "candidate_claims",
+    "extracted_by",
+    "extracted_at",
+    "verified_by",
+    "verified_at",
+    "discrepancies",
+    "created_at",
+    "updated_at"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": { "extraction_status": { "const": "verified" } },
+        "required": ["extraction_status"]
+      },
+      "then": {
+        "properties": {
+          "verified_by": { "type": "string", "minLength": 1 },
+          "verified_at": { "type": "string" }
+        },
+        "required": ["verified_by", "verified_at"]
+      }
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+schema_version: "1.0.0"
+id: research-protocol-test-substance-v1
+title: Test Research Protocol
+subject:
+  working_name: Test Substance
+version: 1
+status: draft
+objectives:
+  - de: Testdaten.
+research_questions:
+  - id: rq-1
+    topic: identity
+    question:
+      de: Testfrage.
+scope:
+  description: { de: Test. }
+  in_scope: [Test]
+  out_of_scope: []
+planned_information_sources:
+  - database: pubmed
+    role: primary
+    notes: null
+planned_search_concepts: [test substance]
+eligibility:
+  inclusion_criteria: [Testkriterium]
+  exclusion_criteria: [Testausschlusskriterium]
+deduplication_policy:
+  description: { de: Test. }
+  identifier_priority: [doi]
+  manual_review_required: true
+screening_policy:
+  description: { de: Test. }
+  stages: [title_abstract]
+  dual_reviewer_stages: []
+extraction_policy:
+  description: { de: Test. }
+  verification_required: true
+  fields_to_extract: [identity]
+evidence_appraisal_policy:
+  description: { de: Test. }
+claim_promotion_policy:
+  description: { de: Test. }
+  requires_second_review: true
+amendment_policy:
+  description: { de: Test. }
+created_at: "2026-02-30"
+updated_at: "2026-01-01"
+review:
+  last_reviewed_at: null
+  reviewers: []
+  approval_decision: null

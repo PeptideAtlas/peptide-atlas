@@ -1,0 +1,59 @@
+# Kontrolliertes Vokabular: database (research_search_run) / planned_information_sources[].database (research_protocol)
+# Geteilt mit schemas/common.schema.json#/$defs/research_database -- siehe
+# tests/test_research_vocabulary_consistency.py fuer die Drift-Absicherung.
+schema_version: "1.0.0"
+values:
+  - value: pubmed
+    labels:
+      de: PubMed/MEDLINE
+      en: PubMed/MEDLINE
+    role_default: primary
+  - value: clinicaltrials_gov
+    labels:
+      de: ClinicalTrials.gov
+      en: ClinicalTrials.gov
+    role_default: primary
+  - value: ema
+    labels:
+      de: European Medicines Agency (EMA)
+      en: European Medicines Agency (EMA)
+    role_default: primary
+  - value: fda
+    labels:
+      de: U.S. Food and Drug Administration (FDA)
+      en: U.S. Food and Drug Administration (FDA)
+    role_default: primary
+  - value: who_ictrp
+    labels:
+      de: WHO International Clinical Trials Registry Platform
+      en: WHO International Clinical Trials Registry Platform
+    role_default: primary
+  - value: crossref
+    labels:
+      de: Crossref
+      en: Crossref
+    role_default: supplementary
+  - value: cochrane_library
+    labels:
+      de: Cochrane Library
+      en: Cochrane Library
+    role_default: supplementary
+  - value: google_scholar
+    labels:
+      de: Google Scholar
+      en: Google Scholar
+    role_default: discovery_only
+    note_de: >
+      Nur ergaenzendes Discovery-Werkzeug -- kein eigenstaendiger Wirksamkeitsnachweis.
+  - value: manufacturer_registry
+    labels:
+      de: Herstellerregister
+      en: Manufacturer Registry
+    role_default: discovery_only
+    note_de: >
+      Nur fuer ausdruecklich attribuierte Herstellerangaben, kein eigenstaendiger Wirksamkeitsnachweis.
+  - value: other
+    labels:
+      de: Sonstige
+      en: Other
+    role_default: supplementary

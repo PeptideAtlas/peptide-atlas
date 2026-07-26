@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any, Iterator
 from urllib.parse import urlsplit, urlunsplit
 
+import jsonschema
 import yaml
 from referencing import Registry, Resource
 from referencing.jsonschema import DRAFT202012
@@ -49,6 +50,60 @@ SCHEMA_VERSION = "1.0.0"
 
 class DataFileError(Exception):
     """Wird geworfen, wenn eine YAML-Datei nicht sicher geladen werden kann."""
+
+
+@dataclass
+class Issue:
+    """Ein einzelner Validierungsbefund. Gemeinsame Infrastruktur fuer validate_data.py
+    UND validate_research.py, damit beide Validatoren dasselbe Ausgabeformat und dieselben
+    Exitcode-Regeln haben, obwohl sie inhaltlich unabhaengig voneinander arbeiten."""
+
+    level: str  # "ERROR" | "WARNING"
+    file: str
+    path: str
+    message: str
+
+    def format(self) -> str:
+        location = f"{self.file}\n  {self.path}: " if self.path else f"{self.file}\n  "
+        return f"{self.level} {location}{self.message}"
+
+
+class Report:
+    def __init__(self) -> None:
+        self.issues: list[Issue] = []
+
+    def error(self, file: str, path: str, message: str) -> None:
+        self.issues.append(Issue("ERROR", file, path, message))
+
+    def warning(self, file: str, path: str, message: str) -> None:
+        self.issues.append(Issue("WARNING", file, path, message))
+
+    @property
+    def error_count(self) -> int:
+        return sum(1 for issue in self.issues if issue.level == "ERROR")
+
+    @property
+    def warning_count(self) -> int:
+        return sum(1 for issue in self.issues if issue.level == "WARNING")
+
+
+_FORMAT_CHECKER = jsonschema.FormatChecker()
+
+
+def jsonschema_error_path(error: "jsonschema.exceptions.ValidationError") -> str:
+    parts = [str(p) for p in error.absolute_path]
+    return "$" + "".join(f"[{p}]" if isinstance(p, int) else f".{p}" for p in parts) if parts else "$"
+
+
+def validate_against_schema(report: Report, file_rel: str, data: Any, schema_id: str, registry, schemas) -> None:
+    """Validiert `data` gegen das Schema `schema_id` und traegt jeden Fehler in `report` ein.
+    Nutzt einen aktivierten FormatChecker, damit z. B. 'format: date' echte Kalenderdaten
+    verlangt (nicht nur die Regex-Syntax)."""
+    schema = schemas[schema_id]
+    validator_cls = jsonschema.validators.validator_for(schema)
+    validator = validator_cls(schema, registry=registry, format_checker=_FORMAT_CHECKER)
+    for error in sorted(validator.iter_errors(data), key=lambda e: list(e.absolute_path)):
+        report.error(file_rel, jsonschema_error_path(error), error.message)
 
 
 @dataclass

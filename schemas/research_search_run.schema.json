@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "research_search_run.schema.json",
+  "title": "Research Search Run",
+  "description": "Protokoll eines tatsaechlich ausgefuehrten Suchlaufs in einer Datenbank: exakter Suchstring, Zeitpunkt, Trefferzahl. Ein Suchlauf ist selbst KEINE wissenschaftliche Quelle. Unveraenderlich nach Ausfuehrung -- ein wiederholter oder korrigierter Suchlauf erhaelt eine neue id.",
+  "type": "object",
+  "properties": {
+    "schema_version": { "$ref": "common.schema.json#/$defs/schema_version" },
+    "id": {
+      "type": "string",
+      "pattern": "^search-run-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$"
+    },
+    "protocol_id": {
+      "type": "string",
+      "pattern": "^research-protocol-[a-z0-9]+(-[a-z0-9]+)*-v[0-9]+$"
+    },
+    "database": { "$ref": "common.schema.json#/$defs/research_database" },
+    "interface": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Die konkret verwendete Benutzeroberflaeche/API, getrennt von der Datenbank selbst (z. B. 'PubMed web interface', 'ClinicalTrials.gov API v2', 'Ovid MEDLINE')."
+    },
+    "executed_at": { "$ref": "common.schema.json#/$defs/date_time" },
+    "executed_by": { "type": "string", "minLength": 1 },
+    "exact_query": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Der exakte, wortwoertliche Suchstring wie in der Datenbank eingegeben. Pflichtfeld -- ein Suchlauf ohne exakten Suchstring ist nicht reproduzierbar."
+    },
+    "filters": {
+      "type": "object",
+      "description": "Zusaetzliche datenbankspezifische Filter (Sprache, Publikationstyp, Spezies, ...). Bewusst offen gehalten (additionalProperties: true), da Filterschluessel je Datenbank stark variieren und keine zentrale Entscheidung im Sinne der uebrigen Felder darstellen."
+    },
+    "date_range": {
+      "type": "object",
+      "properties": {
+        "from": { "$ref": "common.schema.json#/$defs/date_or_null" },
+        "to": { "$ref": "common.schema.json#/$defs/date_or_null" }
+      },
+      "additionalProperties": false,
+      "required": ["from", "to"]
+    },
+    "result_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Muss eine nicht negative Ganzzahl sein."
+    },
+    "export_reference": {
+      "type": ["string", "null"],
+      "description": "Verweis/Beschreibung eines etwaigen lokalen Exports unter research/raw/ (Pfadhinweis, NICHT die Datei selbst)."
+    },
+    "notes": { "type": ["string", "null"] },
+    "status": { "$ref": "common.schema.json#/$defs/search_run_status" },
+    "created_at": { "$ref": "common.schema.json#/$defs/date" },
+    "updated_at": { "$ref": "common.schema.json#/$defs/date" },
+    "review": { "$ref": "common.schema.json#/$defs/review_block" }
+  },
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "protocol_id",
+    "database",
+    "interface",
+    "executed_at",
+    "executed_by",
+    "exact_query",
+    "filters",
+    "date_range",
+    "result_count",
+    "export_reference",
+    "notes",
+    "status",
+    "created_at",
+    "updated_at",
+    "review"
+  ]
+}

@@ -1,0 +1,14 @@
+# Diese Daten sind ausschliesslich technische Platzhalter und keine medizinischen Aussagen.
+schema_version: "1.0.0"
+id: promotion-record-b0000000-0000-4000-8000-000000000002
+protocol_id: research-protocol-placeholder-substance-v1
+extraction_record_id: extraction-record-a0000000-0000-4000-8000-000000000001
+candidate_working_id: candidate-binds-placeholder-receptor
+promotion_status: proposed
+review:
+  last_reviewed_at: null
+  reviewers: []
+canonical_claim_id: null
+decision_rationale: null
+created_at: "2026-07-25"
+updated_at: "2026-07-25"

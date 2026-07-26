@@ -20,6 +20,33 @@
       "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
       "format": "date"
     },
+    "date_time": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601-Zeitstempel (Datum und Uhrzeit, z. B. '2026-07-24T14:30:00Z'). Fuer Ereignisse, bei denen die Uhrzeit nachvollziehbar sein muss (z. B. Ausfuehrungszeitpunkt eines Suchlaufs), reicht ein reines Kalenderdatum nicht aus."
+    },
+    "claim_type": {
+      "type": "string",
+      "enum": [
+        "identity",
+        "classification",
+        "structure",
+        "mechanism",
+        "receptor_activity",
+        "pathway_activity",
+        "pharmacokinetics",
+        "efficacy",
+        "safety",
+        "adverse_event",
+        "regulatory",
+        "study_result",
+        "association",
+        "comparison",
+        "historical",
+        "other"
+      ],
+      "description": "Geteilt zwischen claim.schema.json (kanonische Claims) und research_extraction_record.schema.json (candidate_claims) -- dieselbe Klassifikation, damit ein Kandidatenclaim spaeter ohne Umbenennung in einen kanonischen Claim ueberfuehrt werden kann."
+    },
     "language_code": {
       "type": "string",
       "pattern": "^[a-z]{2}$",
@@ -160,6 +187,96 @@
         "section": { "type": ["string", "null"] }
       },
       "additionalProperties": false
+    },
+    "research_database": {
+      "type": "string",
+      "enum": [
+        "pubmed",
+        "clinicaltrials_gov",
+        "ema",
+        "fda",
+        "who_ictrp",
+        "crossref",
+        "cochrane_library",
+        "google_scholar",
+        "manufacturer_registry",
+        "other"
+      ],
+      "description": "Kontrolliertes Vokabular fuer Recherche-Datenbanken, siehe research/vocabularies/research_databases.yaml. google_scholar/manufacturer_registry sind ergaenzende Discovery-Werkzeuge, keine eigenstaendigen Wirksamkeitsnachweise."
+    },
+    "screening_stage": {
+      "type": "string",
+      "enum": ["deduplication", "title_abstract", "full_text", "final"]
+    },
+    "screening_decision": {
+      "type": "string",
+      "enum": ["pending", "include", "exclude", "duplicate", "awaiting_full_text", "uncertain"]
+    },
+    "exclusion_reason": {
+      "type": "string",
+      "enum": [
+        "wrong_substance",
+        "wrong_population",
+        "wrong_intervention",
+        "wrong_outcome",
+        "wrong_study_type",
+        "not_primary_source",
+        "duplicate_record",
+        "insufficient_information",
+        "unavailable_full_text",
+        "not_scientific",
+        "marketing_content",
+        "superseded_record",
+        "other"
+      ]
+    },
+    "full_text_status": {
+      "type": "string",
+      "enum": ["not_applicable", "not_yet_obtained", "obtained", "restricted_access", "unavailable"]
+    },
+    "extraction_status": {
+      "type": "string",
+      "enum": ["draft", "awaiting_verification", "verified", "self_checked", "rejected", "superseded"],
+      "description": "'verified' bedeutet immer durch eine ANDERE Person geprueft (verified_by != extracted_by wird unbedingt erzwungen, siehe ADR-0040). 'self_checked' ist der ehrliche Zustand fuer rein technische Ein-Personen-Durchsicht ohne unabhaengige Zweitpruefung -- eine so extrahierte Beobachtung ist NIE promotion-faehig (siehe research_promotion_record.schema.json)."
+    },
+    "search_run_status": {
+      "type": "string",
+      "enum": ["executed", "superseded", "withdrawn"],
+      "description": "Eigenstaendiges Vokabular fuer research_search_run, bewusst getrennt von editorial_status -- ein Suchlauf ist ein bereits ausgefuehrtes, unveraenderliches Ereignis, kein redaktionelles Dokument mit Entwurfs-/Freigabezyklus. Siehe research/vocabularies/search_run_statuses.yaml und ADR-0038."
+    },
+    "promotion_status": {
+      "type": "string",
+      "enum": ["proposed", "in_review", "approved_for_creation", "rejected", "promoted", "withdrawn"],
+      "description": "Statuswerte fuer research_promotion_record. approved_for_creation/promoted duerfen nie automatisiert durch Automatisierung/KI gesetzt werden (siehe ADR-0035, ADR-0037)."
+    },
+    "research_actor_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]*$",
+      "description": "Stabiles, syntaktisch eindeutiges Kuerzel fuer einen Research-Akteur (Screener, Zweitpruefer, Adjudikator, Extraktor, Verifizierer, Promotion-Reviewer). Kein fuehrendes/nachgestelltes oder alleiniges Leerzeichen, kein Grossbuchstabe -- verhindert, dass 'reviewer-1' und ' reviewer-1 ' oder 'Reviewer-1' faelschlich als unterschiedliche Kuerzel durchgehen oder Gleichheits-/Unabhaengigkeitspruefungen (z. B. Zweitpruefer != Erstpruefer) durch Leerzeichenvarianten umgangen werden. Stellt NUR syntaktisch stabile, unterscheidbare Kuerzel sicher -- beweist NICHT, dass zwei unterschiedliche Kuerzel zwei unterschiedliche MENSCHLICHE Personen repraesentieren (das bleibt organisatorisch kontrolliert, siehe ADR-0041 und ADR-0046)."
+    },
+    "dual_reviewable_screening_stage": {
+      "type": "string",
+      "enum": ["title_abstract", "full_text", "final"],
+      "description": "Teilmenge von screening_stage, die ein verpflichtendes Zweitreview mit Adjudikation unterstuetzt (siehe screening_policy.dual_reviewer_stages in research_protocol.schema.json). 'deduplication' ist bewusst ausgeschlossen: adjudication.final_decision ist auf include/exclude beschraenkt, 'exclude' ist an der Stufe 'deduplication' fachlich nie zulaessig (siehe screening_decision-Matrix) und 'duplicate' ist als Adjudikationsergebnis nicht abbildbar -- ein Dedup-Konflikt waere damit strukturell nur halb unterstuetzt. Ein Dedup-Widerspruch bleibt daher immer 'uncertain' und wird durch einen NEUEN Screening-Eintrag (nicht durch Adjudikation) aufgeloest (siehe ADR-0046)."
+    },
+    "short_paraphrase": {
+      "type": "object",
+      "description": "Wie localized_text, aber mit harter Laengengrenze je Sprache -- erzwingt eine kurze Paraphrase statt einer laengeren woertlichen Textuebernahme (siehe Scientific Research Protocol, Abschnitt Urheberrecht).",
+      "patternProperties": {
+        "^[a-z]{2}$": { "type": "string", "minLength": 1, "maxLength": 600 }
+      },
+      "additionalProperties": false,
+      "required": ["de"]
+    },
+    "observation_entry": {
+      "type": "object",
+      "description": "Eine einzelne, kurz paraphrasierte Beobachtung mit praeziser Fundstelle -- kein Freitextfeld ohne Struktur.",
+      "properties": {
+        "summary": { "$ref": "#/$defs/short_paraphrase" },
+        "locator": { "$ref": "#/$defs/locator" }
+      },
+      "additionalProperties": false,
+      "required": ["summary", "locator"]
     },
     "evidence_link": {
       "type": "object",

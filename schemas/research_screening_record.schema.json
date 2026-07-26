@@ -1,0 +1,352 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "research_screening_record.schema.json",
+  "title": "Research Screening Record",
+  "description": "Ein gefundener Kandidat und seine Ein-/Ausschlussentscheidung. Repraesentiert NICHT automatisch eine kanonische Quelle -- canonical_source_id bleibt null, bis ein Source-Objekt unter data/sources/** tatsaechlich angelegt wurde. Die Top-Level-Felder (decision, decision_stage, decision_reason, duplicate_of, full_text_status, screened_by, screened_at, second_review) sind eine validierte Projektion der EFFEKTIVEN Werte des letzten decision_history-Eintrags (siehe tools/validate_research.py) -- bewusste Denormalisierung fuer einfache Abfragen, die vollstaendige Historie bleibt in decision_history[] erhalten. WICHTIG: dieses Array ist ein manuell editierbares Feld innerhalb derselben Datei, KEIN unveraendliches, separates Event-Log -- append-only ist redaktionelle Konvention, nicht durch Dateisystem-/Speicherzugriffskontrolle erzwungen (siehe Scientific Research Protocol, Abschnitt 9a). decision_stage: 'final' ist die einzige terminale, extraktionsfaehige Stufe -- 'full_text' dokumentiert die Volltextbewertung, entscheidet aber noch nicht abschliessend (siehe Abschnitt 9b). Jeder decision_history-Eintrag trennt strukturell primary_decision (Erstentscheidung) von decision (effektive/aktuelle Entscheidung nach ggf. Adjudikation) -- siehe Abschnitt 9c.",
+  "type": "object",
+  "$defs": {
+    "second_review_block": {
+      "type": ["object", "null"],
+      "properties": {
+        "reviewed_by": { "$ref": "common.schema.json#/$defs/research_actor_id" },
+        "reviewed_at": { "$ref": "common.schema.json#/$defs/date" },
+        "decision_confirmed": { "type": "boolean" },
+        "reviewer_decision": {
+          "$ref": "common.schema.json#/$defs/screening_decision",
+          "description": "Die eigenstaendige, explizite Entscheidung der Zweitpruefung -- Pflichtfeld (nicht null) sobald second_review ueberhaupt vorhanden ist. decision_confirmed ist eine vom Validator geprueft abgeleitete Projektion von (reviewer_decision == primary_decision), kein frei editierbares Zusatzfeld -- NICHT gegen die effektive decision verglichen (siehe ADR-0043)."
+        },
+        "reviewer_decision_reason": {
+          "anyOf": [
+            { "$ref": "common.schema.json#/$defs/exclusion_reason" },
+            { "type": "null" }
+          ],
+          "description": "Eigenstaendige Begruendung der Zweitpruefung -- Pflicht (nicht null) wenn reviewer_decision 'exclude' ist, muss null sein sonst. Getrennt von primary_decision_reason und decision_reason, damit die Begruendung der Zweitpruefung nicht verloren geht, wenn sie von der Erst- oder Endentscheidung abweicht (siehe ADR-0046)."
+        },
+        "reviewer_duplicate_of": {
+          "type": ["string", "null"],
+          "pattern": "^screening-record-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$",
+          "description": "Der von der Zweitpruefung erfasste Duplikatverweis -- Pflicht (nicht null) wenn reviewer_decision 'duplicate' ist, muss null sein sonst. Vom Validator referenziell geprueft (Ziel existiert als screening_record, gleiches protocol_id, kein Selbstverweis -- ein einzelner Hop, keine Kettenverfolgung, siehe ADR-0052). Bei bestaetigtem Duplikatkonsens (decision_confirmed: true) muss dieser Wert zusaetzlich mit primary_duplicate_of UND der effektiven duplicate_of uebereinstimmen (ADR-0053)."
+        },
+        "adjudication": {
+          "type": ["object", "null"],
+          "description": "Nur zulaessig, wenn reviewer_decision von primary_decision abweicht (decision_confirmed: false). Pflicht (nicht null), wenn dieser Widerspruch besteht UND der Datensatz nicht (mehr) auf decision: uncertain steht -- siehe Scientific Research Protocol, Abschnitt 27a/9c. Fuer stage 'deduplication' strukturell nie zulaessig (vom Validator geprueft, siehe ADR-0046) -- ein Dedup-Widerspruch bleibt immer 'uncertain'.",
+          "properties": {
+            "resolved_by": {
+              "$ref": "common.schema.json#/$defs/research_actor_id",
+              "description": "Dritte Person, die den Widerspruch aufloest. Darf weder den Erstpruefer noch second_review.reviewed_by entsprechen (vom Validator geprueft)."
+            },
+            "resolved_at": { "$ref": "common.schema.json#/$defs/date" },
+            "final_decision": {
+              "type": "string",
+              "enum": ["include", "exclude"],
+              "description": "Die Adjudikation loest einen Include-/Exclude-Widerspruch auf und kann sowohl die Erst- als auch die Zweitentscheidung bestaetigen -- ausdruecklich beschraenkt auf include/exclude, andere Screening-Zustaende (pending/duplicate/awaiting_full_text/uncertain) sind keine gueltigen Adjudikationsergebnisse."
+            },
+            "rationale": { "type": "string", "minLength": 1 }
+          },
+          "additionalProperties": false,
+          "required": ["resolved_by", "resolved_at", "final_decision", "rationale"]
+        },
+        "notes": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false,
+      "required": [
+        "reviewed_by", "reviewed_at", "decision_confirmed", "reviewer_decision", "reviewer_decision_reason",
+        "reviewer_duplicate_of", "adjudication", "notes"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": { "reviewer_decision": { "const": "exclude" } },
+            "required": ["reviewer_decision"]
+          },
+          "then": {
+            "properties": { "reviewer_decision_reason": { "$ref": "common.schema.json#/$defs/exclusion_reason" } },
+            "required": ["reviewer_decision_reason"]
+          }
+        },
+        {
+          "if": {
+            "properties": { "reviewer_decision": { "not": { "const": "exclude" } } },
+            "required": ["reviewer_decision"]
+          },
+          "then": {
+            "properties": { "reviewer_decision_reason": { "type": "null" } }
+          }
+        },
+        {
+          "if": {
+            "properties": { "reviewer_decision": { "const": "duplicate" } },
+            "required": ["reviewer_decision"]
+          },
+          "then": {
+            "properties": { "reviewer_duplicate_of": { "type": "string", "minLength": 1 } },
+            "required": ["reviewer_duplicate_of"]
+          }
+        },
+        {
+          "if": {
+            "properties": { "reviewer_decision": { "not": { "const": "duplicate" } } },
+            "required": ["reviewer_decision"]
+          },
+          "then": {
+            "properties": { "reviewer_duplicate_of": { "type": "null" } }
+          }
+        }
+      ]
+    }
+  },
+  "properties": {
+    "schema_version": { "$ref": "common.schema.json#/$defs/schema_version" },
+    "id": {
+      "type": "string",
+      "pattern": "^screening-record-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$"
+    },
+    "protocol_id": {
+      "type": "string",
+      "pattern": "^research-protocol-[a-z0-9]+(-[a-z0-9]+)*-v[0-9]+$"
+    },
+    "search_run_ids": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "pattern": "^search-run-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$" }
+    },
+    "candidate_identifiers": {
+      "type": "object",
+      "properties": {
+        "doi": { "type": ["string", "null"] },
+        "pmid": { "type": ["string", "null"] },
+        "pmcid": { "type": ["string", "null"] },
+        "nct_id": { "type": ["string", "null"] },
+        "isbn": { "type": ["string", "null"] },
+        "url": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false,
+      "required": ["doi", "pmid", "pmcid", "nct_id", "isbn", "url"]
+    },
+    "candidate_title": { "type": "string", "minLength": 1 },
+    "candidate_source_type": { "$ref": "common.schema.json#/$defs/source_type" },
+    "decision": {
+      "$ref": "common.schema.json#/$defs/screening_decision",
+      "description": "Effektive/aktuelle Entscheidung -- Projektion von decision_history[-1].decision (nach ggf. Adjudikation), NICHT zwingend identisch mit der Erstentscheidung."
+    },
+    "decision_stage": { "$ref": "common.schema.json#/$defs/screening_stage" },
+    "decision_reason": {
+      "anyOf": [
+        { "$ref": "common.schema.json#/$defs/exclusion_reason" },
+        { "type": "null" }
+      ],
+      "description": "Pflicht (nicht null) wenn decision 'exclude' ist, muss null sein sonst."
+    },
+    "duplicate_of": {
+      "type": ["string", "null"],
+      "pattern": "^screening-record-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$",
+      "description": "Pflicht (nicht null) wenn decision 'duplicate' ist. Darf nicht auf den eigenen Datensatz zeigen (Selbstreferenz) und keine Zyklen bilden -- vom Validator geprueft."
+    },
+    "full_text_status": { "$ref": "common.schema.json#/$defs/full_text_status" },
+    "screened_by": { "$ref": "common.schema.json#/$defs/research_actor_id" },
+    "screened_at": { "$ref": "common.schema.json#/$defs/date" },
+    "second_review": { "$ref": "#/$defs/second_review_block" },
+    "decision_history": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Vollstaendige, append-only Screening-Historie -- ein neuer Zustand wird als neuer Eintrag angehaengt, nie durch Ueberschreiben eines frueheren Eintrags ersetzt (siehe Scientific Research Protocol, Abschnitt 9a).",
+      "items": {
+        "type": "object",
+        "properties": {
+          "sequence": { "type": "integer", "minimum": 1 },
+          "stage": { "$ref": "common.schema.json#/$defs/screening_stage" },
+          "primary_decision": {
+            "$ref": "common.schema.json#/$defs/screening_decision",
+            "description": "Die Entscheidung des Erstpruefers (decided_by/decided_at) an dieser Stufe -- bleibt erhalten, auch wenn eine Zweitpruefung/Adjudikation die effektive decision spaeter davon abweichen laesst oder decision: uncertain setzt (siehe ADR-0043)."
+          },
+          "primary_decision_reason": {
+            "anyOf": [
+              { "$ref": "common.schema.json#/$defs/exclusion_reason" },
+              { "type": "null" }
+            ],
+            "description": "Begruendung der Erstentscheidung -- Pflicht (nicht null) wenn primary_decision 'exclude' ist, muss null sein sonst. Bleibt erhalten, auch wenn die effektive decision_reason spaeter davon abweicht (z. B. nach Adjudikation), siehe ADR-0046."
+          },
+          "decision": {
+            "$ref": "common.schema.json#/$defs/screening_decision",
+            "description": "Effektive Entscheidung dieses Eintrags: identisch mit primary_decision ohne second_review oder bei Uebereinstimmung; sonst uncertain (ungeloest) oder second_review.adjudication.final_decision (geloest)."
+          },
+          "decision_reason": {
+            "anyOf": [
+              { "$ref": "common.schema.json#/$defs/exclusion_reason" },
+              { "type": "null" }
+            ]
+          },
+          "duplicate_of": {
+            "type": ["string", "null"],
+            "pattern": "^screening-record-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$",
+            "description": "Der zum Zeitpunkt dieses Eintrags erfasste Hauptdatensatz-Verweis -- Pflicht (nicht null), wenn decision 'duplicate' ist. Geht bei spaeteren Historieneintraegen nicht verloren, da jeder Eintrag ihn eigenstaendig traegt."
+          },
+          "primary_duplicate_of": {
+            "type": ["string", "null"],
+            "pattern": "^screening-record-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$",
+            "description": "Der von der Erstentscheidung erfasste Duplikatverweis -- Pflicht (nicht null) wenn primary_decision 'duplicate' ist, muss null sein sonst. Bleibt bei einem ungeloesten Zielkonflikt (primary_duplicate_of != second_review.reviewer_duplicate_of) unveraendert erhalten, auch wenn die effektive duplicate_of in diesem Fall auf null zurueckfaellt (siehe ADR-0046). Vom Validator referenziell geprueft (ADR-0052) und -- ohne Zweitpruefung oder bei bestaetigtem Konsens -- deterministisch an die effektive duplicate_of gebunden (ADR-0053)."
+          },
+          "decided_by": { "$ref": "common.schema.json#/$defs/research_actor_id" },
+          "decided_at": { "$ref": "common.schema.json#/$defs/date" },
+          "full_text_status": {
+            "$ref": "common.schema.json#/$defs/full_text_status",
+            "description": "Zustand des Volltextzugriffs zum Zeitpunkt dieses Historieneintrags -- Teil der Projektion, siehe research_screening_record.schema.json Top-Level-Beschreibung."
+          },
+          "second_review": { "$ref": "#/$defs/second_review_block" }
+        },
+        "additionalProperties": false,
+        "required": [
+          "sequence", "stage", "primary_decision", "primary_decision_reason", "decision", "decision_reason",
+          "duplicate_of", "primary_duplicate_of", "decided_by", "decided_at", "full_text_status", "second_review"
+        ],
+        "allOf": [
+          {
+            "if": {
+              "properties": { "decision": { "const": "exclude" } },
+              "required": ["decision"]
+            },
+            "then": {
+              "properties": { "decision_reason": { "$ref": "common.schema.json#/$defs/exclusion_reason" } },
+              "required": ["decision_reason"]
+            }
+          },
+          {
+            "if": {
+              "properties": { "decision": { "not": { "const": "exclude" } } },
+              "required": ["decision"]
+            },
+            "then": {
+              "properties": { "decision_reason": { "type": "null" } }
+            }
+          },
+          {
+            "if": {
+              "properties": { "decision": { "const": "duplicate" } },
+              "required": ["decision"]
+            },
+            "then": {
+              "properties": { "duplicate_of": { "type": "string", "minLength": 1 } },
+              "required": ["duplicate_of"]
+            }
+          },
+          {
+            "if": {
+              "properties": { "decision": { "not": { "const": "duplicate" } } },
+              "required": ["decision"]
+            },
+            "then": {
+              "properties": { "duplicate_of": { "type": "null" } }
+            }
+          },
+          {
+            "if": {
+              "properties": { "primary_decision": { "const": "exclude" } },
+              "required": ["primary_decision"]
+            },
+            "then": {
+              "properties": { "primary_decision_reason": { "$ref": "common.schema.json#/$defs/exclusion_reason" } },
+              "required": ["primary_decision_reason"]
+            }
+          },
+          {
+            "if": {
+              "properties": { "primary_decision": { "not": { "const": "exclude" } } },
+              "required": ["primary_decision"]
+            },
+            "then": {
+              "properties": { "primary_decision_reason": { "type": "null" } }
+            }
+          },
+          {
+            "if": {
+              "properties": { "primary_decision": { "const": "duplicate" } },
+              "required": ["primary_decision"]
+            },
+            "then": {
+              "properties": { "primary_duplicate_of": { "type": "string", "minLength": 1 } },
+              "required": ["primary_duplicate_of"]
+            }
+          },
+          {
+            "if": {
+              "properties": { "primary_decision": { "not": { "const": "duplicate" } } },
+              "required": ["primary_decision"]
+            },
+            "then": {
+              "properties": { "primary_duplicate_of": { "type": "null" } }
+            }
+          }
+        ]
+      }
+    },
+    "canonical_source_id": {
+      "type": ["string", "null"],
+      "pattern": "^source-[a-z0-9]+(-[a-z0-9]+)*$",
+      "description": "Bleibt null, bis ein entsprechendes Source-Objekt unter data/sources/** existiert (vom Validator geprueft)."
+    },
+    "created_at": { "$ref": "common.schema.json#/$defs/date" },
+    "updated_at": { "$ref": "common.schema.json#/$defs/date" }
+  },
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "protocol_id",
+    "search_run_ids",
+    "candidate_identifiers",
+    "candidate_title",
+    "candidate_source_type",
+    "decision",
+    "decision_stage",
+    "decision_reason",
+    "duplicate_of",
+    "full_text_status",
+    "screened_by",
+    "screened_at",
+    "second_review",
+    "decision_history",
+    "canonical_source_id",
+    "created_at",
+    "updated_at"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": { "decision": { "const": "exclude" } },
+        "required": ["decision"]
+      },
+      "then": {
+        "properties": { "decision_reason": { "$ref": "common.schema.json#/$defs/exclusion_reason" } },
+        "required": ["decision_reason"]
+      }
+    },
+    {
+      "if": {
+        "properties": { "decision": { "not": { "const": "exclude" } } },
+        "required": ["decision"]
+      },
+      "then": {
+        "properties": { "decision_reason": { "type": "null" } }
+      }
+    },
+    {
+      "if": {
+        "properties": { "decision": { "const": "duplicate" } },
+        "required": ["decision"]
+      },
+      "then": {
+        "properties": { "duplicate_of": { "type": "string", "minLength": 1 } },
+        "required": ["duplicate_of"]
+      }
+    },
+    {
+      "if": {
+        "properties": { "decision": { "not": { "const": "duplicate" } } },
+        "required": ["decision"]
+      },
+      "then": {
+        "properties": { "duplicate_of": { "type": "null" } }
+      }
+    }
+  ]
+}

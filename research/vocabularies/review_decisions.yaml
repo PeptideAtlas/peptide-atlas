@@ -1,0 +1,8 @@
+# Kontrolliertes Vokabular: second_review.decision_confirmed (research_screening_record) --
+# dokumentiert als boolesches Feld im Schema, hier zusaetzlich mit Anzeigenamen fuer die Redaktion.
+schema_version: "1.0.0"
+values:
+  - value: "true"
+    labels: { de: Entscheidung bestätigt, en: Decision Confirmed }
+  - value: "false"
+    labels: { de: Entscheidung nicht bestätigt (abweichende Zweitmeinung), en: Decision Not Confirmed }

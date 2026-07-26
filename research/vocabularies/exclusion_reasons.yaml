@@ -1,0 +1,33 @@
+# Kontrolliertes Vokabular: decision_reason (research_screening_record, wenn decision == exclude)
+schema_version: "1.0.0"
+values:
+  - value: wrong_substance
+    labels: { de: Falsche Substanz, en: Wrong Substance }
+  - value: wrong_population
+    labels: { de: Falsche Population, en: Wrong Population }
+  - value: wrong_intervention
+    labels: { de: Falsche Intervention, en: Wrong Intervention }
+  - value: wrong_outcome
+    labels: { de: Falscher Endpunkt, en: Wrong Outcome }
+  - value: wrong_study_type
+    labels: { de: Falscher Studientyp, en: Wrong Study Type }
+  - value: not_primary_source
+    labels: { de: Keine Primärquelle, en: Not a Primary Source }
+  - value: duplicate_record
+    labels: { de: Doppelter Datensatz, en: Duplicate Record }
+    note_de: >
+      Für den Sonderfall eines erkannten Duplikats, das dennoch als 'exclude' statt 'duplicate'
+      erfasst wird (z. B. Duplikat außerhalb des Protokoll-Scopes). Der reguläre Duplikat-Pfad ist
+      decision: duplicate mit duplicate_of.
+  - value: insufficient_information
+    labels: { de: Unzureichende Informationen, en: Insufficient Information }
+  - value: unavailable_full_text
+    labels: { de: Volltext nicht verfügbar, en: Full Text Unavailable }
+  - value: not_scientific
+    labels: { de: Nicht wissenschaftlich, en: Not Scientific }
+  - value: marketing_content
+    labels: { de: Werbe-/Marketinginhalt, en: Marketing Content }
+  - value: superseded_record
+    labels: { de: Durch neueren Datensatz abgelöst, en: Superseded Record }
+  - value: other
+    labels: { de: Sonstige, en: Other }

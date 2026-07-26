@@ -10,27 +10,7 @@
       "type": "string",
       "pattern": "^claim-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$"
     },
-    "claim_type": {
-      "type": "string",
-      "enum": [
-        "identity",
-        "classification",
-        "structure",
-        "mechanism",
-        "receptor_activity",
-        "pathway_activity",
-        "pharmacokinetics",
-        "efficacy",
-        "safety",
-        "adverse_event",
-        "regulatory",
-        "study_result",
-        "association",
-        "comparison",
-        "historical",
-        "other"
-      ]
-    },
+    "claim_type": { "$ref": "common.schema.json#/$defs/claim_type" },
     "subject_id": { "$ref": "common.schema.json#/$defs/id_ref" },
     "predicate": {
       "type": "string",

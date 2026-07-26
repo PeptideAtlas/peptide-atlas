@@ -22,6 +22,14 @@ Dieses Dokument entwirft ein **universelles, technologieunabhängiges Datenmodel
     wurde für Phase 3 auf sieben Entitätstypen reduziert (siehe Phase 3 Dokumentation für die vollständige
     Begründung je Typ).
 
+!!! info "Provenienzebene seit Phase 4A"
+    Seit Phase 4A gibt es zusätzlich `research/**` — eine separate Recherche- und Provenienzebene (siehe
+    ADR-0033 im [Decision Log](Decision_Log.md)), die Rechercheverlauf, Kandidaten, Screening- und
+    Extraktionsdaten hält. `research/**` ist **kein** kanonisches Wissen und fließt nicht in dieses Datenmodell
+    ein — erst nach manueller Prüfung wird eine Information als Entität, Quelle, Studie oder Claim unter
+    `data/**` angelegt. Details: [Scientific Research Protocol](Scientific_Research_Protocol.md),
+    [Evidence Curation Workflow](Evidence_Curation_Workflow.md).
+
 ## Leitprinzipien
 
 1. **Ein Objekt, eine ID, eine Quelle der Wahrheit.** Jedes Objekt existiert genau einmal und wird von überall darauf verlinkt, nie dupliziert.

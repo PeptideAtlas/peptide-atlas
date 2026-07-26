@@ -1,0 +1,258 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "research_protocol.schema.json",
+  "title": "Research Protocol",
+  "description": "Ein wissenschaftliches Rechercheprotokoll: legt Forschungsfragen, geplante Suchstrategie, Ein-/Ausschlusskriterien sowie Dedup-, Screening-, Extraktions- und Claim-Promotion-Regeln VOR der eigentlichen Recherche fest. Gehoert zur Provenienzebene (research/**), ist selbst kein kanonisches Wissensobjekt.",
+  "type": "object",
+  "properties": {
+    "schema_version": { "$ref": "common.schema.json#/$defs/schema_version" },
+    "id": {
+      "type": "string",
+      "pattern": "^research-protocol-[a-z0-9]+(-[a-z0-9]+)*-v[0-9]+$",
+      "description": "Format: research-protocol-<slug>-v<Ganzzahl>, z. B. research-protocol-retatrutide-v1."
+    },
+    "title": { "type": "string", "minLength": 1 },
+    "subject": {
+      "type": "object",
+      "description": "Der Untersuchungsgegenstand. working_name ist ausdruecklich KEIN kanonischer Name -- die Substanzidentitaet wird erst durch belastbare Quellen bestaetigt (siehe eligibility/research_questions).",
+      "properties": {
+        "working_name": { "type": "string", "minLength": 1 },
+        "notes": { "$ref": "common.schema.json#/$defs/localized_text" }
+      },
+      "additionalProperties": false,
+      "required": ["working_name"]
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Muss mit der Versionsnummer im Suffix der id (-v<N>) uebereinstimmen."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "in_review", "approved", "superseded", "withdrawn"]
+    },
+    "objectives": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "common.schema.json#/$defs/localized_text" }
+    },
+    "research_questions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "topic": {
+            "type": "string",
+            "enum": [
+              "identity",
+              "history",
+              "mechanism",
+              "pharmacokinetics",
+              "clinical",
+              "safety",
+              "preclinical",
+              "regulatory",
+              "other"
+            ]
+          },
+          "question": { "$ref": "common.schema.json#/$defs/localized_text" }
+        },
+        "additionalProperties": false,
+        "required": ["id", "topic", "question"]
+      }
+    },
+    "scope": {
+      "type": "object",
+      "properties": {
+        "description": { "$ref": "common.schema.json#/$defs/localized_text" },
+        "in_scope": { "type": "array", "items": { "type": "string", "minLength": 1 }, "default": [] },
+        "out_of_scope": { "type": "array", "items": { "type": "string", "minLength": 1 }, "default": [] }
+      },
+      "additionalProperties": false,
+      "required": ["description", "in_scope", "out_of_scope"]
+    },
+    "planned_information_sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "properties": {
+          "database": { "$ref": "common.schema.json#/$defs/research_database" },
+          "role": {
+            "type": "string",
+            "enum": ["primary", "supplementary", "discovery_only"],
+            "description": "discovery_only: geeignet, um Kandidaten zu finden, aber nicht als eigenstaendiger Wirksamkeitsnachweis (z. B. google_scholar, manufacturer_registry)."
+          },
+          "notes": { "type": ["string", "null"] }
+        },
+        "additionalProperties": false,
+        "required": ["database", "role", "notes"],
+        "allOf": [
+          {
+            "if": {
+              "properties": { "database": { "enum": ["google_scholar", "manufacturer_registry"] } },
+              "required": ["database"]
+            },
+            "then": {
+              "properties": { "role": { "const": "discovery_only" } },
+              "required": ["role"]
+            },
+            "description": "google_scholar und manufacturer_registry sind strukturell auf role: discovery_only beschraenkt -- sie duerfen nie als primary/supplementary eingestuft werden (siehe Scientific Research Protocol, Abschnitt 5)."
+          }
+        ]
+      }
+    },
+    "planned_search_concepts": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "eligibility": {
+      "type": "object",
+      "properties": {
+        "inclusion_criteria": { "type": "array", "items": { "type": "string", "minLength": 1 }, "minItems": 1 },
+        "exclusion_criteria": { "type": "array", "items": { "type": "string", "minLength": 1 }, "minItems": 1 }
+      },
+      "additionalProperties": false,
+      "required": ["inclusion_criteria", "exclusion_criteria"]
+    },
+    "deduplication_policy": {
+      "type": "object",
+      "properties": {
+        "description": { "$ref": "common.schema.json#/$defs/localized_text" },
+        "identifier_priority": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "enum": ["doi", "pmid", "pmcid", "nct_id", "isbn", "url"] }
+        },
+        "manual_review_required": { "type": "boolean" }
+      },
+      "additionalProperties": false,
+      "required": ["description", "identifier_priority", "manual_review_required"]
+    },
+    "screening_policy": {
+      "type": "object",
+      "properties": {
+        "description": { "$ref": "common.schema.json#/$defs/localized_text" },
+        "stages": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "common.schema.json#/$defs/screening_stage" }
+        },
+        "dual_reviewer_stages": {
+          "type": "array",
+          "items": { "$ref": "common.schema.json#/$defs/dual_reviewable_screening_stage" },
+          "default": [],
+          "description": "Muss eine Teilmenge von screening_policy.stages sein (vom Validator geprueft, siehe ADR-0046). 'deduplication' ist bereits schema-seitig ausgeschlossen (siehe common.schema.json#/$defs/dual_reviewable_screening_stage)."
+        }
+      },
+      "additionalProperties": false,
+      "required": ["description", "stages", "dual_reviewer_stages"]
+    },
+    "extraction_policy": {
+      "type": "object",
+      "properties": {
+        "description": { "$ref": "common.schema.json#/$defs/localized_text" },
+        "verification_required": {
+          "type": "boolean",
+          "description": "Redaktionelle Absichtserklaerung, ob dieses Protokoll eine Extraktionsverifikation vorsieht. Seit ADR-0040 rein informationell: verified_by != extracted_by wird vom Validator bei extraction_status: verified IMMER erzwungen, unabhaengig von diesem Feld (siehe Scientific Research Protocol, Abschnitt 27a)."
+        },
+        "fields_to_extract": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      },
+      "additionalProperties": false,
+      "required": ["description", "verification_required", "fields_to_extract"]
+    },
+    "evidence_appraisal_policy": {
+      "type": "object",
+      "properties": {
+        "description": { "$ref": "common.schema.json#/$defs/localized_text" }
+      },
+      "additionalProperties": false,
+      "required": ["description"]
+    },
+    "claim_promotion_policy": {
+      "type": "object",
+      "properties": {
+        "description": { "$ref": "common.schema.json#/$defs/localized_text" },
+        "requires_second_review": { "type": "boolean" }
+      },
+      "additionalProperties": false,
+      "required": ["description", "requires_second_review"]
+    },
+    "amendment_policy": {
+      "type": "object",
+      "properties": {
+        "description": { "$ref": "common.schema.json#/$defs/localized_text" }
+      },
+      "additionalProperties": false,
+      "required": ["description"]
+    },
+    "created_at": { "$ref": "common.schema.json#/$defs/date" },
+    "updated_at": { "$ref": "common.schema.json#/$defs/date" },
+    "review": {
+      "type": "object",
+      "properties": {
+        "last_reviewed_at": { "$ref": "common.schema.json#/$defs/date_or_null" },
+        "reviewers": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/research_actor_id" } },
+        "approval_decision": {
+          "type": ["string", "null"],
+          "description": "Dokumentierte Freigabeentscheidung. Pflicht (nicht leer), sobald status 'approved' ist."
+        }
+      },
+      "additionalProperties": false,
+      "required": ["last_reviewed_at", "reviewers", "approval_decision"]
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "title",
+    "subject",
+    "version",
+    "status",
+    "objectives",
+    "research_questions",
+    "scope",
+    "planned_information_sources",
+    "planned_search_concepts",
+    "eligibility",
+    "deduplication_policy",
+    "screening_policy",
+    "extraction_policy",
+    "evidence_appraisal_policy",
+    "claim_promotion_policy",
+    "amendment_policy",
+    "created_at",
+    "updated_at",
+    "review"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": { "status": { "const": "approved" } },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "review": {
+            "type": "object",
+            "properties": {
+              "last_reviewed_at": { "type": "string" },
+              "reviewers": { "type": "array", "minItems": 1 },
+              "approval_decision": { "type": "string", "minLength": 1 }
+            },
+            "required": ["last_reviewed_at", "reviewers", "approval_decision"]
+          }
+        },
+        "required": ["review"]
+      }
+    }
+  ]
+}
