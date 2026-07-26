@@ -1222,6 +1222,35 @@ def check_search_result_manifests(report: Report, objects: dict[str, dict[str, R
                 "('utf-8')) over the identifiers exactly as stored in this manifest",
             )
 
+        # R2 -- Punkt 3: zeitliche Provenienz. Ein Manifest ist die Momentaufnahme EINES bereits
+        # ausgefuehrten Suchlaufs und kann daher nicht vor dessen Ausfuehrung entstanden sein.
+        # executed_at ist ein date-time, created_at ein reines Datum -- Vergleich auf Datumsebene.
+        executed_date = (search_run.data.get("executed_at") or "")[:10]
+        created_at = data.get("created_at")
+        if executed_date and created_at and created_at < executed_date:
+            report.error(
+                file_rel, "$.created_at",
+                f"created_at ('{created_at}') is before the executed_at date of its own search run "
+                f"'{search_run_id}' ('{executed_date}') -- a manifest cannot predate the search event "
+                "it is a snapshot of",
+            )
+
+        # R2 -- Punkt 4: bei result_capture.status: complete muss das Manifest exakt dieselbe lokale
+        # Exportreferenz dokumentieren wie sein Suchlauf -- ein Suchlauf darf nicht auf einen anderen
+        # lokalen Ursprung verweisen als das Manifest, das er als sein eigenes ausgibt. Deckt implizit
+        # auch den Fall search_run.export_reference: null ab (ungleich einem nicht-leeren
+        # source_export_reference, das das Manifest-Schema bereits als Pflichtfeld erzwingt).
+        if result_capture.get("status") == "complete":
+            search_run_export_ref = search_run.data.get("export_reference")
+            manifest_export_ref = data.get("source_export_reference")
+            if search_run_export_ref != manifest_export_ref:
+                report.error(
+                    file_rel, "$.source_export_reference",
+                    f"does not match export_reference ({search_run_export_ref!r}) of referenced search run "
+                    f"'{search_run_id}' -- a complete manifest must document the exact same local export "
+                    "source as its search run",
+                )
+
     for search_run_id, group in manifests_by_search_run.items():
         if len(group) > 1:
             ids = ", ".join(sorted(o.id for o in group))
@@ -1242,6 +1271,140 @@ def check_search_result_manifests(report: Report, objects: dict[str, dict[str, R
                     file_rel, "$.result_capture.manifest_id",
                     f"references missing search_result_manifest: {manifest_id}",
                 )
+
+
+def _is_ncbi_eutils_esearch_interface(interface: str | None) -> bool:
+    text = (interface or "").lower()
+    return "e-utilities" in text and "esearch" in text
+
+
+def _is_clinicaltrials_gov_api_v2_interface(interface: str | None) -> bool:
+    return "clinicaltrials.gov api v2" in (interface or "").lower()
+
+
+def _is_positive_int(value) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool) and value > 0
+
+
+def _is_nonnegative_int(value) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool) and value >= 0
+
+
+def check_search_run_interface_profiles(report: Report, objects: dict[str, dict[str, ResearchObject]]) -> None:
+    """R2 (Haertung von ADR-0055): technische Mindestvalidierung fuer die beiden derzeit tatsaechlich
+    verwendeten API-Profile. Erkennung ausschliesslich ueber `database` UND einen textuellen Hinweis in
+    `interface` (siehe _is_ncbi_eutils_esearch_interface/_is_clinicaltrials_gov_api_v2_interface) -- ein
+    anderes Interface (z. B. 'PubMed web interface', ein manueller Website-Suchlauf) wird bewusst NICHT
+    diesen Profilregeln unterworfen, auch wenn `database` uebereinstimmt. Beweist nicht allein die
+    tatsaechliche API-Antwort, verhindert aber strukturell unmoegliche Vollstaendigkeitsangaben (z. B.
+    `retmax` kleiner als `result_count` ohne dokumentierte Pagination)."""
+    for obj in objects["search_run"].values():
+        file_rel = relative(obj.path)
+        data = obj.data
+        database = data.get("database")
+        interface = data.get("interface")
+        request_parameters = data.get("request_parameters") or {}
+        result_capture = data.get("result_capture") or {}
+        pagination = data.get("pagination")
+        result_count = data.get("result_count")
+        is_complete = result_capture.get("status") == "complete"
+
+        if database == "pubmed" and _is_ncbi_eutils_esearch_interface(interface):
+            if request_parameters.get("db") != "pubmed":
+                report.error(
+                    file_rel, "$.request_parameters.db",
+                    "NCBI E-utilities ESearch profile requires request_parameters.db == 'pubmed'",
+                )
+            if request_parameters.get("retmode") != "json":
+                report.error(
+                    file_rel, "$.request_parameters.retmode",
+                    "NCBI E-utilities ESearch profile requires request_parameters.retmode == 'json'",
+                )
+            retmax = request_parameters.get("retmax")
+            if not _is_positive_int(retmax):
+                report.error(
+                    file_rel, "$.request_parameters.retmax",
+                    "NCBI E-utilities ESearch profile requires request_parameters.retmax to be a positive "
+                    "integer",
+                )
+            retstart = request_parameters.get("retstart")
+            if not _is_nonnegative_int(retstart):
+                report.error(
+                    file_rel, "$.request_parameters.retstart",
+                    "NCBI E-utilities ESearch profile requires request_parameters.retstart to be a "
+                    "non-negative integer",
+                )
+            if (
+                is_complete and pagination is None
+                and _is_positive_int(retmax) and isinstance(result_count, int)
+                and retmax < result_count
+            ):
+                report.error(
+                    file_rel, "$.request_parameters.retmax",
+                    f"retmax ({retmax}) is less than result_count ({result_count}) with no pagination "
+                    "documented -- the response cannot have contained the full result set",
+                )
+
+        elif database == "clinicaltrials_gov" and _is_clinicaltrials_gov_api_v2_interface(interface):
+            if request_parameters.get("query_parameter") != "query.term":
+                report.error(
+                    file_rel, "$.request_parameters.query_parameter",
+                    "ClinicalTrials.gov API v2 profile requires request_parameters.query_parameter == "
+                    "'query.term'",
+                )
+            if request_parameters.get("countTotal") is not True:
+                report.error(
+                    file_rel, "$.request_parameters.countTotal",
+                    "ClinicalTrials.gov API v2 profile requires request_parameters.countTotal == true",
+                )
+            page_size = request_parameters.get("pageSize")
+            if not _is_positive_int(page_size):
+                report.error(
+                    file_rel, "$.request_parameters.pageSize",
+                    "ClinicalTrials.gov API v2 profile requires request_parameters.pageSize to be a "
+                    "positive integer",
+                )
+            if request_parameters.get("format") != "json":
+                report.error(
+                    file_rel, "$.request_parameters.format",
+                    "ClinicalTrials.gov API v2 profile requires request_parameters.format == 'json'",
+                )
+            if request_parameters.get("fields") != "NCTId":
+                report.error(
+                    file_rel, "$.request_parameters.fields",
+                    "ClinicalTrials.gov API v2 profile requires request_parameters.fields == 'NCTId'",
+                )
+
+            if is_complete:
+                if not isinstance(pagination, dict):
+                    report.error(
+                        file_rel, "$.pagination",
+                        "ClinicalTrials.gov API v2 profile requires pagination to be documented when "
+                        "result_capture.status is 'complete'",
+                    )
+                else:
+                    pages_retrieved = pagination.get("pages_retrieved")
+                    if pagination.get("completion_confirmed") is not True:
+                        report.error(
+                            file_rel, "$.pagination.completion_confirmed",
+                            "must be true for a complete result capture -- otherwise a further page may "
+                            "have been skipped",
+                        )
+                    if not _is_positive_int(pages_retrieved):
+                        report.error(
+                            file_rel, "$.pagination.pages_retrieved",
+                            "must be a positive integer",
+                        )
+                    elif (
+                        _is_positive_int(page_size) and isinstance(result_count, int)
+                        and pages_retrieved * page_size < result_count
+                    ):
+                        report.error(
+                            file_rel, "$.pagination.pages_retrieved",
+                            f"pages_retrieved ({pages_retrieved}) x pageSize ({page_size}) = "
+                            f"{pages_retrieved * page_size} is less than result_count ({result_count}) -- "
+                            "the documented pagination cannot have covered the full result set",
+                        )
 
 
 def check_object_temporal_bounds(report: Report, objects: dict[str, dict[str, ResearchObject]]) -> None:
@@ -1348,6 +1511,7 @@ def check_no_unwanted_binaries(report: Report, root: Path) -> None:
 def run_checks(report: Report, objects: dict[str, dict[str, ResearchObject]], source_ids, study_ids, claim_ids) -> None:
     check_research_references(report, objects, source_ids, study_ids)
     check_search_result_manifests(report, objects)
+    check_search_run_interface_profiles(report, objects)
     check_historical_duplicate_targets(report, objects)
     check_protocol_version_matches_id(report, objects["protocol"])
     check_deduplication(report, objects)

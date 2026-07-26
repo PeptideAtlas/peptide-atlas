@@ -22,7 +22,7 @@ result_count: 2
 date_range:
   from: null
   to: null
-export_reference: null
+export_reference: "research/raw/placeholder-substance/esearch_placeholder_example.json (local, gitignored, Platzhalter-Beispiel)"
 notes: null
 status: executed
 created_at: "2026-07-24"

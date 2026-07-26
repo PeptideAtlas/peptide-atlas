@@ -46,3 +46,55 @@ verändern sich über Zeit (neue Publikationen, zurückgezogene Einträge, geän
 identische Query zu einem späteren Zeitpunkt ein anderes Ergebnis liefern kann. `result_capture` stellt sicher,
 dass entweder das tatsächlich erhaltene Identifikator-Set selbst versioniert ist, oder dass dokumentiert ist,
 warum das nicht möglich war.
+
+## API-Profile: Mindestvalidierung für die derzeit verwendeten Interfaces (R2, ADR-0055-Härtung)
+
+`tools/validate_research.py::check_search_run_interface_profiles` erzwingt für die beiden aktuell tatsächlich
+genutzten API-Profile vollständige `request_parameters` (und ggf. `pagination`). Die Erkennung erfolgt
+ausschließlich über `database` **und** einen textuellen Hinweis in `interface` — ein anderer Suchlauf gegen
+dieselbe Datenbank, aber mit einem anderen Interface (z. B. eine manuelle Websuche statt der API), wird bewusst
+**nicht** diesen Regeln unterworfen.
+
+**NCBI E-utilities ESearch** (`interface` enthält sowohl „E-utilities" als auch „ESearch", `database: pubmed`):
+
+```yaml
+request_parameters:
+  db: pubmed
+  retmode: json
+  retmax: <positive Ganzzahl>
+  retstart: <nicht negative Ganzzahl>
+```
+
+Zusätzlich: ist `result_capture.status: complete` und liegt **keine** `pagination` vor, muss `retmax >=
+result_count` gelten — sonst könnte die Antwort strukturell gar nicht das vollständige Ergebnis enthalten haben.
+
+**ClinicalTrials.gov API v2** (`interface` enthält „ClinicalTrials.gov API v2", `database: clinicaltrials_gov`):
+
+```yaml
+request_parameters:
+  query_parameter: query.term
+  countTotal: true
+  pageSize: <positive Ganzzahl>
+  format: json
+  fields: NCTId
+```
+
+Zusätzlich ist bei `result_capture.status: complete` `pagination` **verpflichtend**, und es muss gelten:
+`pagination.completion_confirmed: true` sowie `pagination.pages_retrieved × request_parameters.pageSize >=
+result_count`. `completion_confirmed: true` bedeutet konkret: die letzte abgerufene Seite enthielt **keinen**
+weiteren `nextPageToken` (oder äquivalenten Fortsetzungsmarker) mehr — es wurde also nicht nur "genug" Seiten für
+die Trefferzahl abgerufen, sondern die API selbst hat bestätigt, dass keine weitere Seite folgt. Diese
+Regeln beweisen nicht allein die tatsächliche API-Antwort, verhindern aber strukturell unmögliche
+Vollständigkeitsangaben.
+
+## Zeitliche Provenienz und Exportreferenz gegenüber dem Manifest
+
+Für jeden Suchlauf mit `result_capture.status: complete` gilt zusätzlich (siehe
+[`research/search_results/README.md`](../search_results/README.md)):
+
+- Das Datum von `executed_at` muss `<=` dem `created_at` seines Manifests sein — ein Manifest kann nicht vor dem
+  Suchereignis entstanden sein, dessen Momentaufnahme es ist.
+- `export_reference` (auf diesem Suchlauf) muss **exakt** `manifest.source_export_reference` entsprechen — ein
+  Suchlauf darf nicht auf einen anderen lokalen Ursprung verweisen als das Manifest, das er als sein eigenes
+  ausgibt. Das schließt `export_reference: null` bei einem sonst vollständigen Suchlauf aus, da das zugehörige
+  Manifest `source_export_reference` als Pflichtfeld immer setzt.

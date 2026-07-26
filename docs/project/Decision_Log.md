@@ -1144,6 +1144,40 @@ Kurze, strukturierte Architecture Decision Records (ADRs): Kontext, Entscheidung
   Suchläufe (Phase 4B-1A ist der erste reale Rechercheschritt). Keine bestehenden bestätigten
   Suchläufe erforderten eine inhaltliche Korrektur — nur die Ergänzung der neuen Pflichtfelder.
 
+**Nachtrag (R2, 2026-07-27) — Härtung, kein neuer ADR:** Die Korrekturrunde R2 identifizierte vier
+weitere Lücken zwischen dem, was `request_parameters`/`result_capture` inhaltlich versprechen, und
+dem, was tatsächlich maschinell geprüft wurde:
+
+1. *Fehlender API-Parameter nachgetragen:* Die tatsächlich ausgeführten ClinicalTrials.gov-Anfragen
+   enthielten `fields=NCTId` (eingrenzt die Antwort auf die NCT-ID), das aber in den ursprünglich in
+   R1 dokumentierten `request_parameters` fehlte. Beide produktiven ClinicalTrials.gov-Suchläufe
+   sowie alle Beispiele/Fixtures mit einem echten ClinicalTrials.gov-API-v2-Profil wurden um
+   `fields: NCTId` ergänzt.
+2. *API-Profil-Mindestvalidierung:* `request_parameters` war zuvor ein vollständig offenes Objekt
+   (`additionalProperties: true`) ohne inhaltliche Prüfung — ein Suchlauf hätte z. B. `retmax: 1`
+   bei `result_count: 157` eintragen können, ohne dass der Validator das bemerkt hätte. Neue Funktion
+   `tools/validate_research.py::check_search_run_interface_profiles` erzwingt fuer die beiden
+   tatsächlich verwendeten Profile (NCBI E-utilities ESearch, ClinicalTrials.gov API v2 —
+   erkannt über `database` UND einen textuellen Hinweis in `interface`, NIE pauschal über
+   `database` allein) vollständige, konsistente `request_parameters` sowie bei
+   `result_capture.status: complete`: `retmax >= result_count` ohne dokumentierte Pagination (NCBI),
+   bzw. verpflichtende `pagination` mit `completion_confirmed: true` und
+   `pages_retrieved × pageSize >= result_count` (ClinicalTrials.gov).
+3. *Zeitliche Provenienz Suchlauf→Manifest:* Bislang unabhängig von seinem Suchlauf. Neue Prüfung:
+   das Datum von `executed_at` muss `<=` `manifest.created_at` sein — ein Manifest kann den
+   Suchlauf, dessen Momentaufnahme es ist, nicht zeitlich vorwegnehmen.
+4. *Exportreferenz-Konsistenz:* `search_run.export_reference` und `manifest.source_export_reference`
+   konnten unabhängig voneinander beliebige Werte tragen (inkl. `export_reference: null` bei einem
+   sonst vollständigen Suchlauf). Neue Prüfung: bei `result_capture.status: complete` müssen beide
+   Felder exakt übereinstimmen.
+
+Alle vier produktiven Suchläufe und Manifeste (Phase 4B-1A) erfüllten Punkt 3 und 4 bereits ohne
+inhaltliche Korrektur (nur `fields: NCTId` war nachzutragen, Punkt 1). 15 Test-Fixtures aus R1 mit
+`result_capture.status: complete`, aber `export_reference: null`, wurden auf die jeweils
+übereinstimmende Exportreferenz ihres Manifests korrigiert (reine Testdaten-Konsistenz, keine
+inhaltliche Regeländerung). Keine der vier Identifikatorlisten, Counts oder SHA-256-Werte wurde
+verändert, keine Datenbanksuche wurde erneut ausgeführt.
+
 ## Format für neue Einträge
 
 ```markdown

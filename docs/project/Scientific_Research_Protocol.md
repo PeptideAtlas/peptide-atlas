@@ -136,6 +136,19 @@ niemals geheime API-Parameter, die zusätzlich zu `interface`/`exact_query` für
 bleiben bewusst getrennte Felder auf dem Suchlauf. Ein optionales `pagination`-Feld dokumentiert bei einem
 paginierenden Interface, dass tatsächlich alle Seiten abgerufen wurden.
 
+**Härtung (R2):** Für die beiden derzeit tatsächlich verwendeten API-Profile erzwingt der Validator zusätzlich
+eine technische Mindestvalidierung der `request_parameters` (NCBI E-utilities ESearch:
+`db`/`retmode`/`retmax`/`retstart`; ClinicalTrials.gov API v2: `query_parameter`/`countTotal`/`pageSize`/
+`format`/`fields`) — Erkennung ausschließlich über `database` UND einen textuellen Hinweis in `interface`, damit
+ein anderes Interface gegen dieselbe Datenbank nicht pauschal denselben Regeln unterworfen wird. Bei
+`result_capture.status: complete` gilt zusätzlich: ohne dokumentierte `pagination` muss `retmax >= result_count`
+(NCBI), bzw. `pagination` ist verpflichtend mit `completion_confirmed: true` und `pages_retrieved × pageSize >=
+result_count` (ClinicalTrials.gov) — verhindert strukturell unmögliche Vollständigkeitsangaben, beweist aber
+nicht allein die tatsächliche API-Antwort. Außerdem muss das Datum von `executed_at` `<=` `manifest.created_at`
+sein (ein Manifest kann seinen eigenen Suchlauf nicht zeitlich vorwegnehmen), und `export_reference` des
+Suchlaufs muss bei `status: complete` exakt `manifest.source_export_reference` entsprechen (siehe
+`research/search_runs/README.md`, `research/search_results/README.md`, ADR-0055).
+
 ## 8. Deduplizierung
 
 **Deduplizierung** bedeutet: erkennen, dass zwei gefundene Datensätze dieselbe zugrunde liegende Publikation
@@ -629,7 +642,10 @@ maschinenlesbar sicherstellt:
   (ADR-0041/ADR-0049), Search-Result-Manifest-Konsistenz (gegenseitige Referenz Suchlauf↔Manifest, höchstens
   ein aktives Manifest je Suchlauf, keine verwaisten Manifeste, `count` gegen sowohl `len(identifiers)` als
   auch `search_run.result_count`, `identifier_type` passend zur Datenbank, kanonische Sortierreihenfolge,
-  SHA-256 gegen die verbindliche Hash-Regel — ADR-0055).
+  SHA-256 gegen die verbindliche Hash-Regel — ADR-0055), API-Profil-Mindestvalidierung für NCBI E-utilities
+  ESearch und ClinicalTrials.gov API v2 inkl. Pagination-Vollständigkeit, zeitliche Reihenfolge
+  Suchlauf→Manifest, und Übereinstimmung von `export_reference`/`source_export_reference` bei
+  `result_capture.status: complete` (ADR-0055, R2-Härtung).
 - **CI-seitig geprüft, mit dokumentierter Lücke**: `tools/check_research_immutability.py` (ADR-0038/ADR-0042,
   seit ADR-0055 zusätzlich auf `research/search_results/**` erweitert, dort **vollständig** unveränderlich statt
   nur `status`/`updated_at`/`review`/`notes` mutable wie bei `research_search_run`) vergleicht nur den

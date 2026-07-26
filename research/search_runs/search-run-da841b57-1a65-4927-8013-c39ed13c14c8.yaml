@@ -12,6 +12,7 @@ request_parameters:
   countTotal: true
   pageSize: 100
   format: json
+  fields: NCTId
 pagination:
   pages_retrieved: 1
   completion_confirmed: true

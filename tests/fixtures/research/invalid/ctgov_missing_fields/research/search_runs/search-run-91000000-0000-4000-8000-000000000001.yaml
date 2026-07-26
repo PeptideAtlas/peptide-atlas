@@ -1,0 +1,31 @@
+schema_version: "1.0.0"
+id: search-run-91000000-0000-4000-8000-000000000001
+protocol_id: research-protocol-test-substance-v1
+database: clinicaltrials_gov
+interface: ClinicalTrials.gov API v2
+executed_at: "2026-01-01T10:00:00Z"
+executed_by: reviewer-1
+exact_query: 'test substance'
+filters: {}
+request_parameters:
+  query_parameter: 'query.term'
+  countTotal: true
+  pageSize: 100
+  format: 'json'
+pagination:
+  pages_retrieved: 1
+  completion_confirmed: true
+result_capture:
+  status: complete
+  manifest_id: search-result-manifest-91000000-0000-4000-8000-000000000001
+  rationale: null
+date_range: { from: null, to: null }
+result_count: 2
+export_reference: "research/raw/test-fixture/placeholder.json"
+notes: null
+status: executed
+created_at: "2026-01-01"
+updated_at: "2026-01-01"
+review:
+  last_reviewed_at: null
+  reviewers: []

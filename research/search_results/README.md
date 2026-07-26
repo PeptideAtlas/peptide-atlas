@@ -51,6 +51,22 @@ Identifikatoren wurden zu diesem Zeitpunkt erhalten", kein Workflow-Dokument. Ei
 erhält ein **neues** Manifest mit neuer ID (und damit auch einen neuen Suchlauf, siehe oben) statt einer
 nachträglichen Bearbeitung.
 
+## Zeitliche Provenienz gegenüber dem Suchlauf (R2, ADR-0055-Härtung)
+
+Ein Manifest ist die Momentaufnahme **eines bereits ausgeführten** Suchlaufs und kann diesem daher zeitlich nicht
+vorausgehen: `search_run.executed_at` (Datum, Uhrzeit ignoriert) muss `<=` `manifest.created_at` sein, und
+`manifest.created_at <= manifest.updated_at` gilt weiterhin wie für jedes Objekt (siehe
+`tools/validate_research.py::check_search_result_manifests`). Ein Manifest mit einem `created_at` vor dem
+`executed_at`-Datum seines eigenen Suchlaufs ist ein Fehler (`$.created_at`).
+
+## Exportreferenz muss mit dem Suchlauf übereinstimmen
+
+Bei `result_capture.status: complete` muss `manifest.source_export_reference` **exakt** dem
+`export_reference`-Wert seines Suchlaufs entsprechen (siehe `research/search_runs/README.md`). Ein Suchlauf mit
+`export_reference: null`, aber einem vollständigen Manifest, ist ebenso ein Fehler wie eine abweichende
+Referenz — beide Fälle würden bedeuten, dass Suchlauf und Manifest scheinbar aus unterschiedlichen lokalen
+Quellen stammen, obwohl sie dasselbe Ergebnis beschreiben sollen (`$.source_export_reference`).
+
 ## Nicht jeder Suchlauf hat ein Manifest
 
 `result_capture.status: unavailable` (auf dem Suchlauf, nicht auf einem Manifest) dokumentiert den Fall, dass

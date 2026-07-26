@@ -242,6 +242,17 @@ INVALID_SCENARIOS = {
     "search_run_invalid_executed_by": "does not match",
     "search_run_executed_by_uppercase": "does not match",
     "search_run_executed_by_trailing_space": "does not match",
+    # Phase 4B-1A Korrekturrunde R2 -- ADR-0055 Haertung: API-Profilregeln, zeitliche Provenienz,
+    # Exportreferenz-Konsistenz.
+    "ctgov_missing_fields": "requires request_parameters.fields == 'NCTId'",
+    "ctgov_wrong_fields": "requires request_parameters.fields == 'NCTId'",
+    "ctgov_complete_without_pagination": "requires pagination to be documented",
+    "ctgov_completion_not_confirmed": "must be true for a complete result capture",
+    "ctgov_pagination_insufficient": "is less than result_count",
+    "pubmed_retmax_too_small": "is less than result_count",
+    "manifest_before_search_run": "cannot predate the search event",
+    "manifest_export_reference_mismatch": "does not match export_reference",
+    "search_run_complete_null_export_reference": "does not match export_reference",
 }
 
 
@@ -443,6 +454,28 @@ PRECISE_INVALID_SCENARIOS = {
     "search_run_invalid_executed_by": (
         "research/search_runs/search-run-90000000-0000-4000-8000-000000000020.yaml",
         "$.executed_by",
+    ),
+    # Phase 4B-1A Korrekturrunde R2 -- ADR-0055 Haertung: kritische Faelle mit exakter
+    # Datei-/Pfadpruefung.
+    "ctgov_pagination_insufficient": (
+        "research/search_runs/search-run-91000000-0000-4000-8000-000000000005.yaml",
+        "$.pagination.pages_retrieved",
+    ),
+    "pubmed_retmax_too_small": (
+        "research/search_runs/search-run-91000000-0000-4000-8000-000000000006.yaml",
+        "$.request_parameters.retmax",
+    ),
+    "manifest_before_search_run": (
+        "research/search_results/search-result-manifest-91000000-0000-4000-8000-000000000007.yaml",
+        "$.created_at",
+    ),
+    "manifest_export_reference_mismatch": (
+        "research/search_results/search-result-manifest-91000000-0000-4000-8000-000000000008.yaml",
+        "$.source_export_reference",
+    ),
+    "search_run_complete_null_export_reference": (
+        "research/search_results/search-result-manifest-91000000-0000-4000-8000-000000000009.yaml",
+        "$.source_export_reference",
     ),
 }
 

@@ -2,7 +2,7 @@ schema_version: "1.0.0"
 id: search-run-90000000-0000-4000-8000-000000000010
 protocol_id: research-protocol-test-substance-v1
 database: clinicaltrials_gov
-interface: ClinicalTrials.gov API v2
+interface: ClinicalTrials.gov web interface (manual search, not API v2 profile)
 executed_at: "2026-01-01T10:00:00Z"
 executed_by: reviewer-1
 exact_query: 'test substance'
@@ -14,7 +14,7 @@ result_capture:
   rationale: null
 date_range: { from: null, to: null }
 result_count: 2
-export_reference: null
+export_reference: "research/raw/test-fixture/placeholder.json"
 notes: null
 status: executed
 created_at: "2026-01-01"
