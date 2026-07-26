@@ -53,6 +53,13 @@ erforderlichen Prüfungen, Abbruchkriterien, gespeicherter Provenienz und mögli
 | **Gespeicherte Provenienz** | `search_run_ids` (mindestens ein Suchlauf), `candidate_identifiers`. |
 | **Mögliche Statuswerte** | `decision: pending`. |
 
+!!! note "Woher stammt der Treffer wirklich?"
+    Ein Suchlauf allein (Query + Trefferzahl) reproduziert kein historisches Ergebnis — Datenbanken verändern
+    sich über Zeit. Welche Identifikatoren ein Suchlauf tatsächlich zum Ausführungszeitpunkt geliefert hat, steht
+    versioniert im zugehörigen `research_search_result_manifest` (`result_capture.status: complete`, siehe
+    [Scientific Research Protocol, Abschnitt 7a](Scientific_Research_Protocol.md#7a-search-result-manifests-versionierte-identifikatormengen)
+    und ADR-0055 im [Decision Log](Decision_Log.md)) — nicht in einer neu ausgeführten Wiederholung der Query.
+
 ## 2. Kandidat → Deduplizierung
 
 | | |

@@ -7,6 +7,15 @@ executed_at: "2026-07-26T21:38:39Z"
 executed_by: claude-code-operator
 exact_query: "retatrutide[All Fields]"
 filters: {}
+request_parameters:
+  db: pubmed
+  retmode: json
+  retmax: 1000
+  retstart: 0
+result_capture:
+  status: complete
+  manifest_id: search-result-manifest-c9be8c23-36e5-4123-9373-d915dc085a68
+  rationale: null
 date_range:
   from: null
   to: null

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "research_search_run.schema.json",
   "title": "Research Search Run",
-  "description": "Protokoll eines tatsaechlich ausgefuehrten Suchlaufs in einer Datenbank: exakter Suchstring, Zeitpunkt, Trefferzahl. Ein Suchlauf ist selbst KEINE wissenschaftliche Quelle. Unveraenderlich nach Ausfuehrung -- ein wiederholter oder korrigierter Suchlauf erhaelt eine neue id.",
+  "description": "Protokoll eines tatsaechlich ausgefuehrten Suchlaufs in einer Datenbank: exakter Suchstring, Zeitpunkt, Trefferzahl. Ein Suchlauf ist selbst KEINE wissenschaftliche Quelle. Unveraenderlich nach Ausfuehrung -- ein wiederholter oder korrigierter Suchlauf erhaelt eine neue id, ebenso ein neues result_capture/Manifest (siehe research_search_result_manifest.schema.json, ADR-0055). Die reine Trefferzahl reicht fuer historische Reproduzierbarkeit NICHT aus -- Datenbanken veraendern sich ueber Zeit --, deshalb verweist result_capture auf das tatsaechlich erhaltene Identifikator-Set.",
   "type": "object",
   "properties": {
     "schema_version": { "$ref": "common.schema.json#/$defs/schema_version" },
@@ -21,7 +21,7 @@
       "description": "Die konkret verwendete Benutzeroberflaeche/API, getrennt von der Datenbank selbst (z. B. 'PubMed web interface', 'ClinicalTrials.gov API v2', 'Ovid MEDLINE')."
     },
     "executed_at": { "$ref": "common.schema.json#/$defs/date_time" },
-    "executed_by": { "type": "string", "minLength": 1 },
+    "executed_by": { "$ref": "common.schema.json#/$defs/research_actor_id" },
     "exact_query": {
       "type": "string",
       "minLength": 1,
@@ -29,7 +29,69 @@
     },
     "filters": {
       "type": "object",
-      "description": "Zusaetzliche datenbankspezifische Filter (Sprache, Publikationstyp, Spezies, ...). Bewusst offen gehalten (additionalProperties: true), da Filterschluessel je Datenbank stark variieren und keine zentrale Entscheidung im Sinne der uebrigen Felder darstellen."
+      "description": "Zusaetzliche WISSENSCHAFTLICHE/redaktionelle Filter (Sprache, Publikationstyp, Spezies, ...). Bewusst offen gehalten (additionalProperties: true), da Filterschluessel je Datenbank stark variieren und keine zentrale Entscheidung im Sinne der uebrigen Felder darstellen. Getrennt von request_parameters: filters sind inhaltliche Suchentscheidungen, request_parameters sind rein technische API-Parameter (siehe ADR-0055)."
+    },
+    "request_parameters": {
+      "type": "object",
+      "description": "Die technischen, NICHT geheimen API-/Interface-Parameter, die zusaetzlich zu interface und exact_query fuer eine Reproduktion noetig sind (z. B. db/retmode/retmax/retstart bei NCBI E-utilities, query_parameter/countTotal/pageSize/format bei ClinicalTrials.gov API v2). Bewusst offen gehalten (additionalProperties: true), da Parameter je Interface stark variieren. Darf NIEMALS API-Schluessel, Tokens oder andere Geheimnisse enthalten -- nur oeffentlich unbedenkliche technische Parameter (siehe ADR-0055, research/search_runs/README.md)."
+    },
+    "pagination": {
+      "type": "object",
+      "description": "Optional: dokumentiert bei einem paginierten Interface (z. B. ClinicalTrials.gov API v2 mit nextPageToken), dass tatsaechlich ALLE Seiten abgerufen wurden und keine weitere Seite ausgelassen wurde. Bei einem nicht paginierenden Interface oder einem Ergebnis, das vollstaendig in einer einzigen Seite lag, kann dieses Feld entfallen.",
+      "properties": {
+        "pages_retrieved": { "type": "integer", "minimum": 1 },
+        "completion_confirmed": {
+          "type": "boolean",
+          "description": "true bedeutet: die Antwort enthielt keinen weiteren nextPageToken (oder aequivalenten Fortsetzungsmarker) -- alle Seiten wurden tatsaechlich abgerufen, nicht nur die erste."
+        }
+      },
+      "additionalProperties": false,
+      "required": ["pages_retrieved", "completion_confirmed"]
+    },
+    "result_capture": {
+      "type": "object",
+      "description": "Verknuepft diesen Suchlauf mit seinem versionierten Identifikator-Manifest (siehe research_search_result_manifest.schema.json, ADR-0055). Pflichtfeld fuer JEDEN ausgefuehrten Suchlauf -- entweder liegt ein vollstaendiges Manifest vor (complete) oder es wird dokumentiert begruendet, warum keins erzeugt wurde (unavailable). status: unavailable ist keine Ausrede fuer 'Manifest wurde nur vergessen' -- die Begruendung muss einen echten, nachvollziehbaren Grund nennen (siehe Scientific Research Protocol).",
+      "properties": {
+        "status": { "$ref": "common.schema.json#/$defs/search_run_result_capture_status" },
+        "manifest_id": {
+          "type": ["string", "null"],
+          "pattern": "^search-result-manifest-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$"
+        },
+        "rationale": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false,
+      "required": ["status", "manifest_id", "rationale"],
+      "allOf": [
+        {
+          "if": {
+            "properties": { "status": { "const": "complete" } },
+            "required": ["status"]
+          },
+          "then": {
+            "properties": {
+              "manifest_id": {
+                "type": "string",
+                "pattern": "^search-result-manifest-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$"
+              },
+              "rationale": { "type": "null" }
+            },
+            "required": ["manifest_id", "rationale"]
+          }
+        },
+        {
+          "if": {
+            "properties": { "status": { "const": "unavailable" } },
+            "required": ["status"]
+          },
+          "then": {
+            "properties": {
+              "manifest_id": { "type": "null" },
+              "rationale": { "type": "string", "minLength": 1 }
+            },
+            "required": ["manifest_id", "rationale"]
+          }
+        }
+      ]
     },
     "date_range": {
       "type": "object",
@@ -66,6 +128,8 @@
     "executed_by",
     "exact_query",
     "filters",
+    "request_parameters",
+    "result_capture",
     "date_range",
     "result_count",
     "export_reference",

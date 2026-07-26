@@ -101,6 +101,41 @@ prüft in CI zusätzlich, dass eine bereits gegenüber dem Zielbranch committete
 `status`/`updated_at`/`review`/`notes` verändert wird — mit der dokumentierten Grenze, dass dieser Check nur
 greift, wenn der Basis-Ref auflösbar ist, und keine serverseitige Branch Protection ersetzt (Abschnitt 34).
 
+## 7a. Search Result Manifests: versionierte Identifikatormengen
+
+Die reine Trefferzahl (`result_count`) reicht für historische Reproduzierbarkeit **nicht** aus: Datenbanken
+verändern sich über Zeit (neue Publikationen, zurückgezogene Einträge, geänderte Indexierung), sodass eine
+identische Query zu einem späteren Zeitpunkt eine andere Treffermenge liefern kann. Jeder ausgeführte Suchlauf
+verweist daher über das Pflichtfeld `result_capture` entweder auf ein versioniertes
+`research_search_result_manifest` (Schema: `schemas/research_search_result_manifest.schema.json`, Ordner
+`research/search_results/`, siehe ADR-0055 im [Decision Log](Decision_Log.md)) oder dokumentiert begründet,
+warum keins erzeugt wurde:
+
+- `result_capture.status: complete` — das vollständige, tatsächlich erhaltene Identifikator-Set (PMID, NCT-ID,
+  ...) ist als eigenes Manifest versioniert. `manifest_id` verweist darauf, und das Manifest verweist über
+  `search_run_id` gegenseitig zurück.
+- `result_capture.status: unavailable` — aus einem echten, dokumentierten Grund (z. B. keine stabile
+  Gesamttrefferzahl, gesperrte automatisierte Anfrage, Interface liefert keine Identifikatorliste) wurde bewusst
+  kein Manifest erzeugt; `rationale` ist dann Pflicht und muss einen nachvollziehbaren Grund nennen.
+
+Ein Search Result Manifest enthält **ausschließlich** stabile Identifikatoren (kanonisch sortiert: numerisch
+aufsteigend für PMID, lexikografisch aufsteigend für NCT-ID) — keine Abstracts, Titel, Volltexte oder sonstigen
+urheberrechtlich geschützten Inhalte. Es ist damit versionierbar, obwohl der vollständige API-Export selbst
+unter `research/raw/` (gitignored) bleibt. Der Hash `sha256` ist verbindlich als SHA-256 über
+`("\n".join(identifiers) + "\n").encode("utf-8")` definiert (identifiers bereits in der gespeicherten,
+kanonisch sortierten Reihenfolge) — siehe `research/search_results/README.md` für Details und
+Referenzimplementierung.
+
+Ein Manifest ist — anders als der Suchlauf selbst — **vollständig** unveränderlich nach dem Merge (kein
+redaktionelles `status`/`review`-Feld): es ist die reine Tatsachenfeststellung, welche Identifikatoren erhalten
+wurden, kein Workflow-Dokument. Eine Korrektur oder Wiederholung erhält ein neues Manifest (und einen neuen
+Suchlauf) mit neuer ID.
+
+`filters` (wissenschaftliche/redaktionelle Sucheinschränkungen) und `request_parameters` (rein technische,
+niemals geheime API-Parameter, die zusätzlich zu `interface`/`exact_query` für eine Reproduktion nötig sind)
+bleiben bewusst getrennte Felder auf dem Suchlauf. Ein optionales `pagination`-Feld dokumentiert bei einem
+paginierenden Interface, dass tatsächlich alle Seiten abgerufen wurden.
+
 ## 8. Deduplizierung
 
 **Deduplizierung** bedeutet: erkennen, dass zwei gefundene Datensätze dieselbe zugrunde liegende Publikation
@@ -536,7 +571,9 @@ nach `research/raw/` — ein per `.gitignore` nicht versionierter, rein lokaler 
 
 Jeder Schritt ist einer Person/Rolle und einem Zeitpunkt zugeordnet (`screened_by`/`screened_at`,
 `extracted_by`/`extracted_at`, `verified_by`/`verified_at`). Jeder Suchlauf ist durch den exakten Suchstring
-reproduzierbar. **Jeder** `decision_history`-Eintrag (nicht nur der letzte) muss zeitlich nach `executed_at`
+UND (sofern `result_capture.status: complete`) das versionierte Search Result Manifest reproduzierbar — der
+Suchstring allein reproduziert kein historisches Ergebnis, da sich Datenbanken über Zeit verändern (siehe
+Abschnitt 7a, ADR-0055). **Jeder** `decision_history`-Eintrag (nicht nur der letzte) muss zeitlich nach `executed_at`
 **jedes einzelnen** in `search_run_ids[]` referenzierten Suchlaufs liegen — auch ein früher
 Titel-/Abstract-Entscheid kann nicht vor Abschluss der Suchläufe stattgefunden haben, die den Kandidaten
 angeblich hervorgebracht haben. Eine legitime spätere Wiederentdeckung desselben Kandidaten über einen neuen
@@ -589,14 +626,18 @@ maschinenlesbar sicherstellt:
   (`created_at <= Ereignisdatum <= updated_at` je Objekt, ADR-0048), `screening_policy.dual_reviewer_stages`
   als Teilmenge von `screening_policy.stages` (ADR-0051), Claim-Promotion-Kette inkl.
   `requires_second_review`-Reviewerzahl symmetrisch für `approved_for_creation`/`promoted`/`rejected`
-  (ADR-0041/ADR-0049).
-- **CI-seitig geprüft, mit dokumentierter Lücke**: `tools/check_research_immutability.py` (ADR-0038/ADR-0042)
-  vergleicht nur den Nettounterschied zum Merge-Base mit einem einzelnen Basis-Ref und wird übersprungen, wenn
-  dieser nicht auflösbar ist (z. B. ein lokaler Push ohne Pull-Request-Kontext) — er erkennt keine Manipulation,
-  die bereits vor diesem Vergleichszeitpunkt auf dem Zielbranch selbst stattgefunden hat, und ersetzt keine
-  serverseitige Branch Protection (ADR-0010, weiterhin nicht umgesetzt). Für `decision_history[]` (Abschnitt 9a)
-  gibt es **keinen** entsprechenden Git-Diff-Schutz — nur die strukturelle Konsistenzprüfung bei der
-  Validierung.
+  (ADR-0041/ADR-0049), Search-Result-Manifest-Konsistenz (gegenseitige Referenz Suchlauf↔Manifest, höchstens
+  ein aktives Manifest je Suchlauf, keine verwaisten Manifeste, `count` gegen sowohl `len(identifiers)` als
+  auch `search_run.result_count`, `identifier_type` passend zur Datenbank, kanonische Sortierreihenfolge,
+  SHA-256 gegen die verbindliche Hash-Regel — ADR-0055).
+- **CI-seitig geprüft, mit dokumentierter Lücke**: `tools/check_research_immutability.py` (ADR-0038/ADR-0042,
+  seit ADR-0055 zusätzlich auf `research/search_results/**` erweitert, dort **vollständig** unveränderlich statt
+  nur `status`/`updated_at`/`review`/`notes` mutable wie bei `research_search_run`) vergleicht nur den
+  Nettounterschied zum Merge-Base mit einem einzelnen Basis-Ref und wird übersprungen, wenn dieser nicht
+  auflösbar ist (z. B. ein lokaler Push ohne Pull-Request-Kontext) — er erkennt keine Manipulation, die bereits
+  vor diesem Vergleichszeitpunkt auf dem Zielbranch selbst stattgefunden hat, und ersetzt keine serverseitige
+  Branch Protection (ADR-0010, weiterhin nicht umgesetzt). Für `decision_history[]` (Abschnitt 9a) gibt es
+  **keinen** entsprechenden Git-Diff-Schutz — nur die strukturelle Konsistenzprüfung bei der Validierung.
 - **Redaktionell vorgeschrieben, nicht technisch erzwungen**: Append-only-Pflege von `decision_history[]`
   innerhalb derselben Datei (Abschnitt 9a); die Erkennung „derselbe Studie, mehrere Publikationen"
   (Abschnitte 13–16) mit Unterstützung durch `identifier_priority`, aber ohne automatische

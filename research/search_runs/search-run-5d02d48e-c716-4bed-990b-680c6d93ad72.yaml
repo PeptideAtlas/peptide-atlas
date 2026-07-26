@@ -7,6 +7,18 @@ executed_at: "2026-07-26T21:38:40Z"
 executed_by: claude-code-operator
 exact_query: "LY3437943"
 filters: {}
+request_parameters:
+  query_parameter: query.term
+  countTotal: true
+  pageSize: 100
+  format: json
+pagination:
+  pages_retrieved: 1
+  completion_confirmed: true
+result_capture:
+  status: complete
+  manifest_id: search-result-manifest-dc672420-ef9e-4ef8-80d3-d4baf9c26ee6
+  rationale: null
 date_range:
   from: null
   to: null

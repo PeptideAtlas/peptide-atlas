@@ -9,6 +9,7 @@ unabhaengig voneinander bleiben (siehe Scientific Research Protocol).
 
 from __future__ import annotations
 
+import hashlib
 import re
 from pathlib import Path
 
@@ -30,6 +31,7 @@ RESEARCH_VOCAB_DIR = RESEARCH_DIR / "vocabularies"
 RESEARCH_KIND_TO_FOLDER = {
     "protocol": "protocols",
     "search_run": "search_runs",
+    "search_result_manifest": "search_results",
     "screening_record": "screening",
     "extraction_record": "extractions",
     "promotion_record": "promotions",
@@ -38,6 +40,7 @@ RESEARCH_KIND_TO_FOLDER = {
 RESEARCH_KIND_TO_SCHEMA_ID = {
     "protocol": "research_protocol.schema.json",
     "search_run": "research_search_run.schema.json",
+    "search_result_manifest": "research_search_result_manifest.schema.json",
     "screening_record": "research_screening_record.schema.json",
     "extraction_record": "research_extraction_record.schema.json",
     "promotion_record": "research_promotion_record.schema.json",
@@ -46,6 +49,7 @@ RESEARCH_KIND_TO_SCHEMA_ID = {
 RESEARCH_KIND_TO_ID_PREFIX = {
     "protocol": "research-protocol-",
     "search_run": "search-run-",
+    "search_result_manifest": "search-result-manifest-",
     "screening_record": "screening-record-",
     "extraction_record": "extraction-record-",
     "promotion_record": "promotion-record-",
@@ -131,6 +135,16 @@ NORMALIZERS = {
     "isbn": normalize_isbn,
     "url": normalize_url,
 }
+
+
+def compute_manifest_sha256(identifiers: list[str]) -> str:
+    """Verbindliche Hash-Regel fuer research_search_result_manifest.sha256 (siehe ADR-0055):
+    SHA-256 ueber ("\\n".join(identifiers) + "\\n").encode("utf-8"). `identifiers` muss bereits
+    in der im Manifest gespeicherten (kanonisch sortierten) Reihenfolge uebergeben werden -- diese
+    Funktion sortiert selbst NICHT, damit ein Manifest mit falscher Reihenfolge auch einen
+    abweichenden Hash erzeugt (siehe check_search_result_manifests in validate_research.py)."""
+    payload = ("\n".join(identifiers) + "\n").encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
 
 
 def iter_research_files(root: Path, kind: str):

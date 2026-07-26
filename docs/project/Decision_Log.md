@@ -1059,6 +1059,91 @@ Kurze, strukturierte Architecture Decision Records (ADRs): Kontext, Entscheidung
   Search-Run-, Screening-, Extraction- oder Promotion-Datensätze angelegt und keine realen
   Quellen, Studien oder Claims ergänzt.
 
+### ADR-0055: Versionierte Identifier-Manifeste für reproduzierbare Search Runs
+
+- **Status:** Entschieden
+- **Datum:** 2026-07-27
+- **Kontext:** Phase 4B-1A legte vier `research_search_run`-Datensätze für Retatrutid-Basissuchen an
+  (PubMed via NCBI E-utilities ESearch, ClinicalTrials.gov API v2), die jeweils nur Query, Zeitpunkt
+  und Trefferzahl (`result_count`) speicherten. Die vollständigen PMID-/NCT-ID-Listen lagen
+  ausschließlich unter `research/raw/**` — per `.gitignore` nicht versioniert. Datenbanken verändern
+  sich jedoch über Zeit (neue Publikationen, zurückgezogene Einträge, geänderte Indexierung): eine
+  identische Query zu einem späteren Zeitpunkt kann eine andere Treffermenge liefern. Die reine
+  Trefferzahl reicht damit für historische Reproduzierbarkeit nicht aus — ohne die tatsächlich
+  erhaltene Identifikatormenge selbst wäre das ursprüngliche Result Set nach einer erneuten Ausführung
+  nicht mehr rekonstruierbar, und ein späterer Prüfer könnte nicht nachvollziehen, welche konkreten
+  Datensätze ein Suchlauf tatsächlich gefunden hat.
+- **Entscheidung:**
+    - Neue Research-Objektart `research_search_result_manifest` (Schema
+      `schemas/research_search_result_manifest.schema.json`, Ordner `research/search_results/`,
+      Dateiname `search-result-manifest-<uuid4>.yaml`): enthält ausschließlich die kanonisch
+      sortierten, eindeutigen stabilen Identifikatoren (`identifier_type: pmid` numerisch aufsteigend,
+      `nct_id` lexikografisch aufsteigend), `count`, einen verbindlichen SHA-256-Hash über
+      `("\n".join(identifiers) + "\n").encode("utf-8")`, und einen Verweis auf den lokalen,
+      NICHT versionierten Rohexport (`source_export_reference`, Pfadhinweis unter `research/raw/`,
+      nicht die Datei selbst). Enthält bewusst KEINE Abstracts, Titel, Volltexte oder sonstigen
+      urheberrechtlich geschützten Inhalte — stabile Identifikatoren allein dürfen versioniert werden,
+      vollständige API-Antworten/Abstracts/PDFs bleiben weiterhin außerhalb von Git.
+    - `research_search_run` erhält ein Pflichtfeld `result_capture`: `status: complete` (mit
+      `manifest_id`, `rationale: null`) verweist auf ein existierendes Manifest, das seinerseits über
+      `search_run_id` gegenseitig zurückverweist; `status: unavailable` (mit `manifest_id: null`,
+      Pflicht-`rationale`) dokumentiert einen echten Grund, warum kein Manifest erzeugt wurde (z. B.
+      keine stabile Gesamttrefferzahl, gesperrte automatisierte Anfrage). `result_capture` ist für
+      JEDEN ausgeführten Suchlauf Pflicht.
+    - Zusätzliches Pflichtfeld `request_parameters` auf `research_search_run`: rein technische,
+      niemals geheime API-Parameter (z. B. `db`/`retmode`/`retmax`/`retstart` bei NCBI E-utilities,
+      `query_parameter`/`countTotal`/`pageSize`/`format` bei ClinicalTrials.gov API v2) — bewusst
+      getrennt von `filters` (inhaltliche/wissenschaftliche Sucheinschränkungen). Optionales Feld
+      `pagination` (`pages_retrieved`, `completion_confirmed`) dokumentiert bei einem paginierenden
+      Interface, dass tatsächlich alle Seiten abgerufen wurden.
+    - `research_search_run.executed_by` referenziert jetzt `common.schema.json#/$defs/research_actor_id`
+      (statt eines unbeschränkten Strings) — dieselbe restriktive, leerzeichen-/
+      grossschreibungsfreie Kürzel-Syntax wie bei allen anderen Research-Akteursfeldern (ADR-0050).
+      Bekannte Grenze bleibt unverändert bestehen: eine syntaktisch stabile Actor-ID beweist nicht,
+      dass dahinter eine bestimmte menschliche Person steht.
+    - `tools/validate_research.py::check_search_result_manifests` prüft: referenzielle Existenz von
+      `search_run_id`, gegenseitige Verknüpfung über `result_capture.manifest_id`, höchstens ein
+      aktives Manifest je Suchlauf, keine verwaisten Manifeste, `count == len(identifiers)` UND
+      `count == search_run.result_count`, `identifier_type` passend zur Datenbank des Suchlaufs
+      (`pubmed` → `pmid`, `clinicaltrials_gov` → `nct_id`), kanonische Sortierreihenfolge (numerisch/
+      lexikografisch — JSON Schema allein kann Sortierreihenfolge nicht ausdrücken), und den
+      SHA-256-Hash gegen die verbindliche Hash-Regel. Identifikator-Pattern (`^[1-9][0-9]*$` für PMID,
+      `^NCT[0-9]{8}$` für NCT-ID) und Eindeutigkeit (`uniqueItems`) sind bereits schema-seitig
+      erzwungen.
+    - `tools/check_research_immutability.py` erweitert um `research/search_results/**` als zweites,
+      eigenständiges Ziel: dort ist JEDES Feld unveränderlich (kein `status`/`review` wie bei
+      `research_search_run` — ein Manifest ist reine Tatsachenfeststellung, kein Workflow-Dokument).
+      `request_parameters`/`result_capture` auf `research_search_run` sind implizit bereits durch die
+      bestehende "alles außer status/updated_at/review/notes ist unveränderlich"-Logik abgedeckt.
+    - Die vier bereits angelegten Phase-4B-1A-Suchläufe (PubMed retatrutide/LY3437943,
+      ClinicalTrials.gov retatrutide/LY3437943) wurden auf `result_capture.status: complete` mit den
+      vier neuen, aus den ursprünglich gespeicherten lokalen Rohantworten erzeugten Manifesten
+      nachgerüstet — keine erneute Suche, keine neuen/späteren Treffer wurden eingemischt.
+- **Alternativen:**
+    1. *Nur die Trefferzahl dokumentieren (Status quo)* — verworfen: reicht für historische
+       Reproduzierbarkeit nicht aus, siehe Kontext.
+    2. *Vollständige Rohantworten (JSON-Exporte) versionieren* — verworfen: würde ggf. urheberrechtlich
+       geschützte Metadaten/Abstracts mitversionieren und widerspricht der bestehenden
+       `research/raw/`-Politik (Abschnitt 32 im Scientific Research Protocol); stabile Identifikatoren
+       allein sind dagegen unproblematisch.
+    3. *Identifikatorliste direkt als zusätzliches Feld auf `research_search_run` speichern, kein
+       eigenes Objekt* — verworfen: vermischt das ausgeführte Suchereignis (Suchlauf) mit der
+       tatsächlich erhaltenen Ergebnismenge (Manifest); ein eigenes, vollständig unveränderliches
+       Objekt macht die Unterscheidung sowohl inhaltlich als auch technisch (getrennte
+       Immutability-Policy) sauberer.
+    4. *Separates Objekt mit gegenseitiger Referenz Suchlauf↔Manifest, optionalem `unavailable`-Pfad
+       für nicht erfassbare Fälle* — **gewählt**.
+- **Konsequenzen:** Ein historisches Result Set ist jetzt entweder über sein Manifest exakt
+  rekonstruierbar, oder es ist dokumentiert, warum das nicht möglich war — kein stiller Datenverlust.
+  Jeder zukünftige Suchlauf muss `result_capture` setzen; ein vollständiges Manifest ohne begründete
+  Ausnahme ist damit der Normalfall. Test-Fixtures unter `tests/fixtures/research/**` (158 bestehende
+  `search_run`-Dateien) wurden mechanisch um `request_parameters: {}` und
+  `result_capture: {status: unavailable, ...}` ergänzt, da sie keine echten Suchläufe mit lokal
+  vorliegendem Rohexport repräsentieren.
+- **Migrationsstrategie:** Nicht zutreffend für Produktivdaten außerhalb der vier genannten
+  Suchläufe (Phase 4B-1A ist der erste reale Rechercheschritt). Keine bestehenden bestätigten
+  Suchläufe erforderten eine inhaltliche Korrektur — nur die Ergänzung der neuen Pflichtfelder.
+
 ## Format für neue Einträge
 
 ```markdown

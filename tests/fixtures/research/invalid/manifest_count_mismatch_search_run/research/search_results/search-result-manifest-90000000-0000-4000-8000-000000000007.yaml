@@ -1,0 +1,13 @@
+schema_version: "1.0.0"
+id: search-result-manifest-90000000-0000-4000-8000-000000000007
+search_run_id: search-run-90000000-0000-4000-8000-000000000007
+identifier_type: pmid
+identifiers:
+  - "100"
+  - "200"
+count: 2
+sha256: "50a63b12f7366e16b0f4a4d68b31641de1f5f74b5ceb30b836324729beb5ca3c"
+source_export_reference: "research/raw/test-fixture/placeholder.json"
+created_at: "2026-01-01"
+updated_at: "2026-01-01"
+notes: null

@@ -9,6 +9,15 @@ executed_by: reviewer-1
 exact_query: '"placeholder substance"[Title/Abstract] AND "placeholder receptor"[Title/Abstract]'
 filters:
   language: english
+request_parameters:
+  db: pubmed
+  retmode: json
+  retmax: 1000
+  retstart: 0
+result_capture:
+  status: complete
+  manifest_id: search-result-manifest-612260ac-757a-4184-ac33-da2b2d075b09
+  rationale: null
 result_count: 2
 date_range:
   from: null

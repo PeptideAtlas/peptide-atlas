@@ -278,6 +278,16 @@
       "additionalProperties": false,
       "required": ["summary", "locator"]
     },
+    "search_result_identifier_type": {
+      "type": "string",
+      "enum": ["pmid", "nct_id"],
+      "description": "Kontrolliertes Vokabular fuer research_search_result_manifest.identifier_type -- welche Art stabiler Identifikator ein Manifest enthaelt. Bewusst auf die Datenbanken beschraenkt, fuer die Phase 4B-1A tatsaechlich Manifeste erzeugt (siehe ADR-0055); weitere Werte koennen ergaenzt werden, sobald ein Manifest fuer eine andere Datenbank benoetigt wird."
+    },
+    "search_run_result_capture_status": {
+      "type": "string",
+      "enum": ["complete", "unavailable"],
+      "description": "Kontrolliertes Vokabular fuer research_search_run.result_capture.status (siehe ADR-0055). 'complete': das vollstaendige, tatsaechlich erhaltene Identifikator-Result-Set ist als research_search_result_manifest versioniert. 'unavailable': aus einem dokumentierten Grund (z. B. keine stabile/reproduzierbare Gesamtmenge, Interface liefert keine Identifikatorliste) wurde bewusst kein Manifest erzeugt -- die Trefferzahl bleibt im Suchlauf selbst dokumentiert, ist aber nicht identifikatorgenau nachvollziehbar."
+    },
     "evidence_link": {
       "type": "object",
       "properties": {

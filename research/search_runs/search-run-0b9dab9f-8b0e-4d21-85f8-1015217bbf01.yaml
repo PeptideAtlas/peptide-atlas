@@ -7,6 +7,15 @@ executed_at: "2026-07-26T21:38:39Z"
 executed_by: claude-code-operator
 exact_query: "LY3437943[All Fields]"
 filters: {}
+request_parameters:
+  db: pubmed
+  retmode: json
+  retmax: 1000
+  retstart: 0
+result_capture:
+  status: complete
+  manifest_id: search-result-manifest-0a10394b-29cc-444b-8e50-c10d8dbca132
+  rationale: null
 date_range:
   from: null
   to: null

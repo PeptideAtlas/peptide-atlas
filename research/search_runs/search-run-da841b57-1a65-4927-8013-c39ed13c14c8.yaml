@@ -7,6 +7,18 @@ executed_at: "2026-07-26T21:38:40Z"
 executed_by: claude-code-operator
 exact_query: "retatrutide"
 filters: {}
+request_parameters:
+  query_parameter: query.term
+  countTotal: true
+  pageSize: 100
+  format: json
+pagination:
+  pages_retrieved: 1
+  completion_confirmed: true
+result_capture:
+  status: complete
+  manifest_id: search-result-manifest-9c189c88-09df-47c2-8d6f-14f234f5965d
+  rationale: null
 date_range:
   from: null
   to: null

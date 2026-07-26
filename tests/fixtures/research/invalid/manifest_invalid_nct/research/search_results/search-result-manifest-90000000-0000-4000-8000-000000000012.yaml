@@ -1,0 +1,12 @@
+schema_version: "1.0.0"
+id: search-result-manifest-90000000-0000-4000-8000-000000000012
+search_run_id: search-run-90000000-0000-4000-8000-000000000012
+identifier_type: nct_id
+identifiers:
+  - "NCT123"
+count: 1
+sha256: "9bd99b968cc232e0caf0a01b30bef4c24bc1577cd8c6d42ab6b0db9e9addc86a"
+source_export_reference: "research/raw/test-fixture/placeholder.json"
+created_at: "2026-01-01"
+updated_at: "2026-01-01"
+notes: null
