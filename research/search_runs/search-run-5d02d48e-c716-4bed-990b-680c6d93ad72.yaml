@@ -1,0 +1,23 @@
+schema_version: "1.0.0"
+id: search-run-5d02d48e-c716-4bed-990b-680c6d93ad72
+protocol_id: research-protocol-retatrutide-v1
+database: clinicaltrials_gov
+interface: ClinicalTrials.gov API v2 (clinicaltrials.gov/api/v2/studies)
+executed_at: "2026-07-26T21:38:40Z"
+executed_by: claude-code-operator
+exact_query: "LY3437943"
+filters: {}
+date_range:
+  from: null
+  to: null
+result_count: 34
+export_reference: "research/raw/retatrutide/phase-4b-1a/ctgov_B_full.json (local, gitignored)"
+notes: >
+  CSO-locked broad identity and discovery search for Phase 4B-1A.
+  No scientific screening, eligibility decision or evidence appraisal performed.
+status: executed
+created_at: "2026-07-26"
+updated_at: "2026-07-26"
+review:
+  last_reviewed_at: null
+  reviewers: []

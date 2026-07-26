@@ -1,0 +1,23 @@
+schema_version: "1.0.0"
+id: search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+protocol_id: research-protocol-retatrutide-v1
+database: pubmed
+interface: NCBI E-utilities ESearch (eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi)
+executed_at: "2026-07-26T21:38:39Z"
+executed_by: claude-code-operator
+exact_query: "retatrutide[All Fields]"
+filters: {}
+date_range:
+  from: null
+  to: null
+result_count: 157
+export_reference: "research/raw/retatrutide/phase-4b-1a/pubmed_A_full.json (local, gitignored)"
+notes: >
+  CSO-locked broad identity and discovery search for Phase 4B-1A.
+  No scientific screening, eligibility decision or evidence appraisal performed.
+status: executed
+created_at: "2026-07-26"
+updated_at: "2026-07-26"
+review:
+  last_reviewed_at: null
+  reviewers: []
