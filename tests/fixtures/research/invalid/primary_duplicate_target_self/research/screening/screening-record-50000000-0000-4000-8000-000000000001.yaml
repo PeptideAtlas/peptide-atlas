@@ -36,7 +36,7 @@ decision_history:
   decision: uncertain
   decision_reason: null
   duplicate_of: null
-  primary_duplicate_of: screening-record-50000000-0000-4000-8000-000000000002
+  primary_duplicate_of: screening-record-50000000-0000-4000-8000-000000000001
   decided_by: reviewer-1
   decided_at: '2026-01-02'
   full_text_status: not_applicable

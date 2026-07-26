@@ -37,6 +37,18 @@ nicht automatisch eine kanonische Quelle. Er dokumentiert die Ein-/Ausschlussent
   bleibt immer `decision: uncertain` und wird durch einen neuen Screening-Eintrag aufgelöst, nicht durch
   Adjudikation. `screening_policy.dual_reviewer_stages` (im Protokoll) kann `deduplication` bereits schema-seitig
   nicht enthalten und muss außerdem eine Teilmenge von `screening_policy.stages` sein.
+- **Historische Duplikatverweise referenziell geprüft:** `primary_duplicate_of`,
+  `second_review.reviewer_duplicate_of` und `decision_history[].duplicate_of` müssen (wenn nicht `null`) auf
+  einen tatsächlich existierenden Screening-Datensatz **desselben Protokolls** verweisen und dürfen nicht auf
+  den eigenen Datensatz zeigen — jeweils am exakten Feldpfad geprüft. Anders als bei der effektiven
+  Top-Level-`duplicate_of` läuft hier **keine** Ketten-/Zyklenverfolgung: jedes historische Feld ist die
+  Momentaufnahme einer einzelnen Entscheidung, kein fortlaufend gepflegter Verweis.
+- **Unterschiedliche Duplikatziele sind ein Konflikt, auch bei gleicher Entscheidung:** Wählen Erst- und
+  Zweitprüfung beide `decision: duplicate`, aber mit unterschiedlichem `primary_duplicate_of`/
+  `second_review.reviewer_duplicate_of`, ist `decision_confirmed: true` ein Validierungsfehler — beide sind
+  sich einig, dass es sich um ein Duplikat handelt, aber nicht, wessen Duplikat. Die effektive `decision`
+  bleibt `uncertain`, `duplicate_of` bleibt `null`, bis ein neuer `decision_history`-Eintrag den Widerspruch
+  auflöst (siehe ADR-0052 im [Decision Log](../../docs/project/Decision_Log.md)).
 - `decision_history[]` wird als **gesamtes** Array geprüft (jeder Eintrag, nicht nur der aktuelle Zustand,
   inkl. Datumsreihenfolge gegen jeden referenzierten Suchlauf) — ist aber ein manuell editierbares Feld
   innerhalb derselben Datei, **kein** unveränderliches, separates Event-Log (append-only ist redaktionelle

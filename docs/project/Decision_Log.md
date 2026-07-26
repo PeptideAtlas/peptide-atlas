@@ -63,6 +63,7 @@ Kurze, strukturierte Architecture Decision Records (ADRs): Kontext, Entscheidung
 | ADR-0049 | `rejected`-Promotions erfordern dieselbe Mindest-Audit-Spur wie `approved_for_creation`/`promoted` | Entschieden (Phase 4A, Review-Härtung Runde 5) | Eine Ablehnung konnte bislang ohne Reviewer, Reviewdatum oder Begründung existieren, obwohl sie eine ebenso konsequenzreiche wissenschaftliche/redaktionelle Entscheidung ist. Ausführliches ADR siehe unten. |
 | ADR-0050 | Stabile Research-Actor-ID-Syntax (`research_actor_id`) ohne Actor-Registry | Entschieden (Phase 4A, Review-Härtung Runde 5) | Alle Research-Akteursfelder verwendeten bislang ein reines `minLength: 1`-Feld — Leerzeichenvarianten oder Groß-/Kleinschreibung hätten Gleichheits-/Unabhängigkeitsprüfungen (z. B. Zweitprüfer ≠ Erstprüfer) unterlaufen können. Ausführliches ADR siehe unten. |
 | ADR-0051 | `screening_policy.dual_reviewer_stages` muss Teilmenge von `screening_policy.stages` sein | Entschieden (Phase 4A, Review-Härtung Runde 5) | Ein Protokoll konnte bislang eine Zweitprüferstufe verlangen, die gar nicht als Screening-Stufe konfiguriert war. Ausführliches ADR siehe unten. |
+| ADR-0052 | Historische Duplikatverweise referenziell geprüft; unterschiedliche Duplikatziele als Konflikt behandelt | Entschieden (Phase 4A, Review-Härtung Runde 5B) | `primary_duplicate_of`, `second_review.reviewer_duplicate_of` und `decision_history[].duplicate_of` waren bislang nur formatgeprüft, nicht referenziell — ein Verweis auf einen nicht existierenden, protokollfremden oder den eigenen Datensatz blieb unbemerkt. Zusätzlich zählte eine übereinstimmende `duplicate`-Entscheidung als „bestätigt", auch wenn Erst- und Zweitprüfung unterschiedliche Hauptdatensätze meinten. Ausführliches ADR siehe unten. |
 
 ## Ausführliche ADRs
 
@@ -910,6 +911,78 @@ Kurze, strukturierte Architecture Decision Records (ADRs): Kontext, Entscheidung
   zuverlässig zurückgewiesen.
 - **Migrationsstrategie:** Nicht zutreffend — alle bestehenden Protokolle (Produktivbeispiele,
   Test-Fixtures) erfüllten die Teilmengenbeziehung bereits.
+
+### ADR-0052: Historische Duplikatverweise referenziell geprüft; unterschiedliche Duplikatziele als Konflikt behandelt
+
+- **Status:** Entschieden
+- **Datum:** 2026-07-26
+- **Kontext:** Runde 5 (ADR-0047) führte `primary_duplicate_of` und `second_review.
+  reviewer_duplicate_of` als eigenständige, verlustfreie Duplikatverweise je Entscheidungsebene ein,
+  prüfte sie aber ausdrücklich nur auf Formatgültigkeit (Pattern), nicht referenziell — dokumentiert
+  als bewusste Grenze, um den Umfang von Runde 5 nicht auszudehnen. Diese Grenze erwies sich als zu
+  weitreichend: ein `primary_duplicate_of`, das auf einen nicht existierenden, protokollfremden oder
+  den eigenen Datensatz verweist, blieb unbemerkt — obwohl genau dieselbe Prüfung für die effektive
+  Top-Level-`duplicate_of` bereits seit Runde 2/4 (ADR-0039/ADR-0042) besteht. Zusätzlich behandelte
+  die bestehende `decision_confirmed`-Projektion (`reviewer_decision == primary_decision`, ADR-0043)
+  zwei `duplicate`-Entscheidungen bereits als „bestätigt", sobald nur die Entscheidungs**kategorie**
+  übereinstimmte — auch wenn `primary_duplicate_of` und `second_review.reviewer_duplicate_of` auf
+  **unterschiedliche** Hauptdatensätze zeigten. Zwei Prüfungen, die beide „ist ein Duplikat" sagen,
+  aber unterschiedlicher Meinung sind, WESSEN Duplikat es ist, sind keine echte Übereinstimmung.
+- **Entscheidung:**
+    1. **Referenzielle Prüfung historischer Duplikatverweise** (`tools/validate_research.py::
+       check_historical_duplicate_targets`): für `decision_history[].primary_duplicate_of`,
+       `decision_history[].second_review.reviewer_duplicate_of` und `decision_history[].duplicate_of`
+       gilt bei nicht-`null`-Wert je Feld unabhängig: das Ziel muss als `screening_record` existieren,
+       zum selben `protocol_id` gehören, und darf nicht der eigene Datensatz sein. Fehler werden am
+       exakten Feldpfad gemeldet (z. B. `$.decision_history[0].primary_duplicate_of`). Bewusst **nur
+       ein einzelner Hop** — anders als die bestehende Ketten-/Zyklenprüfung für die EFFEKTIVE
+       Top-Level-`duplicate_of` (unverändert, siehe unten) läuft hier keine Kettenverfolgung: die
+       historischen Felder sind Momentaufnahmen einer einzelnen Entscheidung, keine fortlaufend
+       gepflegte Verweiskette.
+    2. **Zielkonflikt bei `duplicate`**: `_check_decision_snapshot` erweitert die Definition von
+       „übereinstimmend" (bislang nur `reviewer_decision == primary_decision`) für den Fall
+       `reviewer_decision == primary_decision == 'duplicate'` um eine zusätzliche Bedingung:
+       `second_review.reviewer_duplicate_of == primary_duplicate_of`. `decision_confirmed` muss diese
+       erweiterte Übereinstimmung korrekt projizieren — `decision_confirmed: true` bei unterschiedlichen
+       Zielen ist ein Validierungsfehler. Da `deduplication` seit ADR-0046 strukturell keine Adjudikation
+       unterstützt, folgt aus der bestehenden Konfliktlogik automatisch: die effektive `decision` bleibt
+       `uncertain`, `duplicate_of` bleibt `null` (schema-seitig erzwungen), und der Widerspruch wird durch
+       einen **neuen** `decision_history`-Eintrag aufgelöst, nicht durch Adjudikation. Für alle anderen
+       Entscheidungswerte (`include`/`exclude`/`pending`/`awaiting_full_text`/`uncertain`) bleibt die
+       bisherige reine Wertegleichheit unverändert maßgeblich.
+- **Alternativen (zu Punkt 1):**
+    1. *Auch die historischen Felder mit voller Ketten-/Zyklenverfolgung prüfen* — verworfen: eine
+       historische Momentaufnahme repräsentiert nicht „die aktuell gültige Kette", sondern nur, was zu
+       diesem Zeitpunkt von dieser einen Person eingetragen wurde — eine Kettenverfolgung würde eine
+       Vollständigkeits-/Aktualitätsgarantie vortäuschen, die für vergangene Einzelentscheidungen fachlich
+       nicht sinnvoll ist. Die volle Ketten-/Zyklensemantik bleibt bewusst auf die effektive,
+       redaktionell gepflegte Top-Level-`duplicate_of` beschränkt.
+    2. *Weiterhin nur Formatprüfung, keine referenzielle Prüfung* — verworfen: genau diese Lücke wurde
+       im Folgeauftrag benannt; die Inkonsistenz zur bereits bestehenden Prüfung der effektiven
+       `duplicate_of` war nicht mehr zu rechtfertigen.
+    3. *Referenzielle Einzel-Hop-Prüfung für alle drei historischen Felder, volle Ketten-/
+       Zyklensemantik weiterhin nur für die effektive Top-Level-`duplicate_of`* — **gewählt**.
+- **Alternativen (zu Punkt 2):**
+    1. *Zielkonflikt ignorieren, nur die Entscheidungskategorie vergleichen (bisheriges Verhalten)* —
+       verworfen: genau der im Folgeauftrag benannte Fehler.
+    2. *Adjudikationsmodell für `deduplication` doch öffnen, um einen Zielkonflikt aufzulösen* —
+       verworfen: widerspricht der in ADR-0046 bewusst getroffenen, begründeten Entscheidung, dass
+       `deduplication` keine Adjudikation unterstützt (siehe dortige Alternativenabwägung); ein
+       Zielkonflikt ist inhaltlich derselbe Fall wie ein Entscheidungskonflikt und verdient dieselbe
+       Lösung (neuer Historieneintrag).
+    3. *`decisions_agree` bei `duplicate` inhaltlich erweitern (Entscheidung UND Ziel), bestehende
+       Konflikt-/Adjudikationslogik unverändert wiederverwenden* — **gewählt**: nutzt die bereits
+       vorhandene, gehärtete Infrastruktur (uncertain-Fallback, Adjudikationsverbot bei
+       `deduplication`) ohne Sonderfallcode.
+- **Konsequenzen:** Ein historischer Duplikatverweis auf einen nicht existierenden, protokollfremden
+  oder den eigenen Datensatz wird jetzt zuverlässig zurückgewiesen, unabhängig davon, ob es sich um
+  `primary_duplicate_of`, `second_review.reviewer_duplicate_of` oder `decision_history[].duplicate_of`
+  handelt. Zwei `duplicate`-Entscheidungen mit unterschiedlichen Zielen werden nicht mehr fälschlich als
+  Konsens akzeptiert. Ein bereits akzeptiertes Runde-5-Positiv-Fixture
+  (`primary_duplicate_target_preserved_during_conflict`) verwies auf einen nicht existierenden
+  Platzhalter-Datensatz und wurde um einen echten, protokollinternen Zieldatensatz ergänzt.
+- **Migrationsstrategie:** Nicht zutreffend für Produktivdaten. Ein Test-Fixture wurde im selben Commit
+  korrigiert (siehe oben).
 
 ## Format für neue Einträge
 

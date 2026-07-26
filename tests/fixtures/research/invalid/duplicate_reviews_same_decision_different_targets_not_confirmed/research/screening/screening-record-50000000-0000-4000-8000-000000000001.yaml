@@ -12,20 +12,20 @@ candidate_identifiers:
   url: null
 candidate_title: Test Candidate
 candidate_source_type: peer_reviewed_publication
-decision: uncertain
+decision: duplicate
 decision_stage: deduplication
 decision_reason: null
-duplicate_of: null
+duplicate_of: screening-record-50000000-0000-4000-8000-000000000002
 full_text_status: not_applicable
 screened_by: reviewer-1
 screened_at: '2026-01-02'
 second_review: &id001
   reviewed_by: reviewer-2
   reviewed_at: '2026-01-02'
-  decision_confirmed: false
-  reviewer_decision: include
+  decision_confirmed: true
+  reviewer_decision: duplicate
   reviewer_decision_reason: null
-  reviewer_duplicate_of: null
+  reviewer_duplicate_of: screening-record-50000000-0000-4000-8000-000000000003
   adjudication: null
   notes: null
 decision_history:
@@ -33,9 +33,9 @@ decision_history:
   stage: deduplication
   primary_decision: duplicate
   primary_decision_reason: null
-  decision: uncertain
+  decision: duplicate
   decision_reason: null
-  duplicate_of: null
+  duplicate_of: screening-record-50000000-0000-4000-8000-000000000002
   primary_duplicate_of: screening-record-50000000-0000-4000-8000-000000000002
   decided_by: reviewer-1
   decided_at: '2026-01-02'

@@ -124,9 +124,28 @@ ADR-0039 im [Decision Log](Decision_Log.md).
 `duplicate_of` muss innerhalb **desselben Protokolls** bleiben: Der Validator prüft nicht nur den unmittelbaren
 Verweis, sondern die **gesamte Kette** verketteter Duplikate (A verweist auf B, B verweist auf den eigentlichen
 Hauptdatensatz C) gegen die `protocol_id` des Ausgangsdatensatzes — zusätzlich zur bestehenden Zyklenerkennung
-(kein Datensatz darf sich selbst oder über einen Kreis referenzieren). Ein als `duplicate` markierter Kandidat
-zählt strukturell nie zu den „aktiven" Kandidaten (siehe oben) und ist damit auch nie extraktionsfähig
-(Abschnitt 9b).
+(kein Datensatz darf sich selbst oder über einen Kreis referenzieren). Diese vollständige Ketten-/
+Zyklensemantik gilt ausschließlich für die **effektive Top-Level-`duplicate_of`** (die redaktionell gepflegte,
+aktuelle Projektion). Ein als `duplicate` markierter Kandidat zählt strukturell nie zu den „aktiven"
+Kandidaten (siehe oben) und ist damit auch nie extraktionsfähig (Abschnitt 9b).
+
+**Historische Duplikatverweise referenziell geprüft (seit ADR-0052):** `decision_history[].
+primary_duplicate_of`, `decision_history[].second_review.reviewer_duplicate_of` und `decision_history[].
+duplicate_of` sind — bei nicht-`null`-Wert, unabhängig je Feld — ebenfalls referenziell geprüft: das Ziel
+muss als `screening_record` existieren, zum selben `protocol_id` gehören und darf nicht der eigene Datensatz
+sein. Fehler werden am exakten Feldpfad gemeldet. Bewusster Unterschied zur effektiven Top-Level-`duplicate_of`:
+hier läuft **keine** Kettenverfolgung — jedes historische Feld ist die Momentaufnahme einer einzelnen
+Entscheidung zu einem Zeitpunkt, keine fortlaufend gepflegte Verweiskette, und wird deshalb nur mit einem
+einzelnen Hop geprüft.
+
+**Unterschiedliche Duplikatziele als Konflikt (seit ADR-0052):** Wählen Erst- und Zweitprüfung beide
+`decision: duplicate`, aber mit unterschiedlichem Hauptdatensatz-Verweis (`primary_duplicate_of` ≠
+`second_review.reviewer_duplicate_of`), ist das **keine** bestätigte Übereinstimmung — beide sind sich zwar
+einig, dass der Kandidat ein Duplikat ist, aber uneinig, WESSEN Duplikat. `second_review.decision_confirmed`
+muss in diesem Fall `false` sein (die bestehende Projektionsregel aus Abschnitt 9c/10a wird für `duplicate`
+entsprechend um den Zielvergleich erweitert). Da `deduplication` strukturell keine Adjudikation unterstützt
+(Abschnitt 9c), bleibt die effektive `decision` `uncertain` und `duplicate_of` `null`, bis ein **neuer**
+`decision_history`-Eintrag den Widerspruch auflöst (siehe Abschnitt 9a).
 
 ## 9b. Terminale Extraktionsfähigkeit
 
@@ -555,8 +574,12 @@ maschinenlesbar sicherstellt:
   Identifier-Deduplizierung, Screening-Workflow inkl. jedes `decision_history`-Eintrags (Stage-/
   Decision-Matrix gegen alle drei Entscheidungsebenen — `primary_decision`, `second_review.reviewer_decision`,
   effektive `decision` —, `primary_decision`/`decision`-Konsistenz, ADR-0043/ADR-0046), keine Adjudikation an
-  der Stufe `deduplication` (ADR-0046), terminale Extraktionsfähigkeit, Verifikationsunabhängigkeit, zeitliche
-  Provenienzkette Screening→Extraktion→Verifikation→Promotion objektübergreifend (ADR-0044) UND objektintern
+  der Stufe `deduplication` (ADR-0046), referenzielle Prüfung der historischen Duplikatverweise
+  (`primary_duplicate_of`/`second_review.reviewer_duplicate_of`/`decision_history[].duplicate_of` — Ziel
+  existiert, gleiches Protokoll, kein Selbstverweis, je einzelner Hop) und unterschiedliche Duplikatziele
+  trotz gleicher `duplicate`-Entscheidung als Konflikt (`decision_confirmed` entsprechend erweitert geprüft,
+  ADR-0052), terminale Extraktionsfähigkeit, Verifikationsunabhängigkeit, zeitliche Provenienzkette
+  Screening→Extraktion→Verifikation→Promotion objektübergreifend (ADR-0044) UND objektintern
   (`created_at <= Ereignisdatum <= updated_at` je Objekt, ADR-0048), `screening_policy.dual_reviewer_stages`
   als Teilmenge von `screening_policy.stages` (ADR-0051), Claim-Promotion-Kette inkl.
   `requires_second_review`-Reviewerzahl symmetrisch für `approved_for_creation`/`promoted`/`rejected`

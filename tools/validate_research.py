@@ -12,11 +12,16 @@ Prueft (Ueberblick, siehe die einzelnen check_*-Funktionen fuer Details):
 - Schemaebene: gueltiges YAML, JSON-Schema-Konformitaet, echte Kalenderdaten, schema_version,
   Dateiname == id.
 - Referenzebene: protocol_id, search_run_ids, duplicate_of, canonical_source_id/_study_id/
-  _claim_id gegen die jeweilige kanonische Datenebene.
+  _claim_id gegen die jeweilige kanonische Datenebene. Seit ADR-0052 zusaetzlich referenziell
+  geprueft (Ziel existiert, gleiches protocol_id, kein Selbstverweis, je EXAKTEM Feldpfad):
+  decision_history[].primary_duplicate_of, decision_history[].second_review.reviewer_duplicate_of,
+  decision_history[].duplicate_of -- bewusst nur ein einzelner Hop je historischer Momentaufnahme,
+  keine Kettenverfolgung (die bleibt der EFFEKTIVEN Top-Level-duplicate_of vorbehalten, siehe unten).
 - Protokollkonsistenz: Version/ID-Suffix, Suchlauf nur gegen approved/superseded-Protokolle,
   Suchlauf-Datenbank muss in protocol.planned_information_sources[] freigegeben sein,
   protokoll-uebergreifende Konsistenz zwischen search_run/screening_record/extraction_record,
-  duplicate_of bleibt innerhalb desselben Protokolls (inkl. gesamter Kette).
+  duplicate_of bleibt innerhalb desselben Protokolls (inkl. gesamter Kette und Zyklenerkennung --
+  ausschliesslich fuer die effektive Top-Level-duplicate_of, siehe ADR-0052).
 - Deduplizierung: echte normalisierte DOI/PMID/PMCID/NCT-ID/ISBN-Kollisionserkennung.
 - Screening-Workflow: JEDER decision_history-Eintrag (nicht nur der aktuelle Zustand) wird
   gegen dieselben Invarianten geprueft -- Stufe im Protokoll vorgesehen, Stage-/Decision-Matrix
@@ -28,6 +33,10 @@ Prueft (Ueberblick, siehe die einzelnen check_*-Funktionen fuer Details):
   second_review.reviewer_decision_reason/reviewer_duplicate_of -- ADR-0046), Volltextvollstaendigkeit,
   Datumsreihenfolge (inkl. gegen JEDEN referenzierten Suchlauf). deduplication unterstuetzt
   strukturell KEINE Adjudikation (ADR-0046) -- ein Dedup-Widerspruch bleibt immer 'uncertain'.
+  decision_confirmed bei reviewer_decision == primary_decision == 'duplicate' erfordert seit
+  ADR-0052 zusaetzlich reviewer_duplicate_of == primary_duplicate_of -- zwei Pruefungen, die beide
+  'duplicate' waehlen, aber unterschiedliche Hauptdatensaetze meinen, sind KEINE bestaetigte
+  Uebereinstimmung.
   Extraktion ist nur fuer einen screening_record zulaessig, dessen Einschluss terminal
   (decision_stage: final), vollstaendig volltextgeprueft und frei von ungeloesten
   Zweitpruefungskonflikten ist.
@@ -409,6 +418,70 @@ def check_research_references(
             )
 
 
+def _check_duplicate_target_reference(
+    report: Report,
+    file_rel: str,
+    path: str,
+    field_label: str,
+    own_id: str,
+    own_protocol_id: str | None,
+    target_id: str | None,
+    screening: dict[str, ResearchObject],
+) -> None:
+    """Prueft EINEN Duplikatverweis (egal auf welcher Entscheidungsebene/an welchem JSON-Pfad)
+    referenziell: Ziel existiert als screening_record, Ziel gehoert zum selben protocol_id, Ziel ist
+    nicht der eigene Datensatz (siehe ADR-0052). Bewusst NUR ein einzelner Hop -- anders als die
+    bestehende Ketten-/Zyklenpruefung fuer die EFFEKTIVE Top-Level-duplicate_of (siehe
+    check_research_references) laeuft hier keine Kettenverfolgung: primary_duplicate_of/
+    reviewer_duplicate_of/decision_history[].duplicate_of sind historische Momentaufnahmen, keine
+    fortlaufend gepflegte Verweiskette (siehe Scientific Research Protocol, Abschnitt 8/9c)."""
+    if not target_id:
+        return
+    if target_id == own_id:
+        report.error(file_rel, path, f"{field_label} cannot reference the record's own id (self-reference)")
+        return
+    target = screening.get(target_id)
+    if target is None:
+        report.error(file_rel, path, f"{field_label} references missing screening record: {target_id}")
+        return
+    target_protocol_id = target.data.get("protocol_id")
+    if target_protocol_id != own_protocol_id:
+        report.error(
+            file_rel, path,
+            f"{field_label} target '{target_id}' belongs to a different protocol ('{target_protocol_id}') "
+            f"than this record ('{own_protocol_id}') -- a duplicate target must stay within the same protocol",
+        )
+
+
+def check_historical_duplicate_targets(report: Report, objects: dict[str, dict[str, ResearchObject]]) -> None:
+    """ADR-0052: referenzielle Pruefung der historischen Duplikatverweise -- primary_duplicate_of und
+    second_review.reviewer_duplicate_of je decision_history-Eintrag, sowie (zusaetzlich zur bereits
+    bestehenden Pruefung der Top-Level-Projektion in check_research_references) der EFFEKTIVE
+    decision_history[].duplicate_of je Eintrag selbst. Ergaenzt, ersetzt aber nicht die bestehende
+    Ketten-/Zyklenpruefung fuer die effektive Top-Level-duplicate_of."""
+    screening = objects["screening_record"]
+    for obj in screening.values():
+        file_rel = relative(obj.path)
+        own_protocol_id = obj.data.get("protocol_id")
+        for idx, entry in enumerate(obj.data.get("decision_history") or []):
+            if not isinstance(entry, dict):
+                continue
+            entry_label = f"$.decision_history[{idx}]"
+            _check_duplicate_target_reference(
+                report, file_rel, f"{entry_label}.primary_duplicate_of", "primary_duplicate_of",
+                obj.id, own_protocol_id, entry.get("primary_duplicate_of"), screening,
+            )
+            _check_duplicate_target_reference(
+                report, file_rel, f"{entry_label}.duplicate_of", "duplicate_of",
+                obj.id, own_protocol_id, entry.get("duplicate_of"), screening,
+            )
+            second_review = entry.get("second_review") or {}
+            _check_duplicate_target_reference(
+                report, file_rel, f"{entry_label}.second_review.reviewer_duplicate_of", "reviewer_duplicate_of",
+                obj.id, own_protocol_id, second_review.get("reviewer_duplicate_of"), screening,
+            )
+
+
 _PROTOCOL_ID_VERSION_RE = re.compile(r"-v(\d+)$")
 
 
@@ -494,6 +567,7 @@ def _check_decision_snapshot(
     ggf. adjudizierter Zustand) -- siehe ADR-0043."""
     stage = entry.get("stage")
     primary_decision = entry.get("primary_decision")
+    primary_duplicate_of = entry.get("primary_duplicate_of")
     decision = entry.get("decision")
     decided_by = entry.get("decided_by")
     decided_at = entry.get("decided_at")
@@ -563,13 +637,22 @@ def _check_decision_snapshot(
 
         decision_confirmed = second_review.get("decision_confirmed")
         decisions_agree = reviewer_decision == primary_decision
+        if decisions_agree and reviewer_decision == "duplicate":
+            # ADR-0052: bei 'duplicate' reicht eine uebereinstimmende Entscheidungskategorie allein
+            # nicht aus -- beide Pruefungen muessen zusaetzlich auf DENSELBEN Hauptdatensatz zeigen.
+            # 'primary_duplicate_of: A' vs. 'reviewer_duplicate_of: B' ist ein inhaltlicher
+            # Widerspruch (unterschiedliche Vorstellungen davon, WESSEN Duplikat der Kandidat ist),
+            # auch wenn reviewer_decision == primary_decision == 'duplicate' ist.
+            reviewer_duplicate_of = second_review.get("reviewer_duplicate_of")
+            decisions_agree = reviewer_duplicate_of == primary_duplicate_of
         if decision_confirmed != decisions_agree:
             report.error(
                 file_rel, f"{entry_label}.second_review.decision_confirmed",
                 f"decision_confirmed ({decision_confirmed!r}) is inconsistent with whether reviewer_decision "
                 f"('{reviewer_decision}') actually agrees with the PRIMARY decision ('{primary_decision}') -- "
-                "decision_confirmed must be a validated projection of that comparison, not of the effective "
-                "decision",
+                "decision_confirmed must be a validated projection of that comparison (for 'duplicate', "
+                "also requiring reviewer_duplicate_of == primary_duplicate_of, see ADR-0052), not of the "
+                "effective decision",
             )
 
         adjudication = second_review.get("adjudication")
@@ -1110,6 +1193,7 @@ def check_no_unwanted_binaries(report: Report, root: Path) -> None:
 
 def run_checks(report: Report, objects: dict[str, dict[str, ResearchObject]], source_ids, study_ids, claim_ids) -> None:
     check_research_references(report, objects, source_ids, study_ids)
+    check_historical_duplicate_targets(report, objects)
     check_protocol_version_matches_id(report, objects["protocol"])
     check_deduplication(report, objects)
     check_decision_history(report, objects, objects["search_run"])

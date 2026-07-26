@@ -200,6 +200,17 @@ INVALID_SCENARIOS = {
     "verifier_trailing_space": "is not valid under any of the given schemas",
     # Round 5 -- Punkt 6: dual_reviewer_stages muss Teilmenge von stages sein.
     "dual_reviewer_stage_not_in_stages": "is not among screening_policy.stages",
+    # Round 5B -- Punkt 1: historische Duplikatverweise referenziell geprueft.
+    "primary_duplicate_target_missing": "primary_duplicate_of references missing screening record",
+    "primary_duplicate_target_cross_protocol": "primary_duplicate_of target",
+    "primary_duplicate_target_self": "primary_duplicate_of cannot reference the record's own id",
+    "second_reviewer_duplicate_target_missing": "reviewer_duplicate_of references missing screening record",
+    "second_reviewer_duplicate_target_cross_protocol": "reviewer_duplicate_of target",
+    "second_reviewer_duplicate_target_self": "reviewer_duplicate_of cannot reference the record's own id",
+    # Round 5B -- Punkt 2: unterschiedliche Duplikatziele trotz gleicher decision sind kein Konsens.
+    "duplicate_reviews_same_decision_different_targets_not_confirmed": (
+        "decision_confirmed (True) is inconsistent"
+    ),
 }
 
 
@@ -329,6 +340,35 @@ PRECISE_INVALID_SCENARIOS = {
     "dedup_adjudication_not_supported": (
         "research/screening/screening-record-50000000-0000-4000-8000-000000000001.yaml",
         "$.decision_history[0].second_review.adjudication",
+    ),
+    # Round 5B -- Punkt 1: kritische referenzielle Duplikatverweis-Faelle mit exakter Datei-/Pfadpruefung.
+    "primary_duplicate_target_missing": (
+        "research/screening/screening-record-50000000-0000-4000-8000-000000000001.yaml",
+        "$.decision_history[0].primary_duplicate_of",
+    ),
+    "primary_duplicate_target_cross_protocol": (
+        "research/screening/screening-record-50000000-0000-4000-8000-000000000001.yaml",
+        "$.decision_history[0].primary_duplicate_of",
+    ),
+    "primary_duplicate_target_self": (
+        "research/screening/screening-record-50000000-0000-4000-8000-000000000001.yaml",
+        "$.decision_history[0].primary_duplicate_of",
+    ),
+    "second_reviewer_duplicate_target_missing": (
+        "research/screening/screening-record-50000000-0000-4000-8000-000000000001.yaml",
+        "$.decision_history[0].second_review.reviewer_duplicate_of",
+    ),
+    "second_reviewer_duplicate_target_cross_protocol": (
+        "research/screening/screening-record-50000000-0000-4000-8000-000000000001.yaml",
+        "$.decision_history[0].second_review.reviewer_duplicate_of",
+    ),
+    "second_reviewer_duplicate_target_self": (
+        "research/screening/screening-record-50000000-0000-4000-8000-000000000001.yaml",
+        "$.decision_history[0].second_review.reviewer_duplicate_of",
+    ),
+    "duplicate_reviews_same_decision_different_targets_not_confirmed": (
+        "research/screening/screening-record-50000000-0000-4000-8000-000000000001.yaml",
+        "$.decision_history[0].second_review.decision_confirmed",
     ),
 }
 

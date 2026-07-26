@@ -23,9 +23,9 @@ second_review: &id001
   reviewed_by: reviewer-2
   reviewed_at: '2026-01-02'
   decision_confirmed: false
-  reviewer_decision: include
+  reviewer_decision: duplicate
   reviewer_decision_reason: null
-  reviewer_duplicate_of: null
+  reviewer_duplicate_of: screening-record-50000000-0000-4000-8000-000000000001
   adjudication: null
   notes: null
 decision_history:
