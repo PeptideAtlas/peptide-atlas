@@ -3,6 +3,9 @@ id: search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
 protocol_id: research-protocol-retatrutide-v1
 database: pubmed
 interface: NCBI E-utilities ESearch (eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi)
+interface_profile:
+  id: ncbi_eutils_esearch_v1
+  rationale: null
 executed_at: "2026-07-26T21:38:39Z"
 executed_by: claude-code-operator
 exact_query: "LY3437943[All Fields]"

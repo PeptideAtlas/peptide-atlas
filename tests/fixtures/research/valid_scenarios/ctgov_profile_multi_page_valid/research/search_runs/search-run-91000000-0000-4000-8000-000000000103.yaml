@@ -7,6 +7,9 @@ executed_at: "2026-01-01T10:00:00Z"
 executed_by: reviewer-1
 exact_query: 'test substance'
 filters: {}
+interface_profile:
+  id: clinicaltrials_gov_api_v2_v1
+  rationale: null
 request_parameters:
   query_parameter: 'query.term'
   countTotal: true

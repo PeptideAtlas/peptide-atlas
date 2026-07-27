@@ -4,6 +4,9 @@ id: search-run-a0000000-0000-4000-8000-000000000001
 protocol_id: research-protocol-placeholder-substance-v1
 database: pubmed
 interface: PubMed web interface (Platzhalter-Beispiel)
+interface_profile:
+  id: ncbi_eutils_esearch_v1
+  rationale: null
 executed_at: "2026-07-24T10:00:00Z"
 executed_by: reviewer-1
 exact_query: '"placeholder substance"[Title/Abstract] AND "placeholder receptor"[Title/Abstract]'

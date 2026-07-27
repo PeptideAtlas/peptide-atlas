@@ -15,6 +15,9 @@ id: search-run-40000000-0000-4000-8000-000000000001
 protocol_id: research-protocol-test-substance-v1
 database: pubmed
 interface: PubMed web interface
+interface_profile:
+  id: unprofiled
+  rationale: test fixture, no profile
 executed_at: "2026-01-01T10:00:00Z"
 executed_by: reviewer-1
 exact_query: '"test substance"[Title/Abstract]'
@@ -127,6 +130,21 @@ def test_request_parameters_change_is_flagged(base_repo):
     errors = check(repo, base_sha)
     assert len(errors) == 1
     assert "request_parameters" in errors[0]
+
+
+def test_interface_profile_change_is_flagged(base_repo):
+    """ADR-0055 R3-Nachtrag: interface_profile.id ist ein Ausfuehrungsfeld -- eine nachtraegliche
+    Aenderung wuerde einen bereits ausgefuehrten (und ggf. bereits gemergten) Suchlauf rueckwirkend
+    einem anderen API-Parameterprofil unterwerfen, das zum Ausfuehrungszeitpunkt gar nicht galt.
+    Bereits durch die bestehende 'alles ausser status/updated_at/review/notes ist immutable'-Logik
+    strukturell abgedeckt -- dieser Test sichert die Regel fuer das neue Feld ausdruecklich ab."""
+    repo, base_sha, file_path = base_repo
+    text = file_path.read_text(encoding="utf-8")
+    text = text.replace("id: unprofiled", "id: ncbi_eutils_esearch_v1")
+    file_path.write_text(text, encoding="utf-8")
+    errors = check(repo, base_sha)
+    assert len(errors) == 1
+    assert "interface_profile" in errors[0]
 
 
 def test_result_capture_change_is_flagged(base_repo):

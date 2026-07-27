@@ -136,11 +136,9 @@ niemals geheime API-Parameter, die zusätzlich zu `interface`/`exact_query` für
 bleiben bewusst getrennte Felder auf dem Suchlauf. Ein optionales `pagination`-Feld dokumentiert bei einem
 paginierenden Interface, dass tatsächlich alle Seiten abgerufen wurden.
 
-**Härtung (R2):** Für die beiden derzeit tatsächlich verwendeten API-Profile erzwingt der Validator zusätzlich
-eine technische Mindestvalidierung der `request_parameters` (NCBI E-utilities ESearch:
-`db`/`retmode`/`retmax`/`retstart`; ClinicalTrials.gov API v2: `query_parameter`/`countTotal`/`pageSize`/
-`format`/`fields`) — Erkennung ausschließlich über `database` UND einen textuellen Hinweis in `interface`, damit
-ein anderes Interface gegen dieselbe Datenbank nicht pauschal denselben Regeln unterworfen wird. Bei
+**Härtung (R2):** Für die derzeit implementierten API-Profile erzwingt der Validator zusätzlich eine technische
+Mindestvalidierung der `request_parameters` (NCBI E-utilities ESearch: `db`/`retmode`/`retmax`/`retstart`;
+ClinicalTrials.gov API v2: `query_parameter`/`countTotal`/`pageSize`/`format`/`fields`). Bei
 `result_capture.status: complete` gilt zusätzlich: ohne dokumentierte `pagination` muss `retmax >= result_count`
 (NCBI), bzw. `pagination` ist verpflichtend mit `completion_confirmed: true` und `pages_retrieved × pageSize >=
 result_count` (ClinicalTrials.gov) — verhindert strukturell unmögliche Vollständigkeitsangaben, beweist aber
@@ -148,6 +146,20 @@ nicht allein die tatsächliche API-Antwort. Außerdem muss das Datum von `execut
 sein (ein Manifest kann seinen eigenen Suchlauf nicht zeitlich vorwegnehmen), und `export_reference` des
 Suchlaufs muss bei `status: complete` exakt `manifest.source_export_reference` entsprechen (siehe
 `research/search_runs/README.md`, `research/search_results/README.md`, ADR-0055).
+
+**Härtung (R3):** Welches API-Profil gilt, wurde in R2 noch anhand von Textfragmenten im frei formulierten
+`interface`-Feld erraten (`database` UND ein Substring-Hinweis) — eine beliebige Umformulierung von `interface`
+hätte die Profilvalidierung dadurch unbemerkt umgehen können. R3 führt dafür das zusätzliche Pflichtfeld
+`interface_profile` ein: `interface` bleibt rein menschenlesbar, `interface_profile.id` (kontrolliertes
+Vokabular `research/vocabularies/search_interface_profiles.yaml`:
+`ncbi_eutils_esearch_v1`/`clinicaltrials_gov_api_v2_v1`/`unprofiled`) ist die alleinige, maschinenlesbare Quelle
+der Profilsemantik — der Validator dispatcht ausschließlich darüber, nie mehr über `interface`-Text. Für die
+beiden bekannten Profile muss zusätzlich die jeweils passende `database` vorliegen (`pubmed` bzw.
+`clinicaltrials_gov`); `rationale` muss `null` sein. `unprofiled` unterliegt keinen API-spezifischen
+Parameterregeln, erfordert aber eine nicht leere `rationale` — ein transparenter, begründeter Fallback statt
+eines stillen Verzichts auf Profilierung. Die Versionsnummer ist bewusst Teil des Profilnamens selbst (`_v1`):
+eine künftige Änderung der Profilregeln führt ein neues Profil ein, statt historische Search Runs rückwirkend
+umzudeuten (siehe `research/search_runs/README.md`, ADR-0055).
 
 ## 8. Deduplizierung
 
@@ -624,7 +636,9 @@ maschinenlesbar sicherstellt:
   `reviewer_duplicate_of` je konsistent zur zugehörigen Entscheidungsebene (ADR-0047),
   `screening_policy.dual_reviewer_stages` kann `deduplication` gar nicht erst enthalten (ADR-0046),
   `promotion_status: rejected` erfordert dieselbe Mindest-Audit-Spur wie `approved_for_creation`/`promoted`
-  (ADR-0049), alle Research-Akteursfelder folgen der `research_actor_id`-Kürzel-Syntax (ADR-0050).
+  (ADR-0049), alle Research-Akteursfelder folgen der `research_actor_id`-Kürzel-Syntax (ADR-0050),
+  `interface_profile.id` nur aus dem kontrollierten Vokabular, `rationale` konsistent `null` (bekannte Profile)
+  bzw. nicht-leer (`unprofiled`) erzwungen (ADR-0055, R3-Härtung).
 - **Validator-seitig erzwungen** (`tools/validate_research.py`, blockiert Pull Requests via CI, aber nicht
   außerhalb eines CI-Laufs, z. B. bei einem direkten Push ohne PR): Protokoll-/Referenzkonsistenz,
   Identifier-Deduplizierung, Screening-Workflow inkl. jedes `decision_history`-Eintrags (Stage-/
@@ -645,10 +659,15 @@ maschinenlesbar sicherstellt:
   SHA-256 gegen die verbindliche Hash-Regel — ADR-0055), API-Profil-Mindestvalidierung für NCBI E-utilities
   ESearch und ClinicalTrials.gov API v2 inkl. Pagination-Vollständigkeit, zeitliche Reihenfolge
   Suchlauf→Manifest, und Übereinstimmung von `export_reference`/`source_export_reference` bei
-  `result_capture.status: complete` (ADR-0055, R2-Härtung).
+  `result_capture.status: complete` (ADR-0055, R2-Härtung); Profildispatch seit R3 ausschließlich über das
+  kontrollierte `interface_profile.id`, nicht mehr über Textfragmente in `interface`, inkl. Profil↔Datenbank-
+  Konsistenz (ADR-0055, R3-Härtung).
 - **CI-seitig geprüft, mit dokumentierter Lücke**: `tools/check_research_immutability.py` (ADR-0038/ADR-0042,
   seit ADR-0055 zusätzlich auf `research/search_results/**` erweitert, dort **vollständig** unveränderlich statt
-  nur `status`/`updated_at`/`review`/`notes` mutable wie bei `research_search_run`) vergleicht nur den
+  nur `status`/`updated_at`/`review`/`notes` mutable wie bei `research_search_run`; `interface_profile` zählt
+  seit R3 ausdrücklich als Ausführungsfeld -- eine nachträgliche Änderung von `interface_profile.id` würde
+  einen bereits ausgeführten Suchlauf rückwirkend einem anderen, ggf. erst später eingeführten API-Profil
+  unterwerfen) vergleicht nur den
   Nettounterschied zum Merge-Base mit einem einzelnen Basis-Ref und wird übersprungen, wenn dieser nicht
   auflösbar ist (z. B. ein lokaler Push ohne Pull-Request-Kontext) — er erkennt keine Manipulation, die bereits
   vor diesem Vergleichszeitpunkt auf dem Zielbranch selbst stattgefunden hat, und ersetzt keine serverseitige

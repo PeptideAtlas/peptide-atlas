@@ -7,6 +7,9 @@ executed_at: "2026-01-01T10:00:00Z"
 executed_by: reviewer-1
 exact_query: '"test substance"[Title/Abstract]'
 filters: {}
+interface_profile:
+  id: ncbi_eutils_esearch_v1
+  rationale: null
 request_parameters:
   db: 'pubmed'
   retmode: 'json'

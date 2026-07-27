@@ -1,0 +1,30 @@
+# Kontrolliertes Vokabular: research_search_run.interface_profile.id
+#
+# `interface` bleibt die freie, menschenlesbare Bezeichnung der verwendeten Schnittstelle.
+# `interface_profile.id` ist die davon UNABHAENGIGE, maschinenlesbare Semantik, anhand derer
+# tools/validate_research.py::check_search_run_interface_profiles entscheidet, welches
+# API-Parameterprofil gilt -- niemals aus dem Freitext von `interface` erraten (siehe ADR-0055,
+# R3-Nachtrag im Decision Log). Die Versionsnummer gehoert bewusst zum Profilnamen selbst
+# (z. B. "_v1"): eine kuenftige Aenderung an den Profilregeln fuehrt ein NEUES Profil ein
+# (z. B. "_v2"), statt bereits ausgefuehrte historische Search Runs rueckwirkend unter
+# veraenderten Regeln umzudeuten.
+schema_version: "1.0.0"
+values:
+  - value: ncbi_eutils_esearch_v1
+    labels: { de: "NCBI E-utilities ESearch – Profil v1", en: "NCBI E-utilities ESearch profile v1" }
+    note_de: >
+      Verlangt database: pubmed sowie vollstaendige request_parameters (db/retmode/retmax/
+      retstart) und bei result_capture.status: complete ohne dokumentierte Pagination
+      retmax >= result_count.
+  - value: clinicaltrials_gov_api_v2_v1
+    labels: { de: "ClinicalTrials.gov API v2 – Profil v1", en: "ClinicalTrials.gov API v2 profile v1" }
+    note_de: >
+      Verlangt database: clinicaltrials_gov sowie vollstaendige request_parameters
+      (query_parameter/countTotal/pageSize/format/fields) und bei result_capture.status:
+      complete verpflichtende pagination mit completion_confirmed: true und
+      pages_retrieved x pageSize >= result_count.
+  - value: unprofiled
+    labels: { de: "Noch kein maschinelles Profil", en: "No machine-readable profile yet" }
+    note_de: >
+      Keine API-spezifischen Parameterregeln. Erfordert eine nicht leere, nachvollziehbare
+      Begruendung in interface_profile.rationale -- kein stiller Verzicht auf Profilierung.

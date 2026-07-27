@@ -10,9 +10,12 @@ getrennte Ziele mit je eigener Mutable-Field-Menge (siehe IMMUTABLE_TARGETS):
 
 - research/search_runs/**: erlaubt sind ausschliesslich Aenderungen an
   status/updated_at/review/notes. Jede Aenderung an einem Ausfuehrungsfeld (id, schema_version,
-  protocol_id, database, interface, executed_at, executed_by, exact_query, filters,
-  request_parameters, pagination, result_capture, date_range, result_count, export_reference)
-  ist ein Fehler.
+  protocol_id, database, interface, interface_profile, executed_at, executed_by, exact_query,
+  filters, request_parameters, pagination, result_capture, date_range, result_count,
+  export_reference) ist ein Fehler. interface_profile.id ist dabei besonders wichtig (ADR-0055
+  R3-Nachtrag): eine nachtraegliche Aenderung wuerde einen bereits ausgefuehrten Suchlauf rueckwirkend
+  einem anderen (ggf. neu eingefuehrten) API-Parameterprofil unterwerfen, das zum Ausfuehrungszeitpunkt
+  gar nicht galt.
 - research/search_results/**: VOLLSTAENDIG unveraenderlich -- ein Search Result Manifest hat
   kein redaktionelles status/review-Feld wie der Suchlauf (es ist die reine Tatsachenfeststellung
   "diese Identifikatoren wurden erhalten", kein Workflow-Dokument), daher ist JEDE Aenderung

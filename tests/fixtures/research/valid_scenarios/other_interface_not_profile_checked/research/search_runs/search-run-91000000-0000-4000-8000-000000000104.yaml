@@ -7,6 +7,10 @@ executed_at: "2026-01-01T10:00:00Z"
 executed_by: reviewer-1
 exact_query: '"test substance"[Title/Abstract]'
 filters: {}
+interface_profile:
+  id: unprofiled
+  rationale: >
+    Manual web interface search, not the NCBI E-utilities ESearch API or ClinicalTrials.gov API v2 -- no machine-readable profile implemented for this interface yet.
 request_parameters: {}
 result_capture:
   status: unavailable

@@ -7,6 +7,10 @@ executed_at: "2026-01-01T10:00:00Z"
 executed_by: reviewer-1
 exact_query: '"test substance"[Title/Abstract]'
 filters: {}
+interface_profile:
+  id: unprofiled
+  rationale: >
+    Generic test fixture predating machine-readable interface profiles (ADR-0055 R3); not intended to exercise a specific API parameter profile.
 request_parameters:
   db: 'pubmed'
   retmode: 'json'

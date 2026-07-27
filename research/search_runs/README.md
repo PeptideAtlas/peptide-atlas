@@ -47,15 +47,38 @@ identische Query zu einem späteren Zeitpunkt ein anderes Ergebnis liefern kann.
 dass entweder das tatsächlich erhaltene Identifikator-Set selbst versioniert ist, oder dass dokumentiert ist,
 warum das nicht möglich war.
 
-## API-Profile: Mindestvalidierung für die derzeit verwendeten Interfaces (R2, ADR-0055-Härtung)
+## `interface` vs. `interface_profile`: menschenlesbar vs. maschinenlesbar (R3, ADR-0055-Härtung)
 
-`tools/validate_research.py::check_search_run_interface_profiles` erzwingt für die beiden aktuell tatsächlich
-genutzten API-Profile vollständige `request_parameters` (und ggf. `pagination`). Die Erkennung erfolgt
-ausschließlich über `database` **und** einen textuellen Hinweis in `interface` — ein anderer Suchlauf gegen
-dieselbe Datenbank, aber mit einem anderen Interface (z. B. eine manuelle Websuche statt der API), wird bewusst
-**nicht** diesen Regeln unterworfen.
+`interface` bleibt eine **frei formulierte, menschenlesbare** Bezeichnung (z. B. „NCBI E-utilities ESearch
+(eutils.ncbi.nlm.nih.gov/...)", „Legacy PubMed search portal (internal rename)"). Sie darf beliebig umformuliert
+werden, ohne dass sich dadurch die angewendeten Validierungsregeln ändern.
 
-**NCBI E-utilities ESearch** (`interface` enthält sowohl „E-utilities" als auch „ESearch", `database: pubmed`):
+`interface_profile` ist das davon **unabhängige, kontrollierte** Pflichtfeld, das die tatsächlich angewendete
+API-Profilsemantik trägt:
+
+```yaml
+interface_profile:
+  id: ncbi_eutils_esearch_v1
+  rationale: null
+```
+
+`id` stammt aus dem kontrollierten Vokabular `research/vocabularies/search_interface_profiles.yaml` /
+`common.schema.json#/$defs/search_interface_profile_id`:
+
+- `ncbi_eutils_esearch_v1`, `clinicaltrials_gov_api_v2_v1` — bekannte, implementierte Profile. `rationale` muss
+  `null` sein.
+- `unprofiled` — transparenter Fallback für ein Interface, für das (noch) keine maschinelle Profilvalidierung
+  existiert. `rationale` ist dann Pflicht (nicht leer) und muss einen echten Grund nennen — kein stiller Verzicht.
+
+Die Versionsnummer ist bewusst Teil des Profilnamens selbst (`_v1`): eine künftige Änderung an den Profilregeln
+führt ein **neues** Profil ein (`_v2` usw.), statt bereits ausgeführte historische Search Runs rückwirkend unter
+geänderten Regeln umzudeuten.
+
+**Wichtig:** `tools/validate_research.py::check_search_run_interface_profiles` entscheidet **ausschließlich**
+anhand von `interface_profile.id`, welches Regelprofil gilt — niemals anhand von Textfragmenten in `interface`.
+Eine beliebige Umformulierung von `interface` kann die Profilvalidierung damit nicht umgehen.
+
+**`ncbi_eutils_esearch_v1`** — erfordert zusätzlich `database: pubmed`:
 
 ```yaml
 request_parameters:
@@ -65,10 +88,10 @@ request_parameters:
   retstart: <nicht negative Ganzzahl>
 ```
 
-Zusätzlich: ist `result_capture.status: complete` und liegt **keine** `pagination` vor, muss `retmax >=
+Ist `result_capture.status: complete` und liegt **keine** `pagination` vor, muss zusätzlich `retmax >=
 result_count` gelten — sonst könnte die Antwort strukturell gar nicht das vollständige Ergebnis enthalten haben.
 
-**ClinicalTrials.gov API v2** (`interface` enthält „ClinicalTrials.gov API v2", `database: clinicaltrials_gov`):
+**`clinicaltrials_gov_api_v2_v1`** — erfordert zusätzlich `database: clinicaltrials_gov`:
 
 ```yaml
 request_parameters:
@@ -83,9 +106,10 @@ Zusätzlich ist bei `result_capture.status: complete` `pagination` **verpflichte
 `pagination.completion_confirmed: true` sowie `pagination.pages_retrieved × request_parameters.pageSize >=
 result_count`. `completion_confirmed: true` bedeutet konkret: die letzte abgerufene Seite enthielt **keinen**
 weiteren `nextPageToken` (oder äquivalenten Fortsetzungsmarker) mehr — es wurde also nicht nur "genug" Seiten für
-die Trefferzahl abgerufen, sondern die API selbst hat bestätigt, dass keine weitere Seite folgt. Diese
-Regeln beweisen nicht allein die tatsächliche API-Antwort, verhindern aber strukturell unmögliche
-Vollständigkeitsangaben.
+die Trefferzahl abgerufen, sondern die API selbst hat bestätigt, dass keine weitere Seite folgt.
+
+**`unprofiled`** — keine API-spezifischen Parameterregeln, keine Datenbank-Voraussetzung. Diese Regeln beweisen
+nicht allein die tatsächliche API-Antwort, verhindern aber strukturell unmögliche Vollständigkeitsangaben.
 
 ## Zeitliche Provenienz und Exportreferenz gegenüber dem Manifest
 

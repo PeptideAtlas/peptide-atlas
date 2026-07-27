@@ -66,6 +66,7 @@ RESEARCH_VOCABULARY_NAMES = [
     "review_decisions",
     "search_run_statuses",
     "promotion_statuses",
+    "search_interface_profiles",
 ]
 
 # Kanonische Reihenfolge der Screening-Stufen, fuer Monotonie-Pruefungen in decision_history

@@ -253,6 +253,16 @@ INVALID_SCENARIOS = {
     "manifest_before_search_run": "cannot predate the search event",
     "manifest_export_reference_mismatch": "does not match export_reference",
     "search_run_complete_null_export_reference": "does not match export_reference",
+    # Phase 4B-1A Korrekturrunde R3 -- ADR-0055 Haertung: maschinenlesbare Interface-Profile
+    # (interface_profile.id), niemals aus dem Freitext von `interface` erraten.
+    "interface_profile_unknown_id": "is not one of",
+    "interface_profile_known_with_rationale": "is not of type 'null'",
+    "interface_profile_unprofiled_null_rationale": "is not of type 'string'",
+    "interface_profile_unprofiled_empty_rationale": "should be non-empty",
+    "interface_profile_pubmed_wrong_database": "requires database == 'pubmed'",
+    "interface_profile_ctgov_wrong_database": "requires database == 'clinicaltrials_gov'",
+    "interface_profile_pubmed_renamed_interface_invalid_retmax": "is less than result_count",
+    "interface_profile_ctgov_renamed_interface_missing_fields": "requires request_parameters.fields",
 }
 
 
@@ -476,6 +486,24 @@ PRECISE_INVALID_SCENARIOS = {
     "search_run_complete_null_export_reference": (
         "research/search_results/search-result-manifest-91000000-0000-4000-8000-000000000009.yaml",
         "$.source_export_reference",
+    ),
+    # Phase 4B-1A Korrekturrunde R3 -- ADR-0055 Haertung: entscheidender Beweis, dass eine
+    # Umformulierung von `interface` die Profilvalidierung NICHT umgehen kann.
+    "interface_profile_pubmed_wrong_database": (
+        "research/search_runs/search-run-92000000-0000-4000-8000-000000000005.yaml",
+        "$.interface_profile.id",
+    ),
+    "interface_profile_ctgov_wrong_database": (
+        "research/search_runs/search-run-92000000-0000-4000-8000-000000000006.yaml",
+        "$.interface_profile.id",
+    ),
+    "interface_profile_pubmed_renamed_interface_invalid_retmax": (
+        "research/search_runs/search-run-92000000-0000-4000-8000-000000000007.yaml",
+        "$.request_parameters.retmax",
+    ),
+    "interface_profile_ctgov_renamed_interface_missing_fields": (
+        "research/search_runs/search-run-92000000-0000-4000-8000-000000000008.yaml",
+        "$.request_parameters.fields",
     ),
 }
 

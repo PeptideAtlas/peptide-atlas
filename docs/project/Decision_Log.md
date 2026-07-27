@@ -1178,6 +1178,62 @@ inhaltliche Korrektur (nur `fields: NCTId` war nachzutragen, Punkt 1). 15 Test-F
 inhaltliche Regeländerung). Keine der vier Identifikatorlisten, Counts oder SHA-256-Werte wurde
 verändert, keine Datenbanksuche wurde erneut ausgeführt.
 
+**Nachtrag (R3, 2026-07-27) — maschinenlesbare Interface-Profile, kein neuer ADR:** R2 entschied
+die anzuwendenden API-Profilregeln anhand von `database` UND einem Textfragment im frei
+formulierten `interface`-Feld (z. B. „enthält 'E-utilities' und 'ESearch'"). Das ist strukturell
+unsicher: `interface` ist per Definition eine menschenlesbare Beschreibung ohne Formatgarantie —
+eine harmlos wirkende Umformulierung (Tippfehler-Korrektur, interne Umbenennung, Übersetzung)
+hätte die Profilvalidierung unbemerkt stillgelegt, ohne dass sich an der tatsächlich verwendeten
+Schnittstelle etwas geändert hätte.
+
+**Entscheidung:** Neues kontrolliertes Vokabular `research/vocabularies/search_interface_profiles.yaml`
+(`ncbi_eutils_esearch_v1`, `clinicaltrials_gov_api_v2_v1`, `unprofiled`) sowie neues Pflichtfeld
+`interface_profile` auf `research_search_run`:
+
+```yaml
+interface_profile:
+  id: ncbi_eutils_esearch_v1
+  rationale: null
+```
+
+- `interface` bleibt unverändert die freie, menschenlesbare Bezeichnung — weiterhin anzeigbar und
+  dokumentierend, aber ab sofort NICHT mehr die Quelle der Profilsemantik.
+- `interface_profile.id` ist die alleinige, maschinenlesbare Quelle: `check_search_run_interface_profiles`
+  dispatcht ausschließlich darüber. Die vormaligen Text-Dispatcher
+  `_is_ncbi_eutils_esearch_interface`/`_is_clinicaltrials_gov_api_v2_interface` wurden entfernt.
+  Zusätzlich neu: fuer die beiden bekannten Profile wird jetzt auch die passende `database` erzwungen
+  (`ncbi_eutils_esearch_v1` → `pubmed`, `clinicaltrials_gov_api_v2_v1` → `clinicaltrials_gov`) — in R2
+  war das nur implizit ueber die Text-Erkennung der Fall, nicht als eigene Regel geprueft.
+  Die bereits in R2 eingefuehrten Parameter-/Pagination-Regeln je Profil bleiben inhaltlich unveraendert.
+- Fuer bekannte Profile (`ncbi_eutils_esearch_v1`, `clinicaltrials_gov_api_v2_v1`) ist `rationale`
+  schema-seitig auf `null` beschraenkt. Fuer `id: unprofiled` ist `rationale` schema-seitig als
+  nicht-leerer String erzwungen -- ein transparenter, begruendeter Fallback fuer Suchlaeufe gegen
+  Interfaces, fuer die noch keine maschinelle Profilvalidierung implementiert ist, kein stiller
+  Verzicht auf Profilierung.
+- Die Versionsnummer ist bewusst Teil des Profilnamens selbst (`_v1`): eine kuenftige Aenderung an
+  den Profilregeln fuehrt ein NEUES Profil (`_v2` usw.) ein, statt bereits ausgefuehrte historische
+  Search Runs rueckwirkend unter geaenderten Regeln umzudeuten.
+- `interface_profile` ist ein Ausfuehrungsfeld und damit unveraenderlich nach dem Merge (bereits
+  strukturell durch die bestehende `check_research_immutability.py`-Logik abgedeckt, jetzt zusaetzlich
+  durch einen expliziten Test abgesichert): eine nachtraegliche Aenderung wuerde einen bereits
+  ausgefuehrten Suchlauf rueckwirkend einem anderen, ggf. erst spaeter eingefuehrten Profil unterwerfen.
+- Alle vier produktiven Suchläufe erhielten das jeweils zutreffende bekannte Profil
+  (`ncbi_eutils_esearch_v1` für die beiden PubMed-Läufe, `clinicaltrials_gov_api_v2_v1` für die
+  beiden ClinicalTrials.gov-Läufe), `rationale: null` — keine inhaltliche Änderung an Query,
+  Zeitpunkt, Trefferzahl, Identifikatorliste oder Hash. Bestehende generische Test-Fixtures ohne
+  echten Profilbezug erhielten mechanisch `id: unprofiled` mit einer klaren Testbegründung; echte
+  Profil-Fixtures aus R2 erhielten das jeweils passende bekannte Profil.
+- Zwei neue kritische Tests beweisen die eigentliche Motivation dieser Härtung: ein Suchlauf mit
+  bekanntem Profil, absichtlich umformuliertem `interface`-Text UND einem ungültigen Parameter
+  (`retmax` zu klein bzw. fehlendes `fields`) schlägt weiterhin fehl — die Umformulierung von
+  `interface` kann die Profilvalidierung nicht mehr umgehen.
+
+**Konsequenzen:** Die Profilzuordnung ist jetzt ein expliziter, versionierter, unveränderlicher
+Datenpunkt statt einer aus Freitext abgeleiteten Heuristik. `interface` kann frei redigiert werden,
+ohne die Validierung zu beeinflussen. Keine der vier Identifikatorlisten, Counts, SHA-256-Werte,
+Queries, Ausführungszeitpunkte oder Exportreferenzen wurde verändert; keine Datenbanksuche wurde
+erneut ausgeführt.
+
 ## Format für neue Einträge
 
 ```markdown

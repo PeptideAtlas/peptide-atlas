@@ -18,7 +18,36 @@
     "interface": {
       "type": "string",
       "minLength": 1,
-      "description": "Die konkret verwendete Benutzeroberflaeche/API, getrennt von der Datenbank selbst (z. B. 'PubMed web interface', 'ClinicalTrials.gov API v2', 'Ovid MEDLINE')."
+      "description": "Die konkret verwendete Benutzeroberflaeche/API, getrennt von der Datenbank selbst (z. B. 'PubMed web interface', 'ClinicalTrials.gov API v2', 'Ovid MEDLINE'). Rein menschenlesbar -- NICHT die Quelle der Profilsemantik, siehe interface_profile (ADR-0055 R3-Nachtrag)."
+    },
+    "interface_profile": {
+      "type": "object",
+      "description": "Das MASCHINENLESBARE, kontrollierte Gegenstueck zu `interface`: legt fest, welches API-Parameterprofil tools/validate_research.py::check_search_run_interface_profiles anwendet. Wird NIE aus dem Freitext von `interface` erraten -- eine beliebige Umformulierung von `interface` aendert die angewendeten Regeln nicht (siehe ADR-0055 R3-Nachtrag, research/vocabularies/search_interface_profiles.yaml).",
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/search_interface_profile_id" },
+        "rationale": {
+          "type": ["string", "null"],
+          "description": "Pflicht (nicht leer) fuer id: unprofiled -- ein nachvollziehbarer Grund, warum noch kein maschinelles Profil existiert. Muss null sein fuer jedes bekannte, bereits implementierte Profil."
+        }
+      },
+      "additionalProperties": false,
+      "required": ["id", "rationale"],
+      "allOf": [
+        {
+          "if": {
+            "properties": { "id": { "const": "unprofiled" } },
+            "required": ["id"]
+          },
+          "then": {
+            "properties": { "rationale": { "type": "string", "minLength": 1 } },
+            "required": ["rationale"]
+          },
+          "else": {
+            "properties": { "rationale": { "type": "null" } },
+            "required": ["rationale"]
+          }
+        }
+      ]
     },
     "executed_at": { "$ref": "common.schema.json#/$defs/date_time" },
     "executed_by": { "$ref": "common.schema.json#/$defs/research_actor_id" },
@@ -124,6 +153,7 @@
     "protocol_id",
     "database",
     "interface",
+    "interface_profile",
     "executed_at",
     "executed_by",
     "exact_query",

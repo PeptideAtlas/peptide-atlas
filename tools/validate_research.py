@@ -1273,15 +1273,6 @@ def check_search_result_manifests(report: Report, objects: dict[str, dict[str, R
                 )
 
 
-def _is_ncbi_eutils_esearch_interface(interface: str | None) -> bool:
-    text = (interface or "").lower()
-    return "e-utilities" in text and "esearch" in text
-
-
-def _is_clinicaltrials_gov_api_v2_interface(interface: str | None) -> bool:
-    return "clinicaltrials.gov api v2" in (interface or "").lower()
-
-
 def _is_positive_int(value) -> bool:
     return isinstance(value, int) and not isinstance(value, bool) and value > 0
 
@@ -1290,26 +1281,45 @@ def _is_nonnegative_int(value) -> bool:
     return isinstance(value, int) and not isinstance(value, bool) and value >= 0
 
 
+# database, das ein bestimmtes interface_profile.id strukturell voraussetzt (siehe ADR-0055
+# R3-Nachtrag) -- 'unprofiled' erzwingt bewusst KEINE Datenbank.
+PROFILE_REQUIRED_DATABASE = {
+    "ncbi_eutils_esearch_v1": "pubmed",
+    "clinicaltrials_gov_api_v2_v1": "clinicaltrials_gov",
+}
+
+
 def check_search_run_interface_profiles(report: Report, objects: dict[str, dict[str, ResearchObject]]) -> None:
-    """R2 (Haertung von ADR-0055): technische Mindestvalidierung fuer die beiden derzeit tatsaechlich
-    verwendeten API-Profile. Erkennung ausschliesslich ueber `database` UND einen textuellen Hinweis in
-    `interface` (siehe _is_ncbi_eutils_esearch_interface/_is_clinicaltrials_gov_api_v2_interface) -- ein
-    anderes Interface (z. B. 'PubMed web interface', ein manueller Website-Suchlauf) wird bewusst NICHT
-    diesen Profilregeln unterworfen, auch wenn `database` uebereinstimmt. Beweist nicht allein die
-    tatsaechliche API-Antwort, verhindert aber strukturell unmoegliche Vollstaendigkeitsangaben (z. B.
-    `retmax` kleiner als `result_count` ohne dokumentierte Pagination)."""
+    """R2/R3 (Haertung von ADR-0055): technische Mindestvalidierung fuer die derzeit implementierten
+    API-Profile. Dispatch ausschliesslich ueber das kontrollierte, maschinenlesbare
+    `interface_profile.id` (siehe research/vocabularies/search_interface_profiles.yaml) -- NICHT mehr
+    ueber Textfragmente im frei formulierten `interface`-Feld (das bleibt rein menschenlesbar, siehe
+    ADR-0055 R3-Nachtrag). Eine beliebige Umformulierung von `interface` kann diese Regeln damit nicht
+    mehr umgehen. `id: unprofiled` unterliegt bewusst KEINEN API-spezifischen Parameterregeln --
+    schema-seitig ist dafuer aber eine nicht leere `rationale` erzwungen (kein stiller Verzicht).
+    Beweist nicht allein die tatsaechliche API-Antwort, verhindert aber strukturell unmoegliche
+    Vollstaendigkeitsangaben (z. B. `retmax` kleiner als `result_count` ohne dokumentierte Pagination)."""
     for obj in objects["search_run"].values():
         file_rel = relative(obj.path)
         data = obj.data
         database = data.get("database")
-        interface = data.get("interface")
+        interface_profile = data.get("interface_profile") or {}
+        profile_id = interface_profile.get("id")
         request_parameters = data.get("request_parameters") or {}
         result_capture = data.get("result_capture") or {}
         pagination = data.get("pagination")
         result_count = data.get("result_count")
         is_complete = result_capture.get("status") == "complete"
 
-        if database == "pubmed" and _is_ncbi_eutils_esearch_interface(interface):
+        required_database = PROFILE_REQUIRED_DATABASE.get(profile_id)
+        if required_database and database != required_database:
+            report.error(
+                file_rel, "$.interface_profile.id",
+                f"interface_profile '{profile_id}' requires database == '{required_database}', got "
+                f"'{database}'",
+            )
+
+        if profile_id == "ncbi_eutils_esearch_v1":
             if request_parameters.get("db") != "pubmed":
                 report.error(
                     file_rel, "$.request_parameters.db",
@@ -1345,7 +1355,7 @@ def check_search_run_interface_profiles(report: Report, objects: dict[str, dict[
                     "documented -- the response cannot have contained the full result set",
                 )
 
-        elif database == "clinicaltrials_gov" and _is_clinicaltrials_gov_api_v2_interface(interface):
+        elif profile_id == "clinicaltrials_gov_api_v2_v1":
             if request_parameters.get("query_parameter") != "query.term":
                 report.error(
                     file_rel, "$.request_parameters.query_parameter",

@@ -3,6 +3,9 @@ id: search-run-da841b57-1a65-4927-8013-c39ed13c14c8
 protocol_id: research-protocol-retatrutide-v1
 database: clinicaltrials_gov
 interface: ClinicalTrials.gov API v2 (clinicaltrials.gov/api/v2/studies)
+interface_profile:
+  id: clinicaltrials_gov_api_v2_v1
+  rationale: null
 executed_at: "2026-07-26T21:38:40Z"
 executed_by: claude-code-operator
 exact_query: "retatrutide"
