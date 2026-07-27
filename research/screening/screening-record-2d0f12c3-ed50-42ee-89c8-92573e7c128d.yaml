@@ -1,0 +1,43 @@
+schema_version: 1.0.0
+id: screening-record-2d0f12c3-ed50-42ee-89c8-92573e7c128d
+protocol_id: research-protocol-retatrutide-v1
+search_run_ids:
+- search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+- search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+candidate_identifiers:
+  doi: 10.1186/s40001-026-03933-9
+  pmid: '41582189'
+  pmcid: PMC12918571
+  nct_id: null
+  isbn: null
+  url: null
+candidate_title: 'Effect of glucagon-like peptide-1 receptor agonists on heart rate in non-diabetic individuals
+  with overweight or obesity: a systematic review and pairwise and network meta-analysis of randomized
+  controlled trials.'
+candidate_source_type: peer_reviewed_publication
+decision: pending
+decision_stage: deduplication
+decision_reason: null
+duplicate_of: null
+full_text_status: not_yet_obtained
+screened_by: system-screening-initializer
+screened_at: '2026-07-27'
+second_review: null
+decision_history:
+- sequence: 1
+  stage: deduplication
+  primary_decision: pending
+  primary_decision_reason: null
+  decision: pending
+  decision_reason: null
+  duplicate_of: null
+  primary_duplicate_of: null
+  decided_by: system-screening-initializer
+  decided_at: '2026-07-27'
+  full_text_status: not_yet_obtained
+  second_review: null
+canonical_source_id: null
+candidate_manifest_id: candidate-manifest-73f50257-b982-47cc-a1df-0f8f5fd31353
+candidate_id: research-candidate-eec6c5d2-0a34-4f58-9573-ab71f4e56793
+created_at: '2026-07-27'
+updated_at: '2026-07-27'

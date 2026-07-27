@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "research_screening_initialization_manifest.schema.json",
+  "title": "Research Screening Initialization Manifest",
+  "description": "Rein technisches Kontrollartefakt (KEIN wissenschaftliches Research-Objekt, keine Screening-Entscheidung, kein Candidate Manifest): dokumentiert je Protokoll, ob tools/initialize_screening_records.py fuer alle zum Zeitpunkt des letzten Laufs bekannten Candidate-Manifest-Eintraege ohne Fehler/Konflikte durchgelaufen ist. Existiert ausschliesslich, damit die Vollstaendigkeitsregel 'jeder Candidate braucht einen Screening Record' (tools/validate_research.py::check_screening_initialization_completeness) erst greift, sobald ein Protokoll ausdruecklich als vollstaendig markiert ist -- ein teilweise laufender Import darf die CI nicht zwischenzeitlich rot machen. Genau eine Datei fuer alle Protokolle unter research/screening_status/initialization_manifest.yaml, kein RESEARCH_KINDS-Eintrag (siehe ADR-0057).",
+  "type": "object",
+  "properties": {
+    "schema_version": { "$ref": "common.schema.json#/$defs/schema_version" },
+    "protocols": {
+      "type": "array",
+      "description": "Hoechstens ein Eintrag je protocol_id (vom Tool/Validator geprueft, nicht schema-seitig ausdrueckbar).",
+      "items": {
+        "type": "object",
+        "properties": {
+          "protocol_id": {
+            "type": "string",
+            "pattern": "^research-protocol-[a-z0-9]+(-[a-z0-9]+)*-v[0-9]+$"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["in_progress", "complete"],
+            "description": "'complete' schaltet die Vollstaendigkeitspruefung fuer dieses Protokoll scharf. 'in_progress' dokumentiert nur den letzten Laufstand, ohne die Pruefung auszuloesen."
+          },
+          "expected_candidate_count": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Summe von candidate_count ueber alle candidates_manifest-Datensaetze dieses Protokolls zum Zeitpunkt des letzten Laufs -- vom Validator gegen den tatsaechlichen Datenbestand geprueft, verhindert eine stillschweigend veraltete 'complete'-Markierung."
+          },
+          "initialized_by": { "$ref": "common.schema.json#/$defs/research_actor_id" },
+          "completed_at": {
+            "$ref": "common.schema.json#/$defs/date_or_null",
+            "description": "Pflicht (nicht null) wenn status 'complete' ist, muss null sein bei 'in_progress'."
+          },
+          "notes": { "type": ["string", "null"] }
+        },
+        "additionalProperties": false,
+        "required": [
+          "protocol_id", "status", "expected_candidate_count", "initialized_by", "completed_at", "notes"
+        ],
+        "allOf": [
+          {
+            "if": {
+              "properties": { "status": { "const": "complete" } },
+              "required": ["status"]
+            },
+            "then": {
+              "properties": { "completed_at": { "type": "string" } },
+              "required": ["completed_at"]
+            }
+          },
+          {
+            "if": {
+              "properties": { "status": { "const": "in_progress" } },
+              "required": ["status"]
+            },
+            "then": {
+              "properties": { "completed_at": { "type": "null" } }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "additionalProperties": false,
+  "required": ["schema_version", "protocols"]
+}

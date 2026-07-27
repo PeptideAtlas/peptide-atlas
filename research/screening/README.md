@@ -4,6 +4,64 @@ Ein Screening-Datensatz (`screening-record-<uuid4>.yaml`) repräsentiert **einen
 nicht automatisch eine kanonische Quelle. Er dokumentiert die Ein-/Ausschlussentscheidung und deren Begründung.
 
 - Schema: [`schemas/research_screening_record.schema.json`](../../schemas/research_screening_record.schema.json)
+
+## Technische Initialisierung (ADR-0057, Phase 4B-1B-1)
+
+`tools/initialize_screening_records.py` erzeugt für jeden Discovery-Kandidaten eines
+`research_candidate_manifest` (siehe [`research/candidates/README.md`](../candidates/README.md)) genau einen
+Screening-Datensatz im rein administrativen, noch nicht wissenschaftlich gescreenten Initialzustand:
+
+```yaml
+decision: pending
+decision_stage: deduplication
+decision_reason: null
+duplicate_of: null
+full_text_status: not_yet_obtained
+screened_by: system-screening-initializer
+second_review: null
+```
+
+**`pending` bedeutet ausschließlich „noch nicht wissenschaftlich gescreent" — nicht „wahrscheinlich
+relevant" und nicht „wahrscheinlich irrelevant".** `system-screening-initializer` dokumentiert nur die
+technische Initialisierung; es ist kein wissenschaftlicher Reviewer und hat keine Relevanzentscheidung
+getroffen.
+
+Zwei bewusste Abweichungen vom Vokabular, das man naiv erwarten würde (siehe ADR-0057 im
+[Decision Log](../../docs/project/Decision_Log.md) für die vollständige Begründung):
+
+- **`decision_stage: deduplication`, nicht `title_abstract`:** `tools/_researchlib.py::
+  ALLOWED_DECISIONS_BY_STAGE` erlaubt `pending` ausschließlich an Stufe `deduplication` — der
+  Ausgangszustand vor jeder inhaltlichen Sichtung. `title_abstract` verlangt bereits eine inhaltliche
+  Entscheidung (`include`/`exclude`/`awaiting_full_text`/`uncertain`).
+- **`full_text_status: not_yet_obtained`, nicht `not_requested`:** letzterer Wert existiert nicht im
+  kontrollierten Vokabular (`research/vocabularies/full_text_statuses.yaml`); `not_yet_obtained`
+  ("Noch nicht beschafft") ist die inhaltlich passende, tatsächlich vorhandene Entsprechung.
+
+**Validator-seitig erzwungene Invarianten** (`tools/validate_research.py`):
+
+- `check_screening_system_actor_invariants`: JEDER `decision_history`-Eintrag mit
+  `decided_by: system-screening-initializer` muss `primary_decision: pending`,
+  `stage: deduplication`, `full_text_status: not_yet_obtained`, keinen Duplikatverweis und keine
+  Zweitprüfung tragen — der technische Akteur kann strukturell NIE `include`/`exclude`/`duplicate`
+  dokumentieren. Solange der aktuelle effektive Bearbeiter (`screened_by`) noch dieser Akteur ist,
+  muss `canonical_source_id` `null` bleiben und `candidate_title` (bei aufgelöster Kandidatenreferenz)
+  exakt der aus den Candidate-Manifest-Metadaten abgeleitete Titel sein.
+- `check_screening_candidate_uniqueness`: höchstens ein Screening-Datensatz je
+  (`candidate_manifest_id`, `candidate_id`)-Paar.
+- `check_screening_candidate_references` (seit ADR-0057 erweitert): `search_run_ids` muss bei
+  aufgelöster Kandidatenreferenz **exakt** (nicht nur teilweise) den
+  `discovered_in_search_run_ids` des referenzierten Kandidaten entsprechen.
+- `check_deduplication` (ADR-0057-Anpassung): eine Identifikator-Kollision, an der noch mindestens ein
+  nie menschlich übernommener, system-initialisierter Datensatz beteiligt ist, ist nur eine
+  **Warnung** („potenzielles Duplikat, menschliche Prüfung steht aus") — kein Fehler. Sobald ein
+  Mensch **jeden** beteiligten Datensatz übernommen hat (`screened_by` ≠ `system-screening-initializer`
+  für alle Mitglieder der Kollisionsgruppe), gilt die Deduplizierungsphase für diese Gruppe als
+  abgeschlossen und eine weiterhin ungelöste Kollision wird wieder zum Fehler.
+- `check_screening_initialization_completeness`: „jeder Candidate eines Protokolls braucht einen
+  Screening-Datensatz" greift **ausschließlich** für Protokolle, die im rein technischen
+  Kontrollartefakt `research/screening_status/initialization_manifest.yaml` ausdrücklich als
+  `status: complete` markiert sind — ein teilweise durchgelaufener Import macht die CI dadurch nicht
+  zwischenzeitlich rot.
 - `canonical_source_id` bleibt `null`, bis nach manueller Prüfung tatsächlich eine Datei unter
   `data/sources/**` angelegt wurde.
 - `decision: exclude` benötigt `decision_reason` aus dem kontrollierten Vokabular

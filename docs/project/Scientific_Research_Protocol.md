@@ -213,6 +213,64 @@ Validierungsfehler. Diese Verknüpfung ist ansonsten rein referenziell (Ziel exi
 setzt **niemals** automatisch eine Screening-Entscheidung — das Erzeugen eines Candidate Manifest ist selbst
 keine Include-/Exclude-Entscheidung und keine Bewertung der Relevanz eines einzelnen PMID/NCT-ID.
 
+## 7c. Automatische Screening-Initialisierung
+
+Seit Phase 4B-1B-1 erzeugt `tools/initialize_screening_records.py` (siehe ADR-0057 im
+[Decision Log](Decision_Log.md)) für jeden Discovery-Kandidaten eines `research_candidate_manifest`
+(Abschnitt 7b) automatisch genau einen `screening_record` im **rein administrativen, noch nicht
+wissenschaftlich gescreenten** Initialzustand:
+
+```yaml
+decision: pending
+decision_stage: deduplication
+decision_reason: null
+duplicate_of: null
+full_text_status: not_yet_obtained
+screened_by: system-screening-initializer
+second_review: null
+```
+
+**`pending` bedeutet hier ausschließlich „noch nicht wissenschaftlich gescreent" — nicht „wahrscheinlich
+relevant" und nicht „wahrscheinlich irrelevant".** Der technische Akteur `system-screening-initializer`
+dokumentiert nur die technische Bereitstellung des Datensatzes; er ist kein wissenschaftlicher Reviewer
+und trifft **nie** eine Relevanz-, Ausschluss- oder Duplikatentscheidung. `tools/validate_research.py::
+check_screening_system_actor_invariants` erzwingt das strukturell: jeder `decision_history`-Eintrag mit
+`decided_by: system-screening-initializer` muss `primary_decision: pending` bleiben, unabhängig davon,
+an welcher Position im Verlauf er steht; solange dieser Akteur der aktuelle effektive Bearbeiter ist,
+muss `canonical_source_id` `null` bleiben und `candidate_title` exakt der aus den Candidate-Manifest-
+Metadaten abgeleitete Titel sein (nie erfunden — bei ClinicalTrials.gov mit Fallback `brief_title` →
+`official_title`; fehlen beide, wird der Kandidat als Datenfehler gemeldet, nicht mit einem Platzhalter
+initialisiert).
+
+`decision_stage: deduplication` (nicht `title_abstract`) ist bewusst gewählt: `pending` ist nach der
+Stage-/Decision-Matrix (Abschnitt 9c, `tools/_researchlib.py::ALLOWED_DECISIONS_BY_STAGE`) ausschließlich
+an dieser Stufe zulässig — dem Ausgangszustand vor jeder inhaltlichen Sichtung. `full_text_status:
+not_yet_obtained` ist die im kontrollierten Vokabular (`research/vocabularies/full_text_statuses.yaml`)
+tatsächlich vorhandene, inhaltlich passende Entsprechung zu „noch nicht angefordert".
+
+**Deduplizierungs-Kollisionen vor menschlicher Übernahme (ADR-0057-Anpassung an `check_deduplication`,
+Abschnitt 8):** eine Identifikator-Kollision, an der noch mindestens ein nie menschlich übernommener,
+system-initialisierter Screening Record beteiligt ist, ist nur eine **Warnung**, kein Validierungsfehler
+— welche der kollidierenden Kandidaten tatsächlich dieselbe zugrunde liegende Publikation sind (z. B. ein
+Correspondence-Letter und dessen separat indexierte Reply mit gemeinsamer DOI), ist eine bibliographische
+Einschätzung, die der rein technischen Initialisierung nicht zusteht. Sobald ein Mensch **jeden**
+beteiligten Datensatz übernommen hat, gilt die Deduplizierungsphase für diese Gruppe als abgeschlossen,
+und eine weiterhin ungelöste Kollision wird wieder zum Fehler.
+
+**Vollständigkeit (`tools/validate_research.py::check_screening_initialization_completeness`):** die Regel
+„jeder Candidate eines Protokolls braucht einen Screening Record" greift ausschließlich für Protokolle,
+die im rein technischen Kontrollartefakt `research/screening_status/initialization_manifest.yaml`
+(Schema `schemas/research_screening_initialization_manifest.schema.json` — **kein** eigener
+`RESEARCH_KINDS`-Eintrag, keine wissenschaftliche Aussage) ausdrücklich als `status: complete` markiert
+sind. Ein teilweise durchgelaufener Import macht die CI dadurch nicht zwischenzeitlich rot; das
+Kontrollartefakt wird von `tools/initialize_screening_records.py` selbst gepflegt, sobald ein Lauf für ein
+Protokoll fehler- und konfliktfrei jeden Kandidaten abgedeckt hat.
+
+Das Werkzeug ist deterministisch, idempotent und führt keine Netzwerkzugriffe durch: ein erneuter Lauf mit
+unveränderten Eingaben erzeugt keine neuen Datensätze und ändert bestehende nie still (bereits vorhandene
+Screening Records werden nur gegen die aktuellen Candidate-Manifest-Daten auf Konsistenz geprüft, niemals
+überschrieben).
+
 ## 8. Deduplizierung
 
 **Deduplizierung** bedeutet: erkennen, dass zwei gefundene Datensätze dieselbe zugrunde liegende Publikation

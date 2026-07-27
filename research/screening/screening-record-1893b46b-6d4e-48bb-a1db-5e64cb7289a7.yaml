@@ -1,0 +1,41 @@
+schema_version: 1.0.0
+id: screening-record-1893b46b-6d4e-48bb-a1db-5e64cb7289a7
+protocol_id: research-protocol-retatrutide-v1
+search_run_ids:
+- search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+- search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+candidate_identifiers:
+  doi: 10.1016/j.clnesp.2026.103260
+  pmid: '41933725'
+  pmcid: null
+  nct_id: null
+  isbn: null
+  url: null
+candidate_title: 'Childhood obesity and cardiac risk in youth: Emerging challenges toward 2050.'
+candidate_source_type: peer_reviewed_publication
+decision: pending
+decision_stage: deduplication
+decision_reason: null
+duplicate_of: null
+full_text_status: not_yet_obtained
+screened_by: system-screening-initializer
+screened_at: '2026-07-27'
+second_review: null
+decision_history:
+- sequence: 1
+  stage: deduplication
+  primary_decision: pending
+  primary_decision_reason: null
+  decision: pending
+  decision_reason: null
+  duplicate_of: null
+  primary_duplicate_of: null
+  decided_by: system-screening-initializer
+  decided_at: '2026-07-27'
+  full_text_status: not_yet_obtained
+  second_review: null
+canonical_source_id: null
+candidate_manifest_id: candidate-manifest-73f50257-b982-47cc-a1df-0f8f5fd31353
+candidate_id: research-candidate-370c4cc2-033a-4f33-94d9-5cd6e6ccd55e
+created_at: '2026-07-27'
+updated_at: '2026-07-27'

@@ -90,3 +90,8 @@ ausgenommen. Liegt eine Referenz vor, muss der zum Namespace passende externe Id
 ein fehlender und ein abweichender Identifikator sind zwei getrennte Validierungsfehler. Diese
 Verknüpfung ist ansonsten rein referenziell und löst **niemals** automatisch eine
 Include-/Exclude-Entscheidung aus.
+
+`tools/initialize_screening_records.py` (ADR-0057, siehe [`research/screening/README.md`](../screening/README.md))
+erzeugt diese Screening Records automatisch — genau einen rein administrativen, noch nicht
+wissenschaftlich gescreenten Datensatz je Kandidat eines Candidate Manifest, deterministisch und
+idempotent, ohne jemals eine Include-/Exclude-Entscheidung zu treffen.

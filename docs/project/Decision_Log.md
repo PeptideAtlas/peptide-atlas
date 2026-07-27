@@ -1339,6 +1339,85 @@ gueltig. Die beiden bereits erzeugten realen Retatrutide-Candidate-Manifests (16
 ClinicalTrials.gov) sind von dieser Aenderung inhaltlich nicht betroffen -- es existieren weiterhin keine
 realen Screening Records (Phase 4B-1B-1 bleibt ein separater Folge-PR).
 
+### ADR-0057: Automatische, rein administrative Screening-Initialisierung (`tools/initialize_screening_records.py`)
+- **Status:** Entschieden
+- **Datum:** 2026-07-27
+- **Kontext:** Phase 4B-1B-1 sollte fuer alle 197 Retatrutide-Candidate-Manifest-Eintraege (162 PubMed +
+  35 ClinicalTrials.gov) genau einen realen `research_screening_record` erzeugen, OHNE eine
+  wissenschaftliche Bewertung durchzufuehren -- der Arbeitsauftrag verlangte einen deterministischen,
+  netzwerkfreien, idempotenten Initialisierer, der jeden Datensatz im Zustand `decision: pending`
+  belaesst.
+- **Entscheidung:** Neues Werkzeug `tools/initialize_screening_records.py` erzeugt genau einen
+  Screening Record je Kandidat (`candidate_manifest_id`/`candidate_id`, `search_run_ids` exakt aus
+  `discovered_in_search_run_ids` uebernommen, `candidate_title` deterministisch aus den
+  Candidate-Manifest-Metadaten abgeleitet -- nie erfunden, siehe `tools/_researchlib.py::
+  derive_candidate_title`), zugeschrieben dem neuen technischen Akteur
+  `system-screening-initializer` (`tools/_researchlib.py::SYSTEM_SCREENING_INITIALIZER_ACTOR`).
+  `candidate_source_type` ist je Datenbank ein einzelner, neutraler, bereits im kontrollierten
+  Vokabular vorhandener Wert (`CANDIDATE_SOURCE_TYPE_BY_DATABASE`: `pubmed` ->
+  `peer_reviewed_publication`, `clinicaltrials_gov` -> `trial_registry`) -- bewusst keine feinere
+  Ableitung aus PubMed `publication_types` (z. B. `Review` -> `systematic_review`), da das selbst
+  schon eine wissenschaftliche Einordnung waere.
+
+  Zwei Abweichungen vom woertlichen Arbeitsauftrag, beide durch das bereits vor dieser Phase
+  etablierte Screening-Schema erzwungen:
+  - `decision_stage: deduplication` statt des im Auftrag genannten `title_abstract`:
+    `tools/_researchlib.py::ALLOWED_DECISIONS_BY_STAGE` erlaubt `pending` ausschliesslich an Stufe
+    `deduplication`; `title_abstract` verlangt bereits eine inhaltliche Entscheidung. `deduplication`
+    ist zudem der semantisch zutreffendere Ausgangszustand fuer "gerade entdeckt, noch nicht
+    gesichtet".
+  - `full_text_status: not_yet_obtained` statt des im Auftrag genannten `not_requested`: letzterer
+    Wert existiert nicht im kontrollierten Vokabular (`research/vocabularies/full_text_statuses.yaml`);
+    `not_yet_obtained` ("Noch nicht beschafft") ist die vorhandene, inhaltlich passende Entsprechung.
+
+  Neue Validator-Pruefungen in `tools/validate_research.py`:
+  - `check_screening_system_actor_invariants`: JEDER `decision_history`-Eintrag mit
+    `decided_by: system-screening-initializer` muss `primary_decision: pending`/
+    `stage: deduplication`/`full_text_status: not_yet_obtained` ohne Duplikatverweis/Zweitpruefung
+    tragen -- der technische Akteur kann strukturell NIE `include`/`exclude`/`duplicate`
+    dokumentieren. Solange er der aktuelle effektive Bearbeiter ist, muss `canonical_source_id`
+    `null` bleiben und `candidate_title` exakt der abgeleitete Titel sein.
+  - `check_screening_candidate_uniqueness`: hoechstens ein Screening Record je
+    (`candidate_manifest_id`, `candidate_id`)-Paar.
+  - `check_screening_candidate_references` erweitert: `search_run_ids` muss bei aufgeloester
+    Kandidatenreferenz exakt (nicht nur teilweise) `discovered_in_search_run_ids` entsprechen.
+  - `check_screening_initialization_completeness`: die Vollstaendigkeitsregel "jeder Candidate
+    braucht einen Screening Record" greift ausschliesslich fuer Protokolle, die im neuen, rein
+    technischen Kontrollartefakt `research/screening_status/initialization_manifest.yaml`
+    (Schema `schemas/research_screening_initialization_manifest.schema.json`, KEIN eigener
+    `RESEARCH_KINDS`-Eintrag, keine wissenschaftliche Aussage) als `status: complete` markiert sind
+    -- ein teilweise durchgelaufener Import macht die CI dadurch nicht zwischenzeitlich rot. Wird
+    von `tools/initialize_screening_records.py` selbst nach jedem Lauf aktualisiert
+    (`status: complete` nur nach einem vollstaendig fehler- und konfliktfreien Durchlauf, sonst
+    `status: in_progress`), inkl. Gegenpruefung von `expected_candidate_count` gegen den
+    tatsaechlichen Datenbestand (verhindert eine stillschweigend veraltete `complete`-Markierung).
+
+  **Nutzerentscheidung zur Deduplizierungs-Kollision echter Daten:** die Initialisierung der 197
+  echten Retatrutide-Kandidaten deckte eine reale Identifikator-Kollision auf (drei PubMed-PMIDs mit
+  derselben DOI `10.1056/NEJMc2310645` -- ein NEJM-Correspondence-Letter, offenbar doppelt
+  indexiert, plus dessen separat indexierte Reply). Der bereits bestehende, mehrfach CSO-geprueft
+  `check_deduplication` (Phase 4A) haette dafuer zwingend eine Duplikat-Entscheidung verlangt, die
+  die rein technische Initialisierung laut Arbeitsauftrag nicht treffen darf. Nach expliziter
+  Rueckfrage entschied der Nutzer: alle drei Kandidaten vollstaendig initialisieren (keine Daten
+  verwerfen, PMID bleibt die massgebliche Identitaet, DOI bleibt als bibliographisches Metadatum
+  erhalten), `check_deduplication` darf vor Abschluss der Deduplizierungsphase keine Fehler wegen
+  gemeinsamer Identifikatoren erzeugen (nur eine Warnung), und erst nach menschlicher Uebernahme
+  ALLER beteiligten Datensaetze wird eine ungeloeste Kollision zum Fehler. `check_deduplication`
+  wurde entsprechend angepasst (siehe oben, gilt fuer alle `DEDUPLICATION_IDENTIFIER_FIELDS`, nicht
+  nur DOI).
+- **Konsequenzen:** 197 reale Screening Records fuer `research-protocol-retatrutide-v1` (162 PMID +
+  35 NCT-ID) wurden erzeugt, alle `decision: pending`. `data/**`, `build/catalog.json` und
+  `build/graph.json` bleiben unveraendert (0 Objekte/Knoten/Kanten) -- keine wissenschaftliche
+  Entscheidung, keine Extraktion, keine Promotion. Drei Screening Records tragen weiterhin eine
+  ungeloeste DOI-Kollisionswarnung, bis ein Mensch die bibliographische Frage (dieselbe Publikation
+  vs. Letter+Reply mit gemeinsamer DOI) klaert. `docs/project/Scientific_Research_Protocol.md`
+  (neuer Abschnitt 7c), `docs/project/Evidence_Curation_Workflow.md`,
+  `research/screening/README.md`, `research/candidates/README.md` und `research/README.md` wurden
+  entsprechend aktualisiert. Verworfen wurde: eine hartkodierte Retatrutide-Sonderregel fuer die
+  Vollstaendigkeitspruefung (stattdessen das generische, protokollunabhaengige Kontrollartefakt);
+  eine automatische Deduplizierungs-Entscheidung durch den Initialisierer (haette eine
+  bibliographische Einschaetzung ohne ausreichende Grundlage erfordert).
+
 ## Format für neue Einträge
 
 ```markdown

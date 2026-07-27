@@ -68,8 +68,20 @@ erforderlichen Prüfungen, Abbruchkriterien, gespeicherter Provenienz und mögli
     und ADR-0056 im [Decision Log](Decision_Log.md)) die protokoll- und datenbankgebundene
     Vereinigungsmenge mehrerer Search Result Manifests samt vollständiger Suchlauf-Herkunft und stabiler
     interner `candidate_id`. Das ist selbst **keine** Screening-Entscheidung — ein `screening_record` kann
-    optional (für ausgewählte Protokolle ab Phase 4B-1B-1 verpflichtend) über `candidate_manifest_id`/
-    `candidate_id` darauf zurückverweisen.
+    darauf über `candidate_manifest_id`/`candidate_id` zurückverweisen. Die Referenzpflicht ist seit dem
+    CSO-Review zu ADR-0056 **datengetrieben** (nicht mehr eine feste Protokoll-Allowlist): existiert
+    mindestens ein Candidate Manifest für ein Protokoll, ist die Referenz für neue, reale Screening
+    Records dieses Protokolls verpflichtend.
+
+!!! info "Automatische technische Initialisierung seit Phase 4B-1B-1"
+    `tools/initialize_screening_records.py` (siehe [Scientific Research Protocol, Abschnitt 7c](Scientific_Research_Protocol.md#7c-automatische-screening-initialisierung)
+    und ADR-0057 im [Decision Log](Decision_Log.md)) erzeugt für jeden Candidate-Manifest-Eintrag automatisch
+    genau einen `screening_record` im rein administrativen Initialzustand (`decision: pending`,
+    `decision_stage: deduplication`, `screened_by: system-screening-initializer`) — deterministisch,
+    idempotent, ohne Netzwerkzugriffe. Dieser technische Akteur trifft **nie** eine wissenschaftliche
+    Entscheidung; `pending` bedeutet hier ausschließlich „noch nicht gescreent", nicht „wahrscheinlich
+    relevant". Die eigentlichen Schritte 2–5 dieses Dokuments (Deduplizierung bis terminale Entscheidung)
+    bleiben unverändert menschliche/redaktionelle Schritte.
 
 ## 2. Kandidat → Deduplizierung
 
@@ -78,7 +90,7 @@ erforderlichen Prüfungen, Abbruchkriterien, gespeicherter Provenienz und mögli
 | **Eingabe** | Ein oder mehrere `screening_record`-Kandidaten mit überlappenden Identifikatoren. |
 | **Ausgabe** | Entweder ein eigenständiger Kandidat (`decision_stage: deduplication` bestanden) oder ein als Duplikat markierter Kandidat (`decision: duplicate`, `duplicate_of: <Haupt-ID>`). |
 | **Rolle** | Rechercheur:in, unterstützt durch automatisierte Identifikator-Normalisierung (siehe `deduplication_policy.identifier_priority`). |
-| **Erforderliche Prüfungen** | Abgleich normalisierter DOI/PMID/PMCID/NCT-ID/ISBN (`tools/_researchlib.py`, wiederverwendet aus bzw. analog zu `tools/_datalib.py::normalize_*`) — von `tools/validate_research.py` tatsächlich durchgesetzt: zwei aktive (nicht `duplicate`-markierte) Kandidaten mit identischem normalisiertem Identifikator **innerhalb desselben Protokolls** sind ein Validierungsfehler. Kollisionen über verschiedene Protokolle hinweg sind erlaubt; URL-Kollisionen lösen nur eine Warnung aus. |
+| **Erforderliche Prüfungen** | Abgleich normalisierter DOI/PMID/PMCID/NCT-ID/ISBN (`tools/_researchlib.py`, wiederverwendet aus bzw. analog zu `tools/_datalib.py::normalize_*`) — von `tools/validate_research.py` tatsächlich durchgesetzt: zwei aktive (nicht `duplicate`-markierte) Kandidaten mit identischem normalisiertem Identifikator **innerhalb desselben Protokolls** sind ein Validierungsfehler. Kollisionen über verschiedene Protokolle hinweg sind erlaubt; URL-Kollisionen lösen nur eine Warnung aus. Seit ADR-0057: eine Kollision, an der noch mindestens ein nie menschlich übernommener, system-initialisierter Kandidat beteiligt ist (`screened_by: system-screening-initializer`), ist ebenfalls nur eine Warnung — die Deduplizierungsphase gilt für diese Gruppe erst als abgeschlossen, sobald ein Mensch jeden beteiligten Kandidaten übernommen hat; erst dann wird eine weiterhin ungelöste Kollision zum Fehler. |
 | **Abbruchkriterien** | Ein Duplikat ohne eindeutigen Hauptdatensatz wird nicht automatisch aufgelöst — es bleibt `decision: uncertain`, bis eine Person entscheidet. Wählen Erst- und Zweitprüfung beide `duplicate`, aber mit unterschiedlichem Zielverweis (`primary_duplicate_of` ≠ `second_review.reviewer_duplicate_of`), ist das ebenfalls kein Konsens — `decision_confirmed` muss `false` sein, `decision` bleibt `uncertain` (keine Adjudikation an dieser Stufe möglich, ADR-0046/ADR-0052); der Widerspruch wird durch einen neuen `decision_history`-Eintrag gelöst. Auch bei bestätigtem Konsens muss die effektive `duplicate_of` exakt das bestätigte Ziel binden — ein davon abweichender, sonst gültiger dritter Hauptdatensatz ist ebenfalls ein Fehler (ADR-0053). |
 | **Gespeicherte Provenienz** | `duplicate_of`, sowie `primary_duplicate_of`/`second_review.reviewer_duplicate_of` je Historieneintrag. Keine Zyklen zulässig, `duplicate_of` (und die gesamte Kette verketteter Duplikate) muss innerhalb desselben Protokolls bleiben — das gilt für die **effektive** Top-Level-`duplicate_of`. Die historischen Verweise (`primary_duplicate_of`/`reviewer_duplicate_of`/`decision_history[].duplicate_of`) sind referenziell (Ziel existiert, gleiches Protokoll, kein Selbstverweis), aber ohne Kettenverfolgung geprüft (siehe `tools/validate_research.py`, ADR-0052). |
 | **Mögliche Statuswerte** | `decision: duplicate` \| `uncertain` \| (weiter zu Schritt 3). |

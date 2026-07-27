@@ -30,7 +30,13 @@ Dieses Dokument entwirft ein **universelles, technologieunabhängiges Datenmodel
     `data/**` angelegt. Seit Phase 4B-1B-0 gehört dazu zusätzlich `research_candidate_manifest`
     (`research/candidates/**`) — eine protokoll-/datenbankgebundene, rein technisch-bibliographische
     Normalisierung der Discovery-Grundmenge zwischen Search Result Manifest und Screening Record (siehe
-    ADR-0056). Details: [Scientific Research Protocol](Scientific_Research_Protocol.md),
+    ADR-0056). Seit Phase 4B-1B-1 erzeugt `tools/initialize_screening_records.py` daraus automatisch je
+    Kandidat genau einen `research_screening_record` im rein administrativen Initialzustand
+    (`decision: pending`, `screened_by: system-screening-initializer`) — weiterhin keine wissenschaftliche
+    Bewertung, nur die technische Bereitstellung des Datensatzes (siehe ADR-0057). Ein begleitendes, rein
+    technisches Kontrollartefakt `research/screening_status/initialization_manifest.yaml` ist **kein**
+    eigener Objekttyp dieses Datenmodells — es dokumentiert nur den Initialisierungsfortschritt je
+    Protokoll. Details: [Scientific Research Protocol](Scientific_Research_Protocol.md),
     [Evidence Curation Workflow](Evidence_Curation_Workflow.md).
 
 ## Leitprinzipien
