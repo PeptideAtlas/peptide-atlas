@@ -1418,6 +1418,62 @@ realen Screening Records (Phase 4B-1B-1 bleibt ein separater Folge-PR).
   eine automatische Deduplizierungs-Entscheidung durch den Initialisierer (haette eine
   bibliographische Einschaetzung ohne ausreichende Grundlage erfordert).
 
+### ADR-0058: Workflow-State-Modell, vollstaendige Deduplizierungsarchitektur und erweitertes Source-Type-Modell (Phase 4B-1B-2)
+- **Status:** Vorgeschlagen (Architektur-Entwurf, keine Implementierung)
+- **Datum:** 2026-07-27
+- **Kontext:** Der CSO-Review von PR #6 (Phase 4B-1B-1) hat die ADR-0057-Loesung fuer die DOI-Kollision
+  (drei PubMed-PMIDs mit gemeinsamer DOI `10.1056/NEJMc2310645`) explizit als provisorisch eingestuft und
+  einen eigenstaendigen Architektur-Entwurf angefordert, bevor eine Implementierung erfolgt. Drei
+  strukturelle Probleme der ADR-0057-Loesung: (1) `check_screening_system_actor_invariants` und
+  `check_deduplication` leiten den Bearbeitungszustand eines Screening Records redundant aus
+  `screened_by == system-screening-initializer` her -- eine Akteursidentitaet wird als Workflow-Zustand
+  zweckentfremdet; (2) `decision: duplicate` kennt nur eine einzige Beziehungsart zwischen Kandidaten
+  ("identisch, einer redundant"), obwohl der reale Kollisionsfall zeigt, dass geteilte Identifikatoren
+  (insbesondere DOI bei Correspondence-Paaren) auch eigenstaendige, aber inhaltlich verwandte
+  Publikationen verbinden koennen (Letter + Reply); (3) `candidate_source_type` (ein Wert je Datenbank)
+  kann Letter/Reply/Editorial/Corrigendum/Retraction Notice nicht unterscheiden, obwohl PubMed dafuer
+  bereits strukturierte Metadaten (`publication_types`) liefert.
+- **Entscheidung (vorgeschlagen, siehe vollstaendigen Entwurf in
+  [Phase_4B_1B_2_Deduplication_and_Workflow_Architecture.md](Phase_4B_1B_2_Deduplication_and_Workflow_Architecture.md)):**
+  - Neues, additiv-optionales Feld `workflow_state` auf `research_screening_record`
+    (`system_initialized`/`under_human_review`/`finalized`, kontrolliertes Vokabular
+    `research/vocabularies/screening_workflow_states.yaml`) -- wie `decision`/`decision_stage` eine vom
+    Validator geprueft Projektion von `decision_history[]`, keine zweite Wahrheitsquelle. Ersetzt die
+    `screened_by`-basierte Herleitung in `check_screening_system_actor_invariants` und
+    `check_deduplication`.
+  - Neues, additiv-optionales Feld `related_records[]` auf `research_screening_record`
+    (`screening_record_id`, `relationship_type`, Pflicht-Freitext `rationale`, `identified_by`,
+    `identified_at`) fuer eigenstaendige, aber inhaltlich verwandte Publikationen -- strukturell getrennt
+    von `duplicate_of`, das ausschliesslich fuer bibliographische Dubletten reserviert bleibt. Neues
+    kontrolliertes Vokabular `research/vocabularies/screening_relationship_types.yaml`:
+    `letter_and_reply`, `interim_and_final_results`, `subgroup_or_secondary_analysis`, `safety_update`,
+    `preprint_and_published_version`, `registry_entry_and_publication`, `correction_or_erratum`,
+    `expression_of_concern`, `retraction_notice`, `editorial_comment`, `other`. Referenziell und
+    symmetrisch geprueft (neu: `check_screening_related_records`); `identified_by` darf nicht der
+    technische Systemakteur sein. Eine Identifikator-Kollision, die vollstaendig durch `duplicate_of`
+    und/oder eine symmetrische `related_records`-Beziehung erklaert ist, loest weder Fehler noch Warnung
+    in `check_deduplication` aus.
+  - `common.schema.json#/$defs/source_type` additiv um sieben Werte erweitert: `letter_or_comment`,
+    `reply_or_response`, `editorial`, `case_report`, `corrigendum_or_erratum`, `retraction_notice`,
+    `expression_of_concern_notice`. Fuer PubMed-Kandidaten technische (nicht wissenschaftliche)
+    Ableitung aus dem bereits vorhandenen `metadata.publication_types` (von der NLM selbst vergeben,
+    keine eigene Einordnung) moeglich -- explizit NICHT fuer `reply_or_response` (PubMed unterscheidet
+    Letter und Reply strukturell nicht, das bleibt menschlicher `related_records`-Klassifikation
+    vorbehalten).
+  - Begriffliche Grundlage: Identifikator-Uebereinstimmung (insbesondere DOI) ist ein Signal fuer eine
+    moegliche Beziehung, nie ein Beweis fuer eine bestimmte Beziehungsart -- PMID/PMCID sind praktisch
+    1:1 mit einem Dokument, DOI ist es bei Correspondence-Paaren nachweislich nicht, NCT-ID ist 1:n mit
+    Publikationen (eine Studie, mehrere Berichte). `related_records[]` ist die Recherche-Ebenen-Vorstufe
+    der bereits bestehenden kanonischen Trennung `study.source_ids[]` (Abschnitt 13-16 im Scientific
+    Research Protocol) -- keine kanonische Aussage, analog zu Candidate Manifest (ADR-0056) und
+    Screening Record selbst.
+- **Konsequenzen (bei Umsetzung):** alle Aenderungen additiv-optional, kein Schema-Versionsbump, keine
+  Migration der 197 bestehenden Retatrutide-Records noetig. Keine Aenderung an bestehenden Daten oder
+  Code in diesem ADR selbst -- reine Spezifikation. Offene Fragen (Richtungsabhaengigkeit von
+  `related_records`, Notwendigkeit eines vierten Workflow-Zustands, Vollstaendigkeit der
+  `source_type`-Erweiterung, Reihenfolge der Umsetzung) bleiben bis zur CSO-Freigabe unentschieden, siehe
+  Abschnitt 9 des Entwurfsdokuments.
+
 ## Format für neue Einträge
 
 ```markdown
