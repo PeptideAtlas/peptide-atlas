@@ -284,6 +284,16 @@
       "pattern": "^source-[a-z0-9]+(-[a-z0-9]+)*$",
       "description": "Bleibt null, bis ein entsprechendes Source-Objekt unter data/sources/** existiert (vom Validator geprueft)."
     },
+    "candidate_manifest_id": {
+      "type": ["string", "null"],
+      "pattern": "^candidate-manifest-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$",
+      "description": "Optionale Rueckverknuepfung auf den technischen Discovery-Kandidaten (siehe research_candidate_manifest.schema.json, ADR-0056), aus dem dieser Screening Record hervorgegangen ist. Fuer bestehende Screening Records (vor Phase 4B-1B-0) und research/examples/** bleibt dieses Feld optional/null; fuer neue reale Screening Records ausgewaehlter Protokolle ist es ab Phase 4B-1B-1 verpflichtend (siehe validate_research.py::CANDIDATE_REFERENCE_REQUIRED_PROTOCOLS und den Migrationsplan im Decision Log). Muss zusammen mit candidate_id gesetzt oder zusammen null sein -- niemals nur eines von beiden."
+    },
+    "candidate_id": {
+      "type": ["string", "null"],
+      "pattern": "^research-candidate-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$",
+      "description": "Die konkrete candidates[].candidate_id innerhalb von candidate_manifest_id, aus der dieser Screening Record hervorgegangen ist (vom Validator referenziell geprueft: Manifest existiert, gleiches protocol_id, candidate_id innerhalb des Manifests vorhanden, Identifikator widerspricht nicht candidate_identifiers)."
+    },
     "created_at": { "$ref": "common.schema.json#/$defs/date" },
     "updated_at": { "$ref": "common.schema.json#/$defs/date" }
   },
@@ -310,6 +320,19 @@
     "updated_at"
   ],
   "allOf": [
+    {
+      "if": {
+        "properties": { "candidate_manifest_id": { "type": "string" } },
+        "required": ["candidate_manifest_id"]
+      },
+      "then": {
+        "properties": { "candidate_id": { "type": "string", "minLength": 1 } },
+        "required": ["candidate_id"]
+      },
+      "else": {
+        "properties": { "candidate_id": { "type": "null" } }
+      }
+    },
     {
       "if": {
         "properties": { "decision": { "const": "exclude" } },

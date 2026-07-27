@@ -213,3 +213,148 @@ def test_manifest_deleted_file_is_flagged(manifest_repo):
     errors = check(repo, base_sha)
     assert len(errors) == 1
     assert "deleted" in errors[0]
+
+
+# --- research/candidates/** (ADR-0056): Discovery-Identitaet unveraenderlich, Metadaten mutable --
+
+CANDIDATE_MANIFEST_YAML = """schema_version: "1.0.0"
+id: candidate-manifest-40000000-0000-4000-8000-000000000001
+protocol_id: research-protocol-test-substance-v1
+database: pubmed
+identifier_namespace: pmid
+source_search_run_ids:
+  - search-run-40000000-0000-4000-8000-000000000001
+source_result_manifest_ids:
+  - search-result-manifest-40000000-0000-4000-8000-000000000001
+candidate_count: 1
+candidates:
+  - candidate_id: research-candidate-40000000-0000-4000-8000-000000000001
+    primary_identifier: {{ namespace: pmid, value: "{pmid}" }}
+    discovered_in_search_run_ids:
+      - search-run-40000000-0000-4000-8000-000000000001
+    metadata: {metadata}
+    metadata_status: {metadata_status}
+    metadata_fetch_note: null
+    metadata_provenance: null
+created_at: "2026-01-01"
+updated_at: "{updated_at}"
+"""
+
+
+@pytest.fixture
+def candidate_manifest_repo(tmp_path: Path) -> tuple[Path, str, Path]:
+    repo = tmp_path / "candidate_manifest_repo"
+    repo.mkdir()
+    _git(repo, "init", "-q")
+    candidates_dir = repo / "research" / "candidates"
+    candidates_dir.mkdir(parents=True)
+    file_path = candidates_dir / "candidate-manifest-40000000-0000-4000-8000-000000000001.yaml"
+    file_path.write_text(
+        CANDIDATE_MANIFEST_YAML.format(pmid="100", metadata="null", metadata_status="not_fetched", updated_at="2026-01-01"),
+        encoding="utf-8",
+    )
+    _git(repo, "add", ".")
+    _git(repo, "commit", "-q", "-m", "base: add candidate manifest")
+    base_sha = _git(repo, "rev-parse", "HEAD").strip()
+    return repo, base_sha, file_path
+
+
+def test_candidate_manifest_no_changes_reports_no_errors(candidate_manifest_repo):
+    repo, base_sha, _ = candidate_manifest_repo
+    assert check(repo, base_sha) == []
+
+
+def test_candidate_manifest_metadata_update_is_allowed(candidate_manifest_repo):
+    """ADR-0056: metadata/metadata_status/updated_at duerfen sich kontrolliert aendern (z. B. ein
+    spaeterer Metadaten-Refresh durch tools/build_research_candidates.py --refresh-metadata)."""
+    repo, base_sha, file_path = candidate_manifest_repo
+    file_path.write_text(
+        CANDIDATE_MANIFEST_YAML.format(
+            pmid="100", metadata="{title: A Test Title}", metadata_status="fetched", updated_at="2026-01-02",
+        ),
+        encoding="utf-8",
+    )
+    assert check(repo, base_sha) == []
+
+
+def test_candidate_manifest_candidate_id_change_is_flagged(candidate_manifest_repo):
+    """Ein geaenderter candidate_id sieht aus Sicht des Vergleichs wie Entfernen des alten plus
+    Hinzufuegen eines neuen Kandidaten aus -- beides ist fuer bereits committete Discovery-
+    Identitaet unzulaessig, siehe ADR-0056."""
+    repo, base_sha, file_path = candidate_manifest_repo
+    text = file_path.read_text(encoding="utf-8")
+    text = text.replace(
+        "candidate_id: research-candidate-40000000-0000-4000-8000-000000000001",
+        "candidate_id: research-candidate-40000000-0000-4000-8000-000000000099",
+    )
+    file_path.write_text(text, encoding="utf-8")
+    errors = check(repo, base_sha)
+    assert len(errors) == 1
+    assert "removes already-committed candidate" in errors[0]
+
+
+def test_candidate_manifest_primary_identifier_change_is_flagged(candidate_manifest_repo):
+    repo, base_sha, file_path = candidate_manifest_repo
+    file_path.write_text(
+        CANDIDATE_MANIFEST_YAML.format(pmid="999", metadata="null", metadata_status="not_fetched", updated_at="2026-01-01"),
+        encoding="utf-8",
+    )
+    errors = check(repo, base_sha)
+    assert len(errors) == 1
+    assert "primary_identifier" in errors[0]
+
+
+def test_candidate_manifest_top_level_id_change_is_flagged(candidate_manifest_repo):
+    repo, base_sha, file_path = candidate_manifest_repo
+    text = file_path.read_text(encoding="utf-8")
+    text = text.replace(
+        "id: candidate-manifest-40000000-0000-4000-8000-000000000001",
+        "id: candidate-manifest-40000000-0000-4000-8000-000000000099",
+        1,
+    )
+    file_path.write_text(text, encoding="utf-8")
+    errors = check(repo, base_sha)
+    assert len(errors) == 1
+    assert "'id'" in errors[0]
+
+
+def test_candidate_manifest_removed_candidate_is_flagged(candidate_manifest_repo):
+    repo, base_sha, file_path = candidate_manifest_repo
+    fresh = (
+        'schema_version: "1.0.0"\n'
+        "id: candidate-manifest-40000000-0000-4000-8000-000000000001\n"
+        "protocol_id: research-protocol-test-substance-v1\n"
+        "database: pubmed\n"
+        "identifier_namespace: pmid\n"
+        "source_search_run_ids:\n  - search-run-40000000-0000-4000-8000-000000000001\n"
+        "source_result_manifest_ids:\n  - search-result-manifest-40000000-0000-4000-8000-000000000001\n"
+        "candidate_count: 0\n"
+        "candidates: []\n"
+        'created_at: "2026-01-01"\n'
+        'updated_at: "2026-01-01"\n'
+    )
+    file_path.write_text(fresh, encoding="utf-8")
+    errors = check(repo, base_sha)
+    # Zwei getrennte, gleichzeitig gueltige Verletzungen: candidate_count sank von 1 auf 0 (ein
+    # unveraenderliches Top-Level-Feld), UND der Kandidat selbst wurde entfernt.
+    assert len(errors) == 2
+    assert any("removes already-committed candidate" in error for error in errors)
+    assert any("candidate_count" in error for error in errors)
+
+
+def test_candidate_manifest_new_file_is_allowed(candidate_manifest_repo):
+    repo, base_sha, _ = candidate_manifest_repo
+    new_file = repo / "research" / "candidates" / "candidate-manifest-40000000-0000-4000-8000-000000000002.yaml"
+    new_file.write_text(
+        CANDIDATE_MANIFEST_YAML.format(pmid="200", metadata="null", metadata_status="not_fetched", updated_at="2026-01-01"),
+        encoding="utf-8",
+    )
+    assert check(repo, base_sha) == []
+
+
+def test_candidate_manifest_deleted_file_is_flagged(candidate_manifest_repo):
+    repo, base_sha, file_path = candidate_manifest_repo
+    file_path.unlink()
+    errors = check(repo, base_sha)
+    assert len(errors) == 1
+    assert "deleted" in errors[0]

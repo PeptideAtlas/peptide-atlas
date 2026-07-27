@@ -1,0 +1,5270 @@
+schema_version: 1.0.0
+id: candidate-manifest-73f50257-b982-47cc-a1df-0f8f5fd31353
+protocol_id: research-protocol-retatrutide-v1
+database: pubmed
+identifier_namespace: pmid
+source_search_run_ids:
+- search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+- search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+source_result_manifest_ids:
+- search-result-manifest-0a10394b-29cc-444b-8e50-c10d8dbca132
+- search-result-manifest-c9be8c23-36e5-4123-9373-d915dc085a68
+candidate_count: 162
+candidates:
+- candidate_id: research-candidate-d2d7c827-fce8-4d25-9329-f195ac465951
+  primary_identifier:
+    namespace: pmid
+    value: '35985340'
+  discovered_in_search_run_ids:
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'LY3437943, a novel triple glucagon, GIP, and GLP-1 receptor agonist for glycemic control and
+      weight loss: From discovery to clinical proof of concept.'
+    publication_year: 2022
+    journal: Cell metabolism
+    publication_types:
+    - Journal Article
+    doi: 10.1016/j.cmet.2022.07.013
+    pmcid: null
+    authors:
+    - Coskun T
+    - Urva S
+    - Roell WC
+    - Qu H
+    - Loghin C
+    - Moyers JS
+    - O'Farrell LS
+    - Briere DA
+    - Sloop KW
+    - Thomas MK
+    - Pirro V
+    - Wainscott DB
+    - Willard FS
+    - Abernathy M
+    - Morford L
+    - Du Y
+    - Benson C
+    - Gimeno RE
+    - Haupt A
+    - Milicevic Z
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=35985340 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-c09cd71a-a54a-4fdf-bc60-983824aed72b
+  primary_identifier:
+    namespace: pmid
+    value: '36354040'
+  discovered_in_search_run_ids:
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'LY3437943, a novel triple GIP, GLP-1, and glucagon receptor agonist in people with type 2
+      diabetes: a phase 1b, multicentre, double-blind, placebo-controlled, randomised, multiple-ascending
+      dose trial.'
+    publication_year: 2022
+    journal: Lancet (London, England)
+    publication_types:
+    - Randomized Controlled Trial
+    - Multicenter Study
+    - Clinical Trial, Phase I
+    - Journal Article
+    doi: 10.1016/S0140-6736(22)02033-5
+    pmcid: null
+    authors:
+    - Urva S
+    - Coskun T
+    - Loh MT
+    - Du Y
+    - Thomas MK
+    - Gurbuz S
+    - Haupt A
+    - Benson CT
+    - Hernandez-Illas M
+    - D'Alessio DA
+    - Milicevic Z
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=36354040 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-f541ff9a-13f8-42a8-aa3c-8eb876ae7f76
+  primary_identifier:
+    namespace: pmid
+    value: '37086147'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Is retatrutide (LY3437943), a GLP-1, GIP, and glucagon receptor agonist a step forward in the
+      treatment of diabetes and obesity?
+    publication_year: 2023
+    journal: Expert opinion on investigational drugs
+    publication_types:
+    - Journal Article
+    doi: 10.1080/13543784.2023.2206560
+    pmcid: null
+    authors:
+    - Doggrell SA
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=37086147 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-87057310-248d-45da-938b-43640caafe73
+  primary_identifier:
+    namespace: pmid
+    value: '37178114'
+  discovered_in_search_run_ids:
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Differentiation of human subcutaneous adipocytes and measurement of lipolytic function induced
+      by GIP or LY3437943.
+    publication_year: 2023
+    journal: STAR protocols
+    publication_types:
+    - Journal Article
+    doi: 10.1016/j.xpro.2023.102304
+    pmcid: PMC10200971
+    authors:
+    - Regmi A
+    - Roell W
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=37178114 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-597f7ec1-d69c-406d-9bbc-e359b01beeb4
+  primary_identifier:
+    namespace: pmid
+    value: '37311727'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: The novel GIP, GLP-1 and glucagon receptor agonist retatrutide delays gastric emptying.
+    publication_year: 2023
+    journal: Diabetes, obesity & metabolism
+    publication_types:
+    - Journal Article
+    doi: 10.1111/dom.15167
+    pmcid: null
+    authors:
+    - Urva S
+    - O'Farrell L
+    - Du Y
+    - Loh MT
+    - Hemmingway A
+    - Qu H
+    - Alsina-Fernandez J
+    - Haupt A
+    - Milicevic Z
+    - Coskun T
+    abstract_available: false
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=37311727 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-404ccec5-89ed-4fbb-a350-e17481d4fa91
+  primary_identifier:
+    namespace: pmid
+    value: '37366315'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Triple-Hormone-Receptor Agonist Retatrutide for Obesity - A Phase 2 Trial.
+    publication_year: 2023
+    journal: The New England journal of medicine
+    publication_types:
+    - Randomized Controlled Trial
+    - Clinical Trial, Phase II
+    - Journal Article
+    doi: 10.1056/NEJMoa2301972
+    pmcid: null
+    authors:
+    - Jastreboff AM
+    - Kaplan LM
+    - Frías JP
+    - Wu Q
+    - Du Y
+    - Gurbuz S
+    - Coskun T
+    - Haupt A
+    - Milicevic Z
+    - Hartman ML
+    - Retatrutide Phase 2 Obesity Trial Investigators
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=37366315 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-2d7089d3-08c7-4806-9682-a0a74ba7d225
+  primary_identifier:
+    namespace: pmid
+    value: '37369789'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Beyond Ozempic: brand-new obesity drugs will be cheaper and more effective.'
+    publication_year: 2023
+    journal: Nature
+    publication_types:
+    - News
+    doi: 10.1038/d41586-023-02092-9
+    pmcid: null
+    authors:
+    - Sidik S
+    abstract_available: false
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=37369789 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-58ef1e5b-1c18-4a1d-a3cf-35247b58d0b2
+  primary_identifier:
+    namespace: pmid
+    value: '37385276'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'A new class of glucose-lowering therapy for type 2 diabetes: the latest development in the
+      incretin arena.'
+    publication_year: 2023
+    journal: Lancet (London, England)
+    publication_types:
+    - Journal Article
+    - Comment
+    doi: 10.1016/S0140-6736(23)01182-0
+    pmcid: null
+    authors:
+    - Bain SC
+    - Min T
+    abstract_available: false
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=37385276 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-7ba1b20c-c7ff-4578-b6f6-44835a8f76ff
+  primary_identifier:
+    namespace: pmid
+    value: '37385280'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Retatrutide, a GIP, GLP-1 and glucagon receptor agonist, for people with type 2 diabetes:
+      a randomised, double-blind, placebo and active-controlled, parallel-group, phase 2 trial conducted
+      in the USA.'
+    publication_year: 2023
+    journal: Lancet (London, England)
+    publication_types:
+    - Randomized Controlled Trial
+    - Clinical Trial, Phase II
+    - Journal Article
+    - Research Support, Non-U.S. Gov't
+    doi: 10.1016/S0140-6736(23)01053-X
+    pmcid: null
+    authors:
+    - Rosenstock J
+    - Frias J
+    - Jastreboff AM
+    - Du Y
+    - Lou J
+    - Gurbuz S
+    - Thomas MK
+    - Hartman ML
+    - Haupt A
+    - Milicevic Z
+    - Coskun T
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=37385280 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-a1feaddc-6e68-43a3-b5a9-3f0148651a19
+  primary_identifier:
+    namespace: pmid
+    value: '37405802'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Triple-Hormone Combination Retatrutide Induces 24% Body Weight Loss.
+    publication_year: 2023
+    journal: JAMA
+    publication_types:
+    - Journal Article
+    doi: 10.1001/jama.2023.12055
+    pmcid: null
+    authors:
+    - Harris E
+    abstract_available: false
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=37405802 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-42289e43-f44b-4abe-94b4-2f73a7b89bcf
+  primary_identifier:
+    namespace: pmid
+    value: '37581246'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Breaking the mold: revolutionary new obesity drugs set to transform treatment landscape?'
+    publication_year: 2023
+    journal: Journal of basic and clinical physiology and pharmacology
+    publication_types:
+    - Editorial
+    doi: 10.1515/jbcpp-2023-0172
+    pmcid: null
+    authors:
+    - Seetharaman R
+    - Pandit S
+    abstract_available: false
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=37581246 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-b8f1d44e-7529-4185-b925-1f4ae90b1d90
+  primary_identifier:
+    namespace: pmid
+    value: '37865924'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: '[From GLP1 receptor agonists to triple hormone receptor activation supplemented with glucagon
+      receptor agonism.].'
+    publication_year: 2023
+    journal: Orvosi hetilap
+    publication_types:
+    - Review
+    - English Abstract
+    - Journal Article
+    doi: 10.1556/650.2023.32894
+    pmcid: null
+    authors:
+    - Winkler G
+    - Kis JT
+    - Arapovicsné Kiss K
+    - Schandl L
+    abstract_available: true
+    language: null
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=37865924 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-4b7b205b-2f23-4fa5-84b9-e966edb2a4a0
+  primary_identifier:
+    namespace: pmid
+    value: '37888925'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Triple-Hormone-Receptor Agonist Retatrutide for Obesity.
+    publication_year: 2023
+    journal: The New England journal of medicine
+    publication_types:
+    - Letter
+    - Comment
+    doi: 10.1056/NEJMc2310645
+    pmcid: null
+    authors:
+    - Bisson A
+    - Fauchier G
+    - Fauchier L
+    abstract_available: false
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=37888925 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-1046dad1-4ee3-4779-8889-c3e267a3db4a
+  primary_identifier:
+    namespace: pmid
+    value: '37888926'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Triple-Hormone-Receptor Agonist Retatrutide for Obesity.
+    publication_year: 2023
+    journal: The New England journal of medicine
+    publication_types:
+    - Letter
+    - Comment
+    doi: 10.1056/NEJMc2310645
+    pmcid: null
+    authors:
+    - Elfeki MA
+    - Alkhouri N
+    abstract_available: false
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=37888926 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-7c900398-fab9-4366-aa4f-22e64aa756da
+  primary_identifier:
+    namespace: pmid
+    value: '37888927'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Triple-Hormone-Receptor Agonist Retatrutide for Obesity. Reply.
+    publication_year: 2023
+    journal: The New England journal of medicine
+    publication_types:
+    - Letter
+    - Comment
+    doi: 10.1056/NEJMc2310645
+    pmcid: null
+    authors:
+    - Jastreboff AM
+    - Kaplan LM
+    - Hartman ML
+    abstract_available: false
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=37888927 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-eff65931-6b11-487a-ac6f-b9432c7df6d8
+  primary_identifier:
+    namespace: pmid
+    value: '37902090'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Retatrutide: a triple incretin receptor agonist for obesity management.'
+    publication_year: 2023
+    journal: Expert opinion on investigational drugs
+    publication_types:
+    - Journal Article
+    doi: 10.1080/13543784.2023.2276754
+    pmcid: null
+    authors:
+    - Ray A
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=37902090 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-f4e46dd1-225d-4729-97da-7b5ae984f9b1
+  primary_identifier:
+    namespace: pmid
+    value: '37947489'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Retatrutide showing promise in obesity (and type 2 diabetes).
+    publication_year: 2023
+    journal: Expert opinion on investigational drugs
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.1080/13543784.2023.2283020
+    pmcid: null
+    authors:
+    - Doggrell SA
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=37947489 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-fd301fc5-aa9a-4369-b1cb-4e99538c3d73
+  primary_identifier:
+    namespace: pmid
+    value: '37995806'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Advances in obesity pharmacotherapy; learning from metabolic surgery and beyond.
+    publication_year: 2024
+    journal: 'Metabolism: clinical and experimental'
+    publication_types:
+    - Journal Article
+    doi: 10.1016/j.metabol.2023.155741
+    pmcid: null
+    authors:
+    - Tsilingiris D
+    - Kokkinos A
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=37995806 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-12378685-fd48-448c-946b-9a3792e7e948
+  primary_identifier:
+    namespace: pmid
+    value: '38027512'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Enteroendocrine cell regulation of the gut-brain axis.
+    publication_year: 2023
+    journal: Frontiers in neuroscience
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.3389/fnins.2023.1272955
+    pmcid: PMC10662325
+    authors:
+    - Barton JR
+    - Londregan AK
+    - Alexander TD
+    - Entezari AA
+    - Covarrubias M
+    - Waldman SA
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=38027512 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-39503cad-bff3-48c6-9b8a-f289230902ca
+  primary_identifier:
+    namespace: pmid
+    value: '38048046'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Can small molecule GLP-1 agonists be the next first-line drugs in type-2 diabetes mellitus?
+    publication_year: 2023
+    journal: Journal of basic and clinical physiology and pharmacology
+    publication_types:
+    - Editorial
+    doi: 10.1515/jbcpp-2023-0234
+    pmcid: null
+    authors:
+    - Seetharaman R
+    - Pandit S
+    abstract_available: false
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=38048046 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-00a6a145-800d-4f3d-a641-4579ca8cddea
+  primary_identifier:
+    namespace: pmid
+    value: '38055301'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: At ObesityWeek, More Data and Questions About Semaglutide, Tirzepatide, and Retatrutide.
+    publication_year: 2024
+    journal: JAMA
+    publication_types:
+    - Journal Article
+    doi: 10.1001/jama.2023.23141
+    pmcid: null
+    authors:
+    - Ruder K
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=38055301 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-9eec6256-6ca0-4de7-9abf-7aab59c3582a
+  primary_identifier:
+    namespace: pmid
+    value: '38111116'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Peptide Polyagonists for the Treatment of Nonalcoholic Fatty Liver Disease.
+    publication_year: 2023
+    journal: Current pharmaceutical design
+    publication_types:
+    - Editorial
+    doi: 10.2174/0113816128279822231211101522
+    pmcid: null
+    authors:
+    - Polyzos SA
+    - Frühbeck G
+    - Kiortsis DN
+    abstract_available: false
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=38111116 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-8374af53-af91-4ccc-80e4-3934c4a1ae42
+  primary_identifier:
+    namespace: pmid
+    value: '38169126'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Review article: Pharmacologic management of obesity - updates on approved medications, indications
+      and risks.'
+    publication_year: 2024
+    journal: Alimentary pharmacology & therapeutics
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.1111/apt.17856
+    pmcid: null
+    authors:
+    - Lupianez-Merly C
+    - Dilmaghani S
+    - Vosoughi K
+    - Camilleri M
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=38169126 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-91606789-4fec-4321-93dc-379f718d1845
+  primary_identifier:
+    namespace: pmid
+    value: '38183334'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Recent advances in the treatment of type 2 diabetes mellitus using new drug therapies.
+    publication_year: 2024
+    journal: The Kaohsiung journal of medical sciences
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.1002/kjm2.12800
+    pmcid: PMC11895656
+    authors:
+    - Chong K
+    - Chang JK
+    - Chuang LM
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=38183334 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-cb049295-8206-4cc3-95a3-b4e480e37027
+  primary_identifier:
+    namespace: pmid
+    value: '38184193'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Recent advances in peptide-based therapies for obesity and type 2 diabetes.
+    publication_year: 2024
+    journal: Peptides
+    publication_types:
+    - Journal Article
+    doi: 10.1016/j.peptides.2024.171149
+    pmcid: null
+    authors:
+    - Bailey CJ
+    - Flatt PR
+    - Conlon JM
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=38184193 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-6680bb0f-03bf-4542-b2be-bef6443f10a9
+  primary_identifier:
+    namespace: pmid
+    value: '38227053'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Rare genetic forms of obesity in childhood and adolescence: A narrative review of the main
+      treatment options with a focus on innovative pharmacological therapies.'
+    publication_year: 2024
+    journal: European journal of pediatrics
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.1007/s00431-024-05427-4
+    pmcid: null
+    authors:
+    - Mainieri F
+    - La Bella S
+    - Rinaldi M
+    - Chiarelli F
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=38227053 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-828b038a-fa37-41aa-8cb8-a4ae9f5d8807
+  primary_identifier:
+    namespace: pmid
+    value: '38275036'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Future is Brighter: New Potential Paradigm-Shifting Medications and Regimens for Diabetes
+      and Obesity.'
+    publication_year: 2024
+    journal: Current diabetes reviews
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.2174/0115733998276832231124170324
+    pmcid: PMC11452264
+    authors:
+    - Al-Horani RA
+    - Aliter KF
+    - Aliter HF
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=38275036 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-40b06040-dee5-45e2-8dac-91109bd53daf
+  primary_identifier:
+    namespace: pmid
+    value: '38299476'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Treatment of obesity with medications binding the glucagon-like peptide 1 receptor: what is
+      the current state of play?'
+    publication_year: 2024
+    journal: Expert opinion on pharmacotherapy
+    publication_types:
+    - Review
+    - Journal Article
+    doi: 10.1080/14656566.2024.2311731
+    pmcid: null
+    authors:
+    - Le Roux C
+    - Mondoh A
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=38299476 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-0ab8930b-89d9-4447-b83a-f5332284fd08
+  primary_identifier:
+    namespace: pmid
+    value: '38302593'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: What is the pipeline for future medications for obesity?
+    publication_year: 2025
+    journal: International journal of obesity (2005)
+    publication_types:
+    - Journal Article
+    - Review
+    - Research Support, Non-U.S. Gov't
+    doi: 10.1038/s41366-024-01473-y
+    pmcid: PMC11971045
+    authors:
+    - Melson E
+    - Ashraf U
+    - Papamargaritis D
+    - Davies MJ
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=38302593 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-0c1e413d-7643-4b6d-80d6-1ae2eb2423f2
+  primary_identifier:
+    namespace: pmid
+    value: '38323122'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Unleashing the power of retatrutide: A possible triumph over obesity and overweight: A correspondence.'
+    publication_year: 2024
+    journal: Health science reports
+    publication_types:
+    - Journal Article
+    doi: 10.1002/hsr2.1864
+    pmcid: PMC10844714
+    authors:
+    - Naeem M
+    - Imran L
+    - Banatwala UESS
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=38323122 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-bec13ce4-d184-4736-89db-f6b62fa87558
+  primary_identifier:
+    namespace: pmid
+    value: '38356208'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'The Road towards Triple Agonists: Glucagon-Like Peptide 1, Glucose-Dependent Insulinotropic
+      Polypeptide and Glucagon Receptor - An Update.'
+    publication_year: 2024
+    journal: Endocrinology and metabolism (Seoul, Korea)
+    publication_types:
+    - Review
+    - Journal Article
+    doi: 10.3803/EnM.2024.1942
+    pmcid: PMC10901658
+    authors:
+    - Jakubowska A
+    - Roux CWL
+    - Viljoen A
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=38356208 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-6559cb52-5ae9-4935-adb4-e0b8d0c3aca4
+  primary_identifier:
+    namespace: pmid
+    value: '38367045'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: A review of an investigational drug retatrutide, a novel triple agonist agent for the treatment
+      of obesity.
+    publication_year: 2024
+    journal: European journal of clinical pharmacology
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.1007/s00228-024-03646-0
+    pmcid: null
+    authors:
+    - Kaur M
+    - Misra S
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=38367045 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-6fa80dd8-e549-4765-8401-abba0ad85d10
+  primary_identifier:
+    namespace: pmid
+    value: '38471571'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: The Pathophysiological Associations Between Obesity, NAFLD, and Atherosclerotic Cardiovascular
+      Diseases.
+    publication_year: 2024
+    journal: Hormone and metabolic research = Hormon- und Stoffwechselforschung = Hormones et metabolisme
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.1055/a-2266-1503
+    pmcid: null
+    authors:
+    - Li M
+    - Cui M
+    - Li G
+    - Liu Y
+    - Xu Y
+    - Eftekhar SP
+    - Ala M
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=38471571 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-3e5add46-dabc-487c-addf-0ca205f96c4a
+  primary_identifier:
+    namespace: pmid
+    value: '38471973'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'An overview of therapeutic options of obesity management in India: the Integrated Diabetes
+      and Endocrinology Academy (IDEA) 2023 Congress update.'
+    publication_year: 2024
+    journal: Expert review of clinical pharmacology
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.1080/17512433.2024.2330468
+    pmcid: null
+    authors:
+    - Ray S
+    - Kapoor N
+    - Deshpande N
+    - Chatterjee S
+    - Kumar J
+    - Tantia O
+    - Goyal G
+    - Mukherjee JJ
+    - Singh AK
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=38471973 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-8e35fa26-0631-42c3-985b-f77bca71832a
+  primary_identifier:
+    namespace: pmid
+    value: '38511400'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Gut hormones and appetite regulation.
+    publication_year: 2024
+    journal: Current opinion in endocrinology, diabetes, and obesity
+    publication_types:
+    - Journal Article
+    - Review
+    - Research Support, Non-U.S. Gov't
+    doi: 10.1097/MED.0000000000000859
+    pmcid: null
+    authors:
+    - Hong SH
+    - Choi KM
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=38511400 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-6055c8d6-45cf-4c0b-8144-44a57e2aa69c
+  primary_identifier:
+    namespace: pmid
+    value: '38626998'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Top studies of 2023 relevant to primary care: From the PEER team.'
+    publication_year: 2024
+    journal: Canadian family physician Medecin de famille canadien
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.46747/cfp.7004245
+    pmcid: PMC11280662
+    authors:
+    - Thomas BS
+    - Perry D
+    - Moe SS
+    - Turgeon RD
+    - Potter J
+    - Braschi É
+    - Dugré N
+    - Kirkwood JEM
+    - Allan GM
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=38626998 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-e6eb9d09-3e6f-442f-a05d-f7f9c5368453
+  primary_identifier:
+    namespace: pmid
+    value: '38681750'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Advancements in pharmacological treatment of NAFLD/MASLD: a focus on metabolic and liver-targeted
+      interventions.'
+    publication_year: 2024
+    journal: Gastroenterology report
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.1093/gastro/goae029
+    pmcid: PMC11052658
+    authors:
+    - Ciardullo S
+    - Muraca E
+    - Vergani M
+    - Invernizzi P
+    - Perseghin G
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=38681750 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-71b6e626-fd97-4b11-b9b8-1a07e3d067c9
+  primary_identifier:
+    namespace: pmid
+    value: '38685693'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Advancements in the management of obesity: a review of current evidence and emerging therapies.'
+    publication_year: 2024
+    journal: Expert review of endocrinology & metabolism
+    publication_types:
+    - Journal Article
+    - Review
+    - Research Support, Non-U.S. Gov't
+    doi: 10.1080/17446651.2024.2347258
+    pmcid: null
+    authors:
+    - Abdalla Ahmed MA
+    - Ssemmondo E
+    - Mark-Wagstaff C
+    - Sathyapalan T
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=38685693 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-9bd523ba-2613-47c4-a258-e9c175ff4a04
+  primary_identifier:
+    namespace: pmid
+    value: '38687506'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Incretin-Based Weight Loss Pharmacotherapy: Can Resistance Exercise Optimize Changes in Body
+      Composition?'
+    publication_year: 2024
+    journal: Diabetes care
+    publication_types:
+    - Journal Article
+    - Review
+    - Research Support, Non-U.S. Gov't
+    doi: 10.2337/dci23-0100
+    pmcid: null
+    authors:
+    - Locatelli JC
+    - Costa JG
+    - Haynes A
+    - Naylor LH
+    - Fegan PG
+    - Yeap BB
+    - Green DJ
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=38687506 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-7ad2fd98-725e-4083-b2d1-a9b17f004e67
+  primary_identifier:
+    namespace: pmid
+    value: '38723646'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Sex, race, and BMI in clinical trials of medications for obesity over the past three decades:
+      a systematic review.'
+    publication_year: 2024
+    journal: The lancet. Diabetes & endocrinology
+    publication_types:
+    - Systematic Review
+    - Journal Article
+    - Research Support, Non-U.S. Gov't
+    doi: 10.1016/S2213-8587(24)00098-6
+    pmcid: null
+    authors:
+    - Alsaqaaby MS
+    - Cooney S
+    - le Roux CW
+    - Pournaras DJ
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=38723646 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-c278b04b-1015-492f-811a-0c2ceba23bc7
+  primary_identifier:
+    namespace: pmid
+    value: '38753454'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Oral glucagon-like peptide-1 receptor agonists and combinations of entero-pancreatic hormones
+      as treatments for adults with type 2 diabetes: where are we now?'
+    publication_year: 2024
+    journal: Expert opinion on pharmacotherapy
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.1080/14656566.2024.2356254
+    pmcid: PMC11195668
+    authors:
+    - Gogineni P
+    - Melson E
+    - Papamargaritis D
+    - Davies M
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=38753454 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-fb8f85e0-f8c3-4c37-993d-896fc4d6093c
+  primary_identifier:
+    namespace: pmid
+    value: '38843460'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Efficacy and Safety of GLP-1 Medicines for Type 2 Diabetes and Obesity.
+    publication_year: 2024
+    journal: Diabetes care
+    publication_types:
+    - Journal Article
+    - Review
+    - Research Support, Non-U.S. Gov't
+    doi: 10.2337/dci24-0003
+    pmcid: null
+    authors:
+    - Drucker DJ
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=38843460 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-efb20763-dea6-4556-b916-a7cb4774673e
+  primary_identifier:
+    namespace: pmid
+    value: '38858523'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Triple hormone receptor agonist retatrutide for metabolic dysfunction-associated steatotic
+      liver disease: a randomized phase 2a trial.'
+    publication_year: 2024
+    journal: Nature medicine
+    publication_types:
+    - Journal Article
+    - Randomized Controlled Trial
+    - Clinical Trial, Phase II
+    doi: 10.1038/s41591-024-03018-2
+    pmcid: PMC11271400
+    authors:
+    - Sanyal AJ
+    - Kaplan LM
+    - Frias JP
+    - Brouwers B
+    - Wu Q
+    - Thomas MK
+    - Harris C
+    - Schloot NC
+    - Du Y
+    - Mather KJ
+    - Haupt A
+    - Hartman ML
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=38858523 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-4c23d9ee-080f-43c9-9b17-efbb340c7322
+  primary_identifier:
+    namespace: pmid
+    value: '38976545'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Comparative Meta-Analysis of Retatrutide Versus Placebo and Dulaglutide for Weight Loss and
+      Diabetes Management: Insights From Clinical Trials.'
+    publication_year: 2024
+    journal: American journal of therapeutics
+    publication_types:
+    - Meta-Analysis
+    - Letter
+    - Comparative Study
+    doi: 10.1097/MJT.0000000000001743
+    pmcid: null
+    authors:
+    - Ayesh H
+    - Ayesh S
+    - Niswender K
+    abstract_available: false
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=38976545 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-038612b9-4fdc-43ae-b736-2a38d188baaf
+  primary_identifier:
+    namespace: pmid
+    value: '38984950'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Investigational and emerging gastric inhibitory polypeptide (GIP) receptor-based therapies
+      for the treatment of obesity.
+    publication_year: 2024
+    journal: Expert opinion on investigational drugs
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.1080/13543784.2024.2377319
+    pmcid: null
+    authors:
+    - Gaffey RH
+    - Takyi AK
+    - Shukla A
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=38984950 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-52f3af88-2146-4fc4-900f-026ed6504848
+  primary_identifier:
+    namespace: pmid
+    value: '39019866'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Structural insights into the triple agonism at GLP-1R, GIPR and GCGR manifested by retatrutide.
+    publication_year: 2024
+    journal: Cell discovery
+    publication_types:
+    - Letter
+    doi: 10.1038/s41421-024-00700-0
+    pmcid: PMC11255275
+    authors:
+    - Li W
+    - Zhou Q
+    - Cong Z
+    - Yuan Q
+    - Li W
+    - Zhao F
+    - Xu HE
+    - Zhao LH
+    - Yang D
+    - Wang MW
+    abstract_available: false
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=39019866 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-5c99fa6e-a925-4ea8-898f-17e6a8d0cb82
+  primary_identifier:
+    namespace: pmid
+    value: '39096466'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Pharmacological Treatment of Binge Eating Disorder and Frequent Comorbid Diseases.
+    publication_year: 2024
+    journal: CNS drugs
+    publication_types:
+    - Journal Article
+    - Review
+    - Research Support, Non-U.S. Gov't
+    doi: 10.1007/s40263-024-01111-1
+    pmcid: null
+    authors:
+    - Himmerich H
+    - Bentley J
+    - McElroy SL
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=39096466 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-7d91f364-5a13-4466-9bd4-0fc6c8ebcbec
+  primary_identifier:
+    namespace: pmid
+    value: '39125772'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Molecular Mechanisms behind Obesity and Their Potential Exploitation in Current and Future
+      Therapy.
+    publication_year: 2024
+    journal: International journal of molecular sciences
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.3390/ijms25158202
+    pmcid: PMC11311839
+    authors:
+    - Nicze M
+    - Dec A
+    - Borówka M
+    - Krzyżak D
+    - Bołdys A
+    - Bułdak Ł
+    - Okopień B
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=39125772 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-a7074a96-e666-4570-8967-1ed29edd9175
+  primary_identifier:
+    namespace: pmid
+    value: '39212900'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Comparison of the effects of Liraglutide, Tirzepatide, and Retatrutide on diabetic kidney disease
+      in db/db mice.
+    publication_year: 2025
+    journal: Endocrine
+    publication_types:
+    - Journal Article
+    - Comparative Study
+    doi: 10.1007/s12020-024-03998-8
+    pmcid: null
+    authors:
+    - Ma J
+    - Hu X
+    - Zhang W
+    - Tao M
+    - Wang M
+    - Lu W
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=39212900 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-5a577a71-2b50-4b4d-9cf0-a78bb3143223
+  primary_identifier:
+    namespace: pmid
+    value: '39259982'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Weight Loss Blockbuster Development: A Role for Unimolecular Polypharmacology.'
+    publication_year: 2025
+    journal: Annual review of pharmacology and toxicology
+    publication_types:
+    - Journal Article
+    - Review
+    - Research Support, Non-U.S. Gov't
+    doi: 10.1146/annurev-pharmtox-061324-011832
+    pmcid: null
+    authors:
+    - Zhou Q
+    - Li G
+    - Hang K
+    - Li J
+    - Yang D
+    - Wang MW
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:31Z'
+    request_reference: NCBI ESummary db=pubmed id=39259982 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-8abbca53-6ec6-4379-a437-4f492c13fb5b
+  primary_identifier:
+    namespace: pmid
+    value: '39305981'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Seven glucagon-like peptide-1 receptor agonists and polyagonists for weight loss in patients
+      with obesity or overweight: an updated systematic review and network meta-analysis of randomized
+      controlled trials.'
+    publication_year: 2024
+    journal: 'Metabolism: clinical and experimental'
+    publication_types:
+    - Journal Article
+    - Systematic Review
+    - Network Meta-Analysis
+    - Research Support, Non-U.S. Gov't
+    doi: 10.1016/j.metabol.2024.156038
+    pmcid: null
+    authors:
+    - Xie Z
+    - Zheng G
+    - Liang Z
+    - Li M
+    - Deng W
+    - Cao W
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=39305981 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-400ae596-2223-4d67-ab0b-64ec5f294c42
+  primary_identifier:
+    namespace: pmid
+    value: '39318607'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Effects of once-weekly subcutaneous retatrutide on weight and metabolic markers: A systematic
+      review and meta-analysis of randomized controlled trials.'
+    publication_year: 2024
+    journal: Metabolism open
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.1016/j.metop.2024.100321
+    pmcid: PMC11420505
+    authors:
+    - Pasqualotto E
+    - Ferreira ROM
+    - Chavez MP
+    - Hohl A
+    - Ronsoni MF
+    - Pasqualotto T
+    - Moraes FCA
+    - Hespanhol L
+    - Figueiredo Watanabe JM
+    - Lütkemeyer C
+    - van de Sande-Lee S
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=39318607 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-6a0829a4-38a4-4917-81f4-00f935e588eb
+  primary_identifier:
+    namespace: pmid
+    value: '39335551'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Modern Challenges in Type 2 Diabetes: Balancing New Medications with Multifactorial Care.'
+    publication_year: 2024
+    journal: Biomedicines
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.3390/biomedicines12092039
+    pmcid: PMC11429233
+    authors:
+    - Caturano A
+    - Galiero R
+    - Rocco M
+    - Tagliaferri G
+    - Piacevole A
+    - Nilo D
+    - Di Lorenzo G
+    - Sardu C
+    - Vetrano E
+    - Monda M
+    - Marfella R
+    - Rinaldi L
+    - Sasso FC
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=39335551 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-a94186c4-4919-4e7d-8b69-881a61bc5d0f
+  primary_identifier:
+    namespace: pmid
+    value: '39429457'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Retatrutide.
+    publication_year: 2024
+    journal: 'Clinical diabetes : a publication of the American Diabetes Association'
+    publication_types:
+    - Journal Article
+    doi: 10.2337/cd24-0062
+    pmcid: PMC11486854
+    authors:
+    - Ramsbacher N
+    abstract_available: false
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=39429457 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-4f1d250d-5da7-4a0d-999e-015bf3114d53
+  primary_identifier:
+    namespace: pmid
+    value: '39458963'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Evaluating the Impact of Novel Incretin Therapies on Cardiovascular Outcomes in Type 2 Diabetes:
+      An Early Systematic Review.'
+    publication_year: 2024
+    journal: Pharmaceuticals (Basel, Switzerland)
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.3390/ph17101322
+    pmcid: PMC11510241
+    authors:
+    - Salmen T
+    - Potcovaru CG
+    - Bica IC
+    - Giglio RV
+    - Patti AM
+    - Stoica RA
+    - Ciaccio M
+    - El-Tanani M
+    - Janež A
+    - Rizzo M
+    - Gherghiceanu F
+    - Stoian AP
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=39458963 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-8877e204-a310-4e83-9815-803db90f8c57
+  primary_identifier:
+    namespace: pmid
+    value: '39481534'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'The impact of weight loss on fat-free mass, muscle, bone and hematopoiesis health: Implications
+      for emerging pharmacotherapies aiming at fat reduction and lean mass preservation.'
+    publication_year: 2024
+    journal: 'Metabolism: clinical and experimental'
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.1016/j.metabol.2024.156057
+    pmcid: null
+    authors:
+    - Stefanakis K
+    - Kokkorakis M
+    - Mantzoros CS
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=39481534 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-49b9bdce-0a82-40c6-b614-5cfb8085b34b
+  primary_identifier:
+    namespace: pmid
+    value: '39507873'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'The "Weight" for a New Agent Is Almost Over: A Commentary on the Novel Triagonist Retatrutide
+      for Obesity.'
+    publication_year: 2024
+    journal: 'The Journal of pharmacy technology : jPT : official publication of the Association of Pharmacy
+      Technicians'
+    publication_types:
+    - Journal Article
+    doi: 10.1177/87551225241285326
+    pmcid: PMC11536522
+    authors:
+    - Deravi M
+    - Piszczatoski C
+    - Phillips B
+    - Huston J
+    - Vascimini A
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=39507873 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-313ecd30-d650-47ee-a151-6f79b2143d3e
+  primary_identifier:
+    namespace: pmid
+    value: '39515565'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'The power of three: Retatrutide''s role in modern obesity and diabetes therapy.'
+    publication_year: 2024
+    journal: European journal of pharmacology
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.1016/j.ejphar.2024.177095
+    pmcid: null
+    authors:
+    - Abdul-Rahman T
+    - Roy P
+    - Ahmed FK
+    - Mueller-Gomez JL
+    - Sarkar S
+    - Garg N
+    - Femi-Lawal VO
+    - Wireko AA
+    - Thaalibi HI
+    - Hashmi MU
+    - Dzebu AS
+    - Banimusa SB
+    - Sood A
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=39515565 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-f26d3e1b-980e-48f4-8b6f-153a8824729b
+  primary_identifier:
+    namespace: pmid
+    value: '39676791'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Approved and Emerging Hormone-Based Anti-Obesity Medications: A Review Article.'
+    publication_year: 2024
+    journal: Indian journal of endocrinology and metabolism
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.4103/ijem.ijem_442_23
+    pmcid: PMC11642516
+    authors:
+    - Sidrak WR
+    - Kalra S
+    - Kalhan A
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=39676791 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-2b869988-84ac-4b80-9cdc-b781c527c510
+  primary_identifier:
+    namespace: pmid
+    value: '39724554'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'The First Triple Agonist for Antiobesity: Retatrutide.'
+    publication_year: 2024
+    journal: Cardiology in review
+    publication_types:
+    - Journal Article
+    doi: 10.1097/CRD.0000000000000793
+    pmcid: null
+    authors:
+    - Tetelbaun L
+    - Mullally JA
+    - Frishman WH
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=39724554 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-ed02cb1d-865f-4820-bbdb-2be9a633046f
+  primary_identifier:
+    namespace: pmid
+    value: '39726721'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Why are we still in need for novel anti-obesity medications?
+    publication_year: 2024
+    journal: The Lancet regional health. Europe
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.1016/j.lanepe.2024.101098
+    pmcid: PMC11670685
+    authors:
+    - Novikoff A
+    - Grandl G
+    - Liu X
+    - D Müller T
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=39726721 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-7cbaeb33-a7a0-4b67-a28f-5aec53c23858
+  primary_identifier:
+    namespace: pmid
+    value: '39761578'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Efficacy and Safety of Glucagon-Like Peptide-1 Receptor Agonists for Weight Loss Among Adults
+      Without Diabetes : A Systematic Review of Randomized Controlled Trials.'
+    publication_year: 2025
+    journal: Annals of internal medicine
+    publication_types:
+    - Journal Article
+    - Systematic Review
+    doi: 10.7326/ANNALS-24-01590
+    pmcid: null
+    authors:
+    - Moiz A
+    - Filion KB
+    - Toutounchi H
+    - Tsoukas MA
+    - Yu OHY
+    - Peters TM
+    - Eisenberg MJ
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=39761578 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-88f47ae8-4199-4a22-bb4a-6946e104233c
+  primary_identifier:
+    namespace: pmid
+    value: '39776466'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Compounded glucagon-like peptide-1 receptor agonists for weight loss: the direct-to-consumer
+      market in Colorado.'
+    publication_year: 2024
+    journal: Journal of pharmaceutical policy and practice
+    publication_types:
+    - Journal Article
+    doi: 10.1080/20523211.2024.2441220
+    pmcid: PMC11703442
+    authors:
+    - DiStefano MJ
+    - Dardouri M
+    - Moore GD
+    - Saseen JJ
+    - Nair KV
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=39776466 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-93f223ba-d708-4d3b-87b3-823e03d0deca
+  primary_identifier:
+    namespace: pmid
+    value: '39817343'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Efficacy and safety of triple hormone receptor agonist retatrutide for the management of obesity:
+      a systematic review and meta-analysis.'
+    publication_year: 2025
+    journal: Expert review of clinical pharmacology
+    publication_types:
+    - Journal Article
+    - Meta-Analysis
+    - Systematic Review
+    doi: 10.1080/17512433.2025.2450254
+    pmcid: null
+    authors:
+    - Tewari J
+    - Qidwai KA
+    - Tewari A
+    - Kaur S
+    - Tewari V
+    - Maheshwari A
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=39817343 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-06306e0d-97ee-4601-b56a-00028a7ae39c
+  primary_identifier:
+    namespace: pmid
+    value: '39868848'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Pharmacological Dissection Identifies Retatrutide Overcomes the Therapeutic Barrier of Obese
+      TNBC Treatments through Suppressing the Interplay between Glycosylation and Ubiquitylation of YAP.
+    publication_year: 2025
+    journal: Advanced science (Weinheim, Baden-Wurttemberg, Germany)
+    publication_types:
+    - Journal Article
+    doi: 10.1002/advs.202407494
+    pmcid: PMC11923992
+    authors:
+    - Cui X
+    - Zhu Y
+    - Zeng L
+    - Zhang M
+    - Uddin A
+    - Gillespie TW
+    - McCullough LE
+    - Zhao S
+    - Torres MA
+    - Wan Y
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=39868848 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-c6910390-a4b7-4374-809c-003968913f91
+  primary_identifier:
+    namespace: pmid
+    value: '39911047'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Quantitative Comparison of Glucagon-Like Peptide-1 Receptor Agonists on Weight Loss in Adults:
+      A Systematic Review and Model-Based Meta-Analysis.'
+    publication_year: 2025
+    journal: Diabetes technology & therapeutics
+    publication_types:
+    - Journal Article
+    - Systematic Review
+    - Meta-Analysis
+    - Comparative Study
+    - Research Support, Non-U.S. Gov't
+    doi: 10.1089/dia.2024.0533
+    pmcid: null
+    authors:
+    - Zhang S
+    - Yu B
+    - Xu J
+    - Jin S
+    - Li Y
+    - Bing H
+    - Li J
+    - Ma X
+    - Zhang X
+    - Zhao L
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=39911047 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-16e9fbdb-96d9-4c47-81bc-dd75bf6bd3e0
+  primary_identifier:
+    namespace: pmid
+    value: '39952695'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Emerging pharmacotherapies for obesity: A systematic review.'
+    publication_year: 2025
+    journal: Pharmacological reviews
+    publication_types:
+    - Journal Article
+    - Systematic Review
+    doi: 10.1124/pharmrev.123.001045
+    pmcid: null
+    authors:
+    - Kokkorakis M
+    - Chakhtoura M
+    - Rhayem C
+    - Al Rifai J
+    - Ghezzawi M
+    - Valenzuela-Vallejo L
+    - Mantzoros CS
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=39952695 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-057e87a3-83fd-4ffd-b9e7-16db6ba59df0
+  primary_identifier:
+    namespace: pmid
+    value: '39968298'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Comparative efficacy of incretin drugs on glycemic control, body weight, and blood pressure
+      in adults with overweight or obesity and with/without type 2 diabetes: a systematic review and network
+      meta-analysis.'
+    publication_year: 2025
+    journal: Frontiers in endocrinology
+    publication_types:
+    - Comparative Study
+    - Journal Article
+    - Network Meta-Analysis
+    - Systematic Review
+    doi: 10.3389/fendo.2025.1513641
+    pmcid: PMC11832366
+    authors:
+    - Liu S
+    - Hu J
+    - Zhao C
+    - Liu H
+    - He C
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=39968298 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-893352fd-1487-49d2-9dec-529f9c07e669
+  primary_identifier:
+    namespace: pmid
+    value: '39980735'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Comparative efficacy and safety of GLP-1 receptor agonists for weight reduction: A model-based
+      meta-analysis of placebo-controlled trials.'
+    publication_year: 2025
+    journal: Obesity pillars
+    publication_types:
+    - Journal Article
+    doi: 10.1016/j.obpill.2025.100162
+    pmcid: PMC11840199
+    authors:
+    - Guo H
+    - Yang J
+    - Huang J
+    - Xu L
+    - Lv Y
+    - Wang Y
+    - Ren J
+    - Feng Y
+    - Zheng Q
+    - Li L
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=39980735 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-7c59024e-fc5f-4f0c-851c-da2cbffa06a3
+  primary_identifier:
+    namespace: pmid
+    value: '40022548'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'The promise of glucagon-like peptide 1 receptor agonists (GLP-1RA) for the treatment of obesity:
+      a look at phase 2 and 3 pipelines.'
+    publication_year: 2025
+    journal: Expert opinion on investigational drugs
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.1080/13543784.2025.2472408
+    pmcid: null
+    authors:
+    - Madsbad S
+    - Holst JJ
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=40022548 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-247ea25b-90de-4e00-afa2-0f2050d88c21
+  primary_identifier:
+    namespace: pmid
+    value: '40040445'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Sex Differences in the Efficacy of Glucagon-Like Peptide-1 Receptor Agonists for Weight Reduction:
+      A Systematic Review and Meta-Analysis.'
+    publication_year: 2025
+    journal: Journal of diabetes
+    publication_types:
+    - Journal Article
+    - Meta-Analysis
+    - Systematic Review
+    doi: 10.1111/1753-0407.70063
+    pmcid: PMC11880690
+    authors:
+    - Yang Y
+    - He L
+    - Han S
+    - Yang N
+    - Liu Y
+    - Wang X
+    - Li Z
+    - Ping F
+    - Xu L
+    - Li W
+    - Zhang H
+    - Li Y
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=40040445 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-8d0e653d-782d-40e8-bd68-3e1c666a5781
+  primary_identifier:
+    namespace: pmid
+    value: '40042613'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: '[Glucagon-like peptide-1 receptor agonists: a new pharmacological treatment option for psychiatric
+      illnesses?].'
+    publication_year: 2025
+    journal: Der Nervenarzt
+    publication_types:
+    - English Abstract
+    - Journal Article
+    - Review
+    doi: 10.1007/s00115-025-01813-x
+    pmcid: PMC12058874
+    authors:
+    - Himmerich H
+    abstract_available: true
+    language: de
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=40042613 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-01c8944e-7718-4a39-bf0d-1eeafba2efe3
+  primary_identifier:
+    namespace: pmid
+    value: '40081498'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Multifunctional incretin peptides in therapies for type 2 diabetes, obesity and associated
+      co-morbidities.
+    publication_year: 2025
+    journal: Peptides
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.1016/j.peptides.2025.171380
+    pmcid: null
+    authors:
+    - Bailey CJ
+    - Flatt PR
+    - Conlon JM
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=40081498 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-d1d76040-a5c7-4ddf-80aa-ebac97fb5c18
+  primary_identifier:
+    namespace: pmid
+    value: '40094000'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Incretin triple agonist retatrutide (LY3437943) alleviates obesity-associated cancer progression.
+    publication_year: 2025
+    journal: npj metabolic health and disease
+    publication_types:
+    - Journal Article
+    doi: 10.1038/s44324-025-00054-5
+    pmcid: PMC11908972
+    authors:
+    - Marathe SJ
+    - Grey EW
+    - Bohm MS
+    - Joseph SC
+    - Ramesh AV
+    - Cottam MA
+    - Idrees K
+    - Wellen KE
+    - Hasty AH
+    - Rathmell JC
+    - Makowski L
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=40094000 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-024416e8-c6d1-42fe-992f-e50404ff82cc
+  primary_identifier:
+    namespace: pmid
+    value: '40126003'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Breaking the weight loss paradox: from weight reduction to cardiovascular benefit in obesity
+      treatment.'
+    publication_year: 2025
+    journal: Polish archives of internal medicine
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.20452/pamw.16983
+    pmcid: null
+    authors:
+    - Gajos G
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=40126003 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-903fe739-7eb1-4d69-898b-e9c3f1ba7464
+  primary_identifier:
+    namespace: pmid
+    value: '40206909'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Comparative Effectiveness of Semaglutide, Liraglutide, Orlistat, and Phentermine for Weight
+      Loss in Obese Individuals: A Systematic Review.'
+    publication_year: 2025
+    journal: Cureus
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.7759/cureus.80321
+    pmcid: PMC11979670
+    authors:
+    - Patel JP
+    - Hardaswani D
+    - Patel J
+    - Saiyed F
+    - Goswami RJ
+    - Saiyed TI
+    - Patel H
+    - Amin TH
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=40206909 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-71c6f92d-8d55-46fc-9db8-1936e08823f7
+  primary_identifier:
+    namespace: pmid
+    value: '40207414'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Efficacy of GLP-1 Receptor Agonist-Based Therapies on Cardiovascular Events and Cardiometabolic
+      Parameters in Obese Individuals Without Diabetes: A Meta-Analysis of Randomized Controlled Trials.'
+    publication_year: 2025
+    journal: Journal of diabetes
+    publication_types:
+    - Journal Article
+    - Meta-Analysis
+    doi: 10.1111/1753-0407.70082
+    pmcid: PMC11982705
+    authors:
+    - Yin Y
+    - Zhang M
+    - Cao Q
+    - Lin L
+    - Lu J
+    - Bi Y
+    - Chen Y
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=40207414 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-77ce07c6-304d-429d-90de-72bc5db44ca7
+  primary_identifier:
+    namespace: pmid
+    value: '40291085'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Efficacy and safety of retatrutide, a novel GLP-1, GIP, and glucagon receptor agonist for
+      obesity treatment: a systematic review and meta-analysis of randomized controlled trials.'
+    publication_year: 2025
+    journal: Proceedings (Baylor University. Medical Center)
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.1080/08998280.2025.2456441
+    pmcid: PMC12026077
+    authors:
+    - Abdrabou Abouelmagd A
+    - Abdelrehim AM
+    - Bashir MN
+    - Abdelsalam F
+    - Marey A
+    - Tanas Y
+    - Abuklish DM
+    - Belal MM
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=40291085 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-c8486887-ee4d-46dd-872b-5116a79ee42e
+  primary_identifier:
+    namespace: pmid
+    value: '40464942'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Contractile effects of retatrutide in isolated mouse atrial preparations.
+    publication_year: 2025
+    journal: Naunyn-Schmiedeberg's archives of pharmacology
+    publication_types:
+    - Journal Article
+    doi: 10.1007/s00210-025-04335-0
+    pmcid: PMC12678479
+    authors:
+    - Neumann J
+    - Ahlrep U
+    - Hofmann B
+    - Gergs U
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=40464942 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-27d025da-c014-43e5-a955-41e9d66e3df3
+  primary_identifier:
+    namespace: pmid
+    value: '40471293'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Beyond GLP-1: efficacy and safety of dual and triple incretin agonists in personalized type
+      2 diabetes care-a systematic review and network meta-analysis.'
+    publication_year: 2025
+    journal: Acta diabetologica
+    publication_types:
+    - Journal Article
+    - Network Meta-Analysis
+    - Systematic Review
+    doi: 10.1007/s00592-025-02534-y
+    pmcid: PMC12433336
+    authors:
+    - Yan K
+    - Yu H
+    - Blaise B
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=40471293 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-17c11107-1e45-4f59-84fe-0326dd282a4c
+  primary_identifier:
+    namespace: pmid
+    value: '40489581'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Efficacy of GLP-1-based Therapies on Metabolic Dysfunction-associated Steatotic Liver Disease
+      and Metabolic Dysfunction-associated Steatohepatitis: A Systematic Review and Meta-analysis.'
+    publication_year: 2025
+    journal: The Journal of clinical endocrinology and metabolism
+    publication_types:
+    - Journal Article
+    - Systematic Review
+    - Meta-Analysis
+    doi: 10.1210/clinem/dgaf336
+    pmcid: null
+    authors:
+    - Wang Y
+    - Zhou Y
+    - Wang Z
+    - Ni Y
+    - Prud'homme GJ
+    - Wang Q
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=40489581 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-ff2e5efe-34ee-43f7-b448-79ee5e6edddb
+  primary_identifier:
+    namespace: pmid
+    value: '40554267'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Antiobesity medications in adult and pediatric obesity and metabolic dysfunction-associated
+      steatotic liver disease.
+    publication_year: 2025
+    journal: Pharmacological reviews
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.1016/j.pharmr.2025.100058
+    pmcid: null
+    authors:
+    - Rodriguez N
+    - Hartmann P
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=40554267 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-05086c83-3713-4324-859f-2367d3998607
+  primary_identifier:
+    namespace: pmid
+    value: '40563436'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Retatrutide-A Game Changer in Obesity Pharmacotherapy.
+    publication_year: 2025
+    journal: Biomolecules
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.3390/biom15060796
+    pmcid: PMC12190491
+    authors:
+    - Katsi V
+    - Koutsopoulos G
+    - Fragoulis C
+    - Dimitriadis K
+    - Tsioufis K
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=40563436 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-fe2a565a-c30b-4481-892e-5dec05b59a96
+  primary_identifier:
+    namespace: pmid
+    value: '40583149'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Efficacy of Tirzepatide, Retatrutide, and Semaglutide for Weight Loss in Obese Individuals
+      Without Diabetes.
+    publication_year: 2025
+    journal: 'Academic emergency medicine : official journal of the Society for Academic Emergency Medicine'
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.1111/acem.70088
+    pmcid: null
+    authors:
+    - Olowo-Oribi BA
+    - Salway RJ
+    abstract_available: false
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=40583149 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-34409e01-5ec6-41c4-a24c-85a36806f6a9
+  primary_identifier:
+    namespace: pmid
+    value: '40604322'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Incretin-based therapies for the treatment of obesity-related diseases.
+    publication_year: 2024
+    journal: npj metabolic health and disease
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.1038/s44324-024-00030-5
+    pmcid: PMC12118674
+    authors:
+    - Caruso I
+    - Cignarelli A
+    - Sorice GP
+    - Perrini S
+    - Giorgino F
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=40604322 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-52f66b06-9383-45fb-b483-12663f30c7cb
+  primary_identifier:
+    namespace: pmid
+    value: '40609566'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Effects of retatrutide on body composition in people with type 2 diabetes: a substudy of a
+      phase 2, double-blind, parallel-group, placebo-controlled, randomised trial.'
+    publication_year: 2025
+    journal: The lancet. Diabetes & endocrinology
+    publication_types:
+    - Journal Article
+    - Randomized Controlled Trial
+    - Clinical Trial, Phase II
+    - Multicenter Study
+    doi: 10.1016/S2213-8587(25)00092-0
+    pmcid: null
+    authors:
+    - Coskun T
+    - Wu Q
+    - Schloot NC
+    - Haupt A
+    - Milicevic Z
+    - Khouli C
+    - Harris C
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=40609566 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-a508cd62-be7e-4e1d-b432-da775c43c27c
+  primary_identifier:
+    namespace: pmid
+    value: '40613938'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Inotropic effects of retatrutide in isolated human atrial preparations.
+    publication_year: 2026
+    journal: Naunyn-Schmiedeberg's archives of pharmacology
+    publication_types:
+    - Journal Article
+    doi: 10.1007/s00210-025-04421-3
+    pmcid: PMC12894140
+    authors:
+    - Neumann J
+    - Ahlrep U
+    - Hofmann B
+    - Gergs U
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=40613938 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-3faf697b-7546-4e48-b5f9-f24f59bd14ff
+  primary_identifier:
+    namespace: pmid
+    value: '40630318'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: The Effect of Retatrutide on Kidney Parameters in Participants With Type 2 Diabetes Mellitus
+      and/or Obesity.
+    publication_year: 2025
+    journal: Kidney international reports
+    publication_types:
+    - Journal Article
+    doi: 10.1016/j.ekir.2025.03.049
+    pmcid: PMC12231004
+    authors:
+    - Heerspink HJL
+    - Lu Z
+    - Du Y
+    - Duffin KL
+    - Coskun T
+    - Haupt A
+    - Hartman ML
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=40630318 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-4fd1517b-ffde-46b0-a3a7-9dc69d415270
+  primary_identifier:
+    namespace: pmid
+    value: '40685589'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Efficacy and Safety of GLP-1 Receptor Agonists, Dual Agonists, and Retatrutide for Weight
+      Loss in Adults With Overweight or Obesity: A Bayesian NMA.'
+    publication_year: 2025
+    journal: Obesity (Silver Spring, Md.)
+    publication_types:
+    - Journal Article
+    - Network Meta-Analysis
+    - Systematic Review
+    doi: 10.1002/oby.24360
+    pmcid: null
+    authors:
+    - Sinha B
+    - Ghosal S
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=40685589 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-20b44d1d-613f-44b7-9f77-cf8f24496ea0
+  primary_identifier:
+    namespace: pmid
+    value: '40699363'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Semaglutide, tirzepatide, and retatrutide attenuate the interoceptive effects of alcohol in
+      male and female rats.
+    publication_year: 2026
+    journal: Psychopharmacology
+    publication_types:
+    - Journal Article
+    doi: 10.1007/s00213-025-06854-3
+    pmcid: PMC13242451
+    authors:
+    - Windram M
+    - Lovelock DF
+    - Carew JM
+    - Krieman CG
+    - Hendershot CS
+    - Besheer J
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=40699363 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-db2c56a0-a536-43d8-b8e6-7ca453ee6367
+  primary_identifier:
+    namespace: pmid
+    value: '40726454'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Decreases in circulating ANGPTL3/8 concentrations following retatrutide treatment parallel
+      reductions in serum lipids.
+    publication_year: 2025
+    journal: Diabetes, obesity & metabolism
+    publication_types:
+    - Clinical Trial, Phase II
+    - Journal Article
+    doi: 10.1111/dom.16661
+    pmcid: PMC12409240
+    authors:
+    - Wen Y
+    - Lemen D
+    - Lin Y
+    - Chen YQ
+    - Regmi A
+    - Roell WC
+    - Thomas MK
+    - Hartman ML
+    - Coskun T
+    - Milicevic Z
+    - Haupt A
+    - Ruotolo G
+    - Konrad RJ
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=40726454 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-757e933b-f494-404a-a8f0-266928626f53
+  primary_identifier:
+    namespace: pmid
+    value: '40728138'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Efficacy and safety of retatrutide for the treatment of obesity: a systematic review of clinical
+      trials.'
+    publication_year: 2025
+    journal: Journal of basic and clinical physiology and pharmacology
+    publication_types:
+    - Journal Article
+    - Systematic Review
+    doi: 10.1515/jbcpp-2025-0113
+    pmcid: null
+    authors:
+    - Misra S
+    - Narayan RK
+    - Kaur M
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=40728138 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-2c9c90bb-d382-4e0e-a252-23acc6cd868a
+  primary_identifier:
+    namespace: pmid
+    value: '40728225'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Glucagon-like peptide-1 receptor analogues and beyond: emerging obesity pharmacotherapies.'
+    publication_year: 2025
+    journal: Panminerva medica
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.23736/S0031-0808.25.05339-X
+    pmcid: null
+    authors:
+    - Abburi K
+    - Melson E
+    - Miras AD
+    - Papamargaritis D
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=40728225 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-1555cab7-296c-4a0f-ac45-631de6e1fdaa
+  primary_identifier:
+    namespace: pmid
+    value: '40734920'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Review: Special Issue: Real-world evidence on the use of GLP1 receptor agonists: Emerging
+      concepts in obesity management: focus on glucagon receptor agonist combinations.'
+    publication_year: 2025
+    journal: Drugs in context
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.7573/dic.2025-4-8
+    pmcid: PMC12306892
+    authors:
+    - Anderson SL
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=40734920 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-b6d5548b-d1ba-40a1-8b92-04048980d32a
+  primary_identifier:
+    namespace: pmid
+    value: '40735804'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Association between patient-reported eating behaviours and weight change: Secondary analyses
+      of a randomized, double-blind trial comparing retatrutide and placebo in people with obesity or
+      overweight.'
+    publication_year: 2025
+    journal: Diabetes, obesity & metabolism
+    publication_types:
+    - Letter
+    doi: 10.1111/dom.16662
+    pmcid: PMC12409224
+    authors:
+    - Kanu C
+    - Wu Q
+    - Poon JL
+    - Goetz I
+    - Perez-Nieves M
+    - Boye K
+    - Martin CK
+    - Coskun T
+    - Hartman ML
+    abstract_available: false
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=40735804 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-6a5780d8-5259-4877-aaf9-090e554961fb
+  primary_identifier:
+    namespace: pmid
+    value: '40741227'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Triple Agonism Based Therapies for Obesity.
+    publication_year: 2025
+    journal: Current cardiovascular risk reports
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.1007/s12170-025-00770-z
+    pmcid: PMC12304053
+    authors:
+    - Goldney J
+    - Hamza M
+    - Surti F
+    - Davies MJ
+    - Papamargaritis D
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=40741227 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-af50054f-9fbb-4f1c-a903-ba32641fea29
+  primary_identifier:
+    namespace: pmid
+    value: '40755350'
+  discovered_in_search_run_ids:
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'The role of GIP in carbohydrate metabolism: Implications in the development of therapies for
+      T2DM, a narrative review.'
+    publication_year: 2026
+    journal: Histology and histopathology
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.14670/HH-18-967
+    pmcid: null
+    authors:
+    - Almorza-Gomar D
+    - Díaz-Gómez A
+    - Visiedo F
+    - García-Ortiz JC
+    - Camacho-Ramírez A
+    - Ribelles-García A
+    - Prada-Oliveira JA
+    - Pérez-Arana GM
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=40755350 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-ee4b30f4-b017-457a-bd19-38d971d361fc
+  primary_identifier:
+    namespace: pmid
+    value: '40843857'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Obesity: Clinical Impact, Pathophysiology, Complications, and Modern Innovations in Therapeutic
+      Strategies.'
+    publication_year: 2025
+    journal: Medicines (Basel, Switzerland)
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.3390/medicines12030019
+    pmcid: PMC12372088
+    authors:
+    - Ullah MI
+    - Tamanna S
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=40843857 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-4103f180-0666-4840-acca-ba2706baa2ef
+  primary_identifier:
+    namespace: pmid
+    value: '40865172'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Weight management treatment in obesity.
+    publication_year: 2025
+    journal: Medicina clinica
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.1016/j.medcli.2025.107152
+    pmcid: null
+    authors:
+    - Rubio-Herrera MA
+    - Mera-Carreiro S
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=40865172 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-7f33cdee-fdc2-4650-83a9-62ed9217ab0e
+  primary_identifier:
+    namespace: pmid
+    value: '40899050'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Effect of incretin-based therapies on blood pressure: a systematic review and meta-analysis.'
+    publication_year: 2026
+    journal: European journal of preventive cardiology
+    publication_types:
+    - Journal Article
+    - Systematic Review
+    - Meta-Analysis
+    doi: 10.1093/eurjpc/zwaf560
+    pmcid: null
+    authors:
+    - Basile C
+    - Merolla A
+    - Mancusi C
+    - De Luca C
+    - Fucile I
+    - Canonico ME
+    - Giugliano G
+    - Orso F
+    - Morisco C
+    - Esposito G
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:32Z'
+    request_reference: NCBI ESummary db=pubmed id=40899050 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-36349079-bfd4-4a20-87da-1d577660f744
+  primary_identifier:
+    namespace: pmid
+    value: '40916752'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Appetite, eating attitudes, and eating behaviours during treatment with retatrutide in adults
+      with type 2 diabetes: Results of a phase 2 study.'
+    publication_year: 2025
+    journal: Diabetes, obesity & metabolism
+    publication_types:
+    - Journal Article
+    - Clinical Trial, Phase II
+    - Randomized Controlled Trial
+    doi: 10.1111/dom.70097
+    pmcid: PMC12587234
+    authors:
+    - Kanu C
+    - Boye KS
+    - Poon JL
+    - Goetz I
+    - Williamson S
+    - Lou J
+    - Hartman ML
+    - Martin CK
+    - Coskun T
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=40916752 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-12b919ee-f586-45a5-b83d-56a406b620f2
+  primary_identifier:
+    namespace: pmid
+    value: '40949933'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Efficacy and safety of incretin co-agonists: Transformative advances in cardiometabolic healthcare.'
+    publication_year: 2025
+    journal: World journal of cardiology
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.4330/wjc.v17.i8.107991
+    pmcid: PMC12426997
+    authors:
+    - Bhat S
+    - Fernandez CJ
+    - Lakshmi V
+    - Pappachan JM
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=40949933 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-d3aa3898-5ef3-4764-af69-de00eb1b3b7a
+  primary_identifier:
+    namespace: pmid
+    value: '40958513'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Strategic Design of Triple GLP-1R/GCGR/GIPR Agonists with Varied Receptor Potency: Achieving
+      Comparable Glycemic and Weight Reduction Effects.'
+    publication_year: 2025
+    journal: Journal of medicinal chemistry
+    publication_types:
+    - Journal Article
+    doi: 10.1021/acs.jmedchem.5c02032
+    pmcid: null
+    authors:
+    - Wang S
+    - Liu Y
+    - Yan Z
+    - Huang X
+    - Liao Y
+    - Tang C
+    - Jing L
+    - Zhou Z
+    - Han J
+    - Tang W
+    - Jiang N
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=40958513 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-3306d7ed-f846-4be7-a064-a45e0ee41d2b
+  primary_identifier:
+    namespace: pmid
+    value: '40980310'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Saving muscle while losing weight: A vital strategy for sustainable results while on glucagon-like
+      peptide-1 related drugs.'
+    publication_year: 2025
+    journal: World journal of diabetes
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.4239/wjd.v16.i9.109123
+    pmcid: PMC12444289
+    authors:
+    - Cigrovski Berkovic M
+    - Ruzic L
+    - Cigrovski V
+    - Strollo F
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=40980310 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-57a5198e-ee12-410d-87d7-ba17f57f47e5
+  primary_identifier:
+    namespace: pmid
+    value: '40988099'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Evaluating the Rates of Pancreatitis and Pancreatic Cancer Among GLP-1 Receptor Agonists:
+      A Systematic Review and Meta-Analysis of Randomised Controlled Trials.'
+    publication_year: 2025
+    journal: Endocrinology, diabetes & metabolism
+    publication_types:
+    - Journal Article
+    - Meta-Analysis
+    - Systematic Review
+    doi: 10.1002/edm2.70113
+    pmcid: PMC12457091
+    authors:
+    - Wen J
+    - Nadora D
+    - Bernstein E
+    - How-Volkman C
+    - Truong A
+    - Joy B
+    - Kou M
+    - Muttalib Z
+    - Alam A
+    - Frezza E
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=40988099 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-fd21081b-7651-4674-93e1-7a64bd0ca306
+  primary_identifier:
+    namespace: pmid
+    value: '41025003'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Efficacy and safety of anti-obesity drugs in metabolic dysfunction-associated steatotic liver
+      disease: An updated review.'
+    publication_year: 2025
+    journal: World journal of gastroenterology
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.3748/wjg.v31.i37.111435
+    pmcid: PMC12476660
+    authors:
+    - Concepción-Zavaleta MJ
+    - Fuentes-Mendoza JM
+    - Gonzáles-Yovera JG
+    - Ruvalcaba-Barbosa GY
+    - Cura-Rodríguez LD
+    - González-Rodríguez JS
+    - Concepción-Urteaga LA
+    - Pérez-Reyes AI
+    - Quiroz-Aldave JE
+    - Paz-Ibarra J
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=41025003 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-67db9f01-85a5-4151-a44d-e4b157738575
+  primary_identifier:
+    namespace: pmid
+    value: '41025406'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Shared mechanistic pathways of glucagon signalling: Unlocking its potential for treating obesity,
+      metabolic dysfunction-associated steatotic liver disease, and other cardio-kidney-metabolic conditions.'
+    publication_year: 2025
+    journal: Diabetes, obesity & metabolism
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.1111/dom.70148
+    pmcid: null
+    authors:
+    - Neff GW
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=41025406 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-da7a70aa-73c5-4f75-b7b2-34690d48eefb
+  primary_identifier:
+    namespace: pmid
+    value: '41054801'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Novel GLP-1-based Medications for Type 2 Diabetes and Obesity.
+    publication_year: 2026
+    journal: Endocrine reviews
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.1210/endrev/bnaf036
+    pmcid: null
+    authors:
+    - Son JW
+    - le Roux CW
+    - Blüher M
+    - Nauck MA
+    - Lim S
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=41054801 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-fcfe0855-a977-4cfc-83a3-fa502b311667
+  primary_identifier:
+    namespace: pmid
+    value: '41056349'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Retatrutide improves steatohepatitis in an accelerated mouse model of diet-induced steatohepatitis
+      with a fructose binge.
+    publication_year: 2025
+    journal: American journal of physiology. Gastrointestinal and liver physiology
+    publication_types:
+    - Journal Article
+    doi: 10.1152/ajpgi.00164.2025
+    pmcid: PMC12643026
+    authors:
+    - Viebahn GK
+    - Khurana A
+    - Freund L
+    - Chilin-Fuentes D
+    - Jepsen K
+    - Rosenthal SB
+    - Chatterjee S
+    - Ellenrieder V
+    - Hsu CL
+    - Schnabl B
+    - Hartmann P
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=41056349 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-16ee529b-55da-43cd-8796-89aae31c3ada
+  primary_identifier:
+    namespace: pmid
+    value: '41090431'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Retatrutide for the treatment of obesity, obstructive sleep apnea and knee osteoarthritis:
+      Rationale and design of the TRIUMPH registrational clinical trials.'
+    publication_year: 2026
+    journal: Diabetes, obesity & metabolism
+    publication_types:
+    - Journal Article
+    doi: 10.1111/dom.70209
+    pmcid: PMC12673447
+    authors:
+    - Giblin K
+    - Kaplan LM
+    - Somers VK
+    - Le Roux CW
+    - Hunter DJ
+    - Wu Q
+    - Lalonde A
+    - Ahmad N
+    - Bethel MA
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=41090431 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-b228afe7-7776-4182-bc1c-df2d0b66fa4a
+  primary_identifier:
+    namespace: pmid
+    value: '41141001'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'The Effects of Glucagon-Like Peptide-1 (GLP-1) Receptor Agonists on Polycystic Ovarian Syndrome:
+      A Scoping Review.'
+    publication_year: 2025
+    journal: Cureus
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.7759/cureus.93104
+    pmcid: PMC12551431
+    authors:
+    - Hudanich M
+    - Smith SN
+    - Marino A
+    - Riskin SI
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=41141001 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-0f5dc830-e5da-4ced-b80a-4d78c57da3ae
+  primary_identifier:
+    namespace: pmid
+    value: '41160422'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Rationale, design and baseline characteristics of the TRANSCEND-CKD trial of retatrutide in
+      patients with chronic kidney disease.
+    publication_year: 2026
+    journal: 'Nephrology, dialysis, transplantation : official publication of the European Dialysis and
+      Transplant Association - European Renal Association'
+    publication_types:
+    - Journal Article
+    - Clinical Trial Protocol
+    doi: 10.1093/ndt/gfaf230
+    pmcid: PMC13218929
+    authors:
+    - Heerspink HJL
+    - van Raalte DH
+    - Bjornstad P
+    - Bunck MC
+    - Wu P
+    - Tunali I
+    - Milicevic Z
+    - Koeneman L
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=41160422 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-adf6c8d1-83d3-409b-96e2-9fd31aeee129
+  primary_identifier:
+    namespace: pmid
+    value: '41201783'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Development and Content Evaluation of the Eating Behavior and Appetite Questionnaire (EBAQ)
+      for Individuals with Obesity.
+    publication_year: 2026
+    journal: Advances in therapy
+    publication_types:
+    - Journal Article
+    - Research Support, Non-U.S. Gov't
+    doi: 10.1007/s12325-025-03386-2
+    pmcid: PMC12858465
+    authors:
+    - Kanu C
+    - Clucas C
+    - Skalicky A
+    - Samuelson A
+    - Goetz I
+    - Neff LM
+    - Boye KS
+    - Karn H
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=41201783 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-2460f161-3b14-4b84-9140-aca40d445cf9
+  primary_identifier:
+    namespace: pmid
+    value: '41216380'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Perceived benefits of treatment for obesity with retatrutide: A qualitative study of patients
+      in a phase 2 clinical trial.'
+    publication_year: 2025
+    journal: Obesity pillars
+    publication_types:
+    - Journal Article
+    doi: 10.1016/j.obpill.2025.100220
+    pmcid: PMC12596213
+    authors:
+    - Goetz IA
+    - Kanu C
+    - Hoover A
+    - Jimenez-Moreno C
+    - Karn H
+    - Kimel M
+    - Neff LM
+    - Boye KS
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=41216380 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-4bf06f3e-7fb6-4df6-bead-6bf92f1ce86e
+  primary_identifier:
+    namespace: pmid
+    value: '41297910'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Engineered nutrient-stimulated hormonal multi-agonists for precision targeting of obesity and
+      metabolic disorders.
+    publication_year: 2026
+    journal: Clinical and molecular hepatology
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.3350/cmh.2025.0744
+    pmcid: PMC13129745
+    authors:
+    - Cho YK
+    - Jung CH
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=41297910 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-52b14d24-81c4-4a5e-8cf0-bea2a71bc81a
+  primary_identifier:
+    namespace: pmid
+    value: '41303824'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Gastrointestinal Adverse Effects of Anti-Obesity Medications in Non-Diabetic Adults: A Systematic
+      Review.'
+    publication_year: 2025
+    journal: Medicina (Kaunas, Lithuania)
+    publication_types:
+    - Journal Article
+    - Systematic Review
+    doi: 10.3390/medicina61111987
+    pmcid: PMC12654588
+    authors:
+    - Takrori E
+    - Peshin S
+    - Singal S
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=41303824 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-7cdf9cc9-bbfd-40ad-a510-6b1471fadc82
+  primary_identifier:
+    namespace: pmid
+    value: '41333115'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Harnessing GLP-1 Receptor Agonists for Obesity Treatment: Prospects and Obstacles on the Horizon.'
+    publication_year: 2025
+    journal: Journal of obesity
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.1155/jobe/9919810
+    pmcid: PMC12668848
+    authors:
+    - Abdelrahman RM
+    - Musa TH
+    - Arbab IA
+    - Suliman MH
+    - Ahmed EO
+    - Mohamed AN
+    - Musa HH
+    - Jalal M
+    - Gasmallah SI
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=41333115 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-4dd6a86e-ebbe-4f32-a15a-19e2172eedbb
+  primary_identifier:
+    namespace: pmid
+    value: '41375628'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Diabetes Mellitus and Chronic Kidney Disease: The Future Is Being Surpassed.'
+    publication_year: 2025
+    journal: Journal of clinical medicine
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.3390/jcm14238326
+    pmcid: PMC12693365
+    authors:
+    - Martínez-Castelao A
+    - Górriz JL
+    - Fernández-Fernández B
+    - Soler MJ
+    - Navarro-González JF
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=41375628 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-95e6fb88-25f7-4e16-8ae9-0523c2532be6
+  primary_identifier:
+    namespace: pmid
+    value: '41393574'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Medical Management of Obesity: A Comprehensive Review of Food and Drug Administration (FDA)-Approved
+      and Investigational Therapies.'
+    publication_year: 2025
+    journal: Cureus
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.7759/cureus.96739
+    pmcid: PMC12701534
+    authors:
+    - Raza SS
+    - Zakir Z
+    - Hashmat A
+    - Awan SK
+    - Varrassi G
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=41393574 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-24eae2be-757b-476c-a9cb-8cb6e1044731
+  primary_identifier:
+    namespace: pmid
+    value: '41478576'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'IUPHAR review: From foe to friend: Repurposing glucagon to treat obesity and type 2 diabetes.'
+    publication_year: 2026
+    journal: Pharmacological research
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.1016/j.phrs.2025.108077
+    pmcid: PMC12910462
+    authors:
+    - Elmendorf AJ
+    - Yousefian M
+    - Kim IM
+    - Hardaway JA
+    - Habegger K
+    - Flak JN
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=41478576 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-72474059-6c67-4515-9705-c3f5b078f8d5
+  primary_identifier:
+    namespace: pmid
+    value: '41537067'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Efficacy and Safety of Retatrutide in the Treatment of Diabetes and/or Obesity Comorbid with
+      Chronic Kidney disease: a Systematic Review and Meta-Analysis.'
+    publication_year: 2025
+    journal: Maedica
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.26574/maedica.2025.20.4.824
+    pmcid: PMC12767911
+    authors:
+    - Pallavi K
+    - Chandra A
+    - Kumar K
+    - Martand K
+    - Sahu SS
+    - Mohan L
+    - Verma A
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=41537067 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-7be176c4-f169-411f-b897-324f86748431
+  primary_identifier:
+    namespace: pmid
+    value: '41540866'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: '[Nephrology : what''s new in 2025].'
+    publication_year: 2026
+    journal: Revue medicale suisse
+    publication_types:
+    - English Abstract
+    - Journal Article
+    doi: 10.53738/REVMED.2026.22.945.47996
+    pmcid: null
+    authors:
+    - Nanchen G
+    - Pruijm M
+    - Lamine F
+    - Golshayan D
+    - Fakhouri F
+    abstract_available: true
+    language: fr
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=41540866 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-14db4739-8e93-4553-a86c-ba58f8158721
+  primary_identifier:
+    namespace: pmid
+    value: '41545327'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'The Triple-Agonist Revolution: Retatrutide and the Paradigm Shift in Multi-Hormonal Pharmacotherapy
+      for Obesity and Cardiometabolic Comorbidities.'
+    publication_year: 2026
+    journal: Clinical pharmacology in drug development
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.1002/cpdd.70001
+    pmcid: null
+    authors:
+    - Ganamurali N
+    - Sabarathinam S
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=41545327 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-db893b3f-4c72-48af-96f1-734fead9f1f0
+  primary_identifier:
+    namespace: pmid
+    value: '41547240'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Multi-target incretin-based therapeutics: The rise of dual and triple agonists for metabolic
+      disorders.'
+    publication_year: 2026
+    journal: European journal of medicinal chemistry
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.1016/j.ejmech.2026.118587
+    pmcid: null
+    authors:
+    - Alavi SE
+    - Boshrouyeh R
+    - Raza A
+    - Ebrahimi Shahmabadi H
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=41547240 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-eec6c5d2-0a34-4f58-9573-ab71f4e56793
+  primary_identifier:
+    namespace: pmid
+    value: '41582189'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Effect of glucagon-like peptide-1 receptor agonists on heart rate in non-diabetic individuals
+      with overweight or obesity: a systematic review and pairwise and network meta-analysis of randomized
+      controlled trials.'
+    publication_year: 2026
+    journal: European journal of medical research
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.1186/s40001-026-03933-9
+    pmcid: PMC12918571
+    authors:
+    - Zhang Y
+    - Zhang C
+    - Gong X
+    - Cheng P
+    - Fu H
+    - Diao L
+    - Song C
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=41582189 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-64151df3-edea-48d3-b1da-c197d6efa20a
+  primary_identifier:
+    namespace: pmid
+    value: '41589220'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Development of the Weight and Emotions Scale (WES).
+    publication_year: 2026
+    journal: Obesity science & practice
+    publication_types:
+    - Journal Article
+    doi: 10.1002/osp4.70119
+    pmcid: PMC12832084
+    authors:
+    - Kanu C
+    - Kimel M
+    - Goetz I
+    - Neff LM
+    - Boye KS
+    - Stefan M
+    - Jordan J
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=41589220 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-dea3b01d-0e50-4fe7-af49-161022bd1151
+  primary_identifier:
+    namespace: pmid
+    value: '41711462'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Incretin-Based Dual and Triple Agonists in Overweight or Obese Individuals: A Systematic Review
+      and Meta-Analysis.'
+    publication_year: 2026
+    journal: Cardiology in review
+    publication_types:
+    - Journal Article
+    doi: 10.1097/CRD.0000000000001209
+    pmcid: null
+    authors:
+    - Chan ZH
+    - Omar AS
+    - Gill K
+    - Volucke G
+    - Azhar MM
+    - Haleem SM
+    - Sia JE
+    - Rahman OU
+    - Ahmad M
+    - Shahid N
+    - Gardezi SA
+    - Joseph KV
+    - Behary Paray N
+    - Zulfiqar E
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=41711462 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-f83b5538-a8ce-4f18-baba-3d615ca0b903
+  primary_identifier:
+    namespace: pmid
+    value: '41723268'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Efficacy of GLP-1 analog peptides, semaglutide, tirzepatide, and retatrutide on MC4R deficient
+      obesity and their comparison.
+    publication_year: 2026
+    journal: International journal of obesity (2005)
+    publication_types:
+    - Journal Article
+    - Comparative Study
+    doi: 10.1038/s41366-026-02025-2
+    pmcid: PMC13056526
+    authors:
+    - Hitaka K
+    - Sugawara T
+    - Matsumoto M
+    - Nio Y
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=41723268 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-3a7c9dd7-b3c3-493a-bcf3-036d14261d3a
+  primary_identifier:
+    namespace: pmid
+    value: '41741376'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Retatrutide Shows Multiple Metabolic Benefits in Diet-Induced Obese MASH Mouse and Hamster
+      Models.
+    publication_year: 2026
+    journal: Obesity (Silver Spring, Md.)
+    publication_types:
+    - Journal Article
+    doi: 10.1002/oby.70155
+    pmcid: PMC13250738
+    authors:
+    - Briand F
+    - Le Cudennec C
+    - Grasset E
+    - Breyner N
+    - Bigot C
+    - Dillard P
+    - Sulpice T
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=41741376 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-747ff7c0-d86b-4a0e-bb1a-4fa990c0e26d
+  primary_identifier:
+    namespace: pmid
+    value: '41785010'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Retatrutide in type 2 diabetes mellitus and obesity: an overview.'
+    publication_year: 2026
+    journal: Expert review of clinical pharmacology
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.1080/17512433.2026.2642415
+    pmcid: null
+    authors:
+    - Panou T
+    - Gouveri E
+    - Popovic DS
+    - Papanas N
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=41785010 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-db3e64a5-6aba-43de-b873-547d2088b135
+  primary_identifier:
+    namespace: pmid
+    value: '41787737'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Comparative Efficacy and Safety of Glucagon Receptor Agonists on Metabolic Outcomes: A Network
+      Meta-Analysis of Randomised Controlled Trials.'
+    publication_year: 2026
+    journal: Endocrinology, diabetes & metabolism
+    publication_types:
+    - Journal Article
+    - Network Meta-Analysis
+    - Comparative Study
+    - Review
+    doi: 10.1002/edm2.70187
+    pmcid: PMC12963462
+    authors:
+    - Abulehia A
+    - Ayesh H
+    - Ayesh O
+    - Jaber D
+    - Asad T
+    - Itbaisha A
+    - Abugharbieh H
+    - Gharbia R
+    - Abu-Hilal LH
+    - Leon BGC
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=41787737 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-a9a60ea9-7cf7-4c49-b3ef-31414c8e8f49
+  primary_identifier:
+    namespace: pmid
+    value: '41823054'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Targeting the LPI/GPR55 Axis in MAFLD and MASH: Novel Insights, Therapeutic Strategies and
+      Future Directions.'
+    publication_year: 2026
+    journal: 'Liver international : official journal of the International Association for the Study of
+      the Liver'
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.1111/liv.70576
+    pmcid: PMC12983196
+    authors:
+    - Lian J
+    - Lareu RR
+    - Patil M
+    - Falasca M
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=41823054 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-68707193-f639-4869-ae31-720195353ed8
+  primary_identifier:
+    namespace: pmid
+    value: '41831086'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Pharmacologic Treatment of Metabolic Dysfunction-Associated Steatotic Liver Disease in the
+      Context of Type 2 Diabetes.
+    publication_year: 2026
+    journal: Current diabetes reports
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.1007/s11892-026-01621-w
+    pmcid: PMC12989002
+    authors:
+    - Malandris K
+    - Charalampidis K
+    - Loomba R
+    - Sinakos E
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=41831086 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-16b113a1-4c7a-40f0-bedf-ee32bb43e517
+  primary_identifier:
+    namespace: pmid
+    value: '41901137'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'New Drugs on the Block: Dietary Management and Nutritional Considerations During the Use of
+      Anti-Obesity Medication.'
+    publication_year: 2026
+    journal: Nutrients
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.3390/nu18060962
+    pmcid: PMC13029618
+    authors:
+    - Pardali EC
+    - Gkouskou KK
+    - Cholevas C
+    - Poulimeneas D
+    - Tsiroukidou K
+    - Goulis DG
+    - Grammatikopoulou MG
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=41901137 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-370c4cc2-033a-4f33-94d9-5cd6e6ccd55e
+  primary_identifier:
+    namespace: pmid
+    value: '41933725'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Childhood obesity and cardiac risk in youth: Emerging challenges toward 2050.'
+    publication_year: 2026
+    journal: Clinical nutrition ESPEN
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.1016/j.clnesp.2026.103260
+    pmcid: null
+    authors:
+    - Mishra NK
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=41933725 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-84c4cb80-3c4e-4db6-bb1c-522518b455db
+  primary_identifier:
+    namespace: pmid
+    value: '41948476'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Obesity pharmacotherapy reimagined: The era of multi-receptor agonists and next-generation
+      metabolic modulators, perspectives and controversies.'
+    publication_year: 2026
+    journal: Metabolism open
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.1016/j.metop.2026.100463
+    pmcid: PMC13051938
+    authors:
+    - Lempesis IG
+    - Dalamaga M
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=41948476 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-63cf2847-d5c1-458c-99ab-2cec5cedc3ee
+  primary_identifier:
+    namespace: pmid
+    value: '41964043'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Multi-omic profiling reveals Retatrutide alleviates adipose tissue fibrosis via metabolic reprogramming
+      and tissue repair.
+    publication_year: 2026
+    journal: Diabetology & metabolic syndrome
+    publication_types:
+    - Journal Article
+    doi: 10.1186/s13098-026-02116-0
+    pmcid: PMC13214175
+    authors:
+    - Li Q
+    - Cheng W
+    - Zhang J
+    - Ran S
+    - Yu H
+    - Zhou W
+    - Wang Y
+    - Lin J
+    - Liu Y
+    - Hong X
+    - Li H
+    - Yan S
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=41964043 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-d11932e1-4671-4c3a-b3d7-e03bc0468b8a
+  primary_identifier:
+    namespace: pmid
+    value: '41997446'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: GIPR:GCGR co-agonism restores normal weight in obese rodents.
+    publication_year: 2026
+    journal: Molecular metabolism
+    publication_types:
+    - Journal Article
+    doi: 10.1016/j.molmet.2026.102365
+    pmcid: PMC13141540
+    authors:
+    - Perez-Tilve D
+    - Zhang F
+    - Zhang Y
+    - Lohman K
+    - Sorrell J
+    - Vick A
+    - Müller TD
+    - Tschöp MH
+    - DiMarchi RD
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=41997446 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-aff60b3c-8ca3-4ed8-8f51-a6a390a2c79f
+  primary_identifier:
+    namespace: pmid
+    value: '42037991'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Metabolic inflammation at the adipose-brain axis.
+    publication_year: 2026
+    journal: Frontiers in physiology
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.3389/fphys.2026.1795058
+    pmcid: PMC13107480
+    authors:
+    - Mateus-Gomes S
+    - Al-Sayyar A
+    - Lobey B
+    - Nadjar A
+    - Rua R
+    - Ahmad R
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=42037991 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-7c945f80-0ee2-4cf5-a800-ec2c99fcb38f
+  primary_identifier:
+    namespace: pmid
+    value: '42108533'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Triple Hormone Receptor Agonism: The Role of Retatrutide in Addressing Cardiovascular-Kidney-Metabolic
+      (CKM) Syndrome: A Comprehensive Review.'
+    publication_year: 2026
+    journal: Cardiology in review
+    publication_types:
+    - Journal Article
+    doi: 10.1097/CRD.0000000000001310
+    pmcid: null
+    authors:
+    - Pillai AA
+    - Godin SL
+    - Frishman WH
+    - Aronow WS
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=42108533 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-739e9c11-a7c2-4bcf-a7e7-d0c5081a6bb7
+  primary_identifier:
+    namespace: pmid
+    value: '42135195'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Retatrutide And Lipid And Metabolite Profiles In Participants With Obesity With Or Without
+      Type 2 Diabetes.
+    publication_year: 2026
+    journal: The Journal of clinical endocrinology and metabolism
+    publication_types:
+    - Journal Article
+    doi: 10.1210/clinem/dgag201
+    pmcid: null
+    authors:
+    - Pearson MJ
+    - Willency JA
+    - Lin Y
+    - Abadi A
+    - Hartman ML
+    - Coskun T
+    - Ruotolo G
+    - Duffin KL
+    - Haupt A
+    - Newgard CB
+    - Pirro V
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=42135195 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-a009820e-5b75-4389-bd49-fa7cae247abe
+  primary_identifier:
+    namespace: pmid
+    value: '42142983'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: A retrospective audit of weight loss and health outcomes following bariatric surgery at a tertiary
+      public hospital.
+    publication_year: 2026
+    journal: Obesity research & clinical practice
+    publication_types:
+    - Journal Article
+    doi: 10.1016/j.orcp.2026.05.003
+    pmcid: null
+    authors:
+    - Lee JP
+    - Bahamdan A
+    - Franklin J
+    - Martin D
+    - Taylor C
+    - Joseph D
+    - Le Page P
+    - Hocking SL
+    - Markovic TP
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=42142983 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-3d9e89d7-002a-43b9-ad32-b5450b24328b
+  primary_identifier:
+    namespace: pmid
+    value: '42156758'
+  discovered_in_search_run_ids:
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Kynurenic acid mediates epicardial fat-induced lymphatic metabolic dysfunction in atrial fibrillation.
+    publication_year: 2026
+    journal: Nature communications
+    publication_types:
+    - Journal Article
+    doi: 10.1038/s41467-026-72974-9
+    pmcid: PMC13381822
+    authors:
+    - Takahashi M
+    - Abe I
+    - Yoshida N
+    - Katoh D
+    - Fujita D
+    - Goto S
+    - Yamasaki H
+    - Ko T
+    - Jiang Y
+    - He Y
+    - Ito S
+    - Harada T
+    - Takano M
+    - Sato H
+    - Kondo H
+    - Fukui A
+    - Teshima Y
+    - Sako H
+    - Ohta K
+    - Miyamoto S
+    - Yamauchi T
+    - Nomura S
+    - Takeda N
+    - Komuro I
+    - Takahashi N
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=42156758 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-2bc31f9c-d40b-49b6-8551-188b7dd80cc4
+  primary_identifier:
+    namespace: pmid
+    value: '42165732'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Evolution of incretin-based therapies: From GLP-1 monotherapy to dual and triple agonists:
+      A new era in metabolic therapy.'
+    publication_year: 2026
+    journal: The Indian journal of medical research
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.25259/IJMR_2041_2025
+    pmcid: PMC13224277
+    authors:
+    - Gupta M
+    - Shukla J
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=42165732 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-d86e155e-c08b-49e9-8e52-6e26cb4bbe7a
+  primary_identifier:
+    namespace: pmid
+    value: '42168638'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Dysesthesia associated with GLP-1 agonist therapies: data-mining analysis and literature review.'
+    publication_year: 2026
+    journal: European journal of clinical pharmacology
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.1007/s00228-026-04079-7
+    pmcid: PMC13194321
+    authors:
+    - Laroche ML
+    - Géniaux H
+    - Jardou M
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=42168638 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-7c6fff8a-e556-43d2-a55b-83c36cd7c1e6
+  primary_identifier:
+    namespace: pmid
+    value: '42195239'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Metabolic Dysfunction-Associated Steatotic Liver Disease and Incretin Receptor Agonists: A
+      Metabolic Approach to Halting Liver Disease Progression.'
+    publication_year: 2026
+    journal: Medicina (Kaunas, Lithuania)
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.3390/medicina62050986
+    pmcid: PMC13208855
+    authors:
+    - Abenavoli L
+    - Loricchio AG
+    - Lopez I
+    - Morano D
+    - Ismaiel A
+    - Dumitrascu DL
+    - Luzza F
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=42195239 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-b3447cab-4e05-48eb-af23-9667dc09e6b8
+  primary_identifier:
+    namespace: pmid
+    value: '42198313'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Diabetes Mellitus and Stroke: Pathophysiological Connections and Therapeutic Potential of
+      GLP-1 and GLP-1/GIP Receptor Agonists.'
+    publication_year: 2026
+    journal: Pharmaceutics
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.3390/pharmaceutics18050620
+    pmcid: PMC13210960
+    authors:
+    - Paceana MA
+    - Tartau LM
+    - Boboc IKS
+    - Oancea CN
+    - Berbecaru-Iovan A
+    - Foia CI
+    - Tartau CG
+    - Bogdan M
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=42198313 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-281fd34b-fb9e-4d74-88d1-8db944d1aa66
+  primary_identifier:
+    namespace: pmid
+    value: '42208956'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Beyond weight loss: multisystem benefits of obesity medications.'
+    publication_year: 2026
+    journal: The lancet. Diabetes & endocrinology
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.1016/S2213-8587(26)00100-2
+    pmcid: null
+    authors:
+    - Savas M
+    - Kuckuck S
+    - Boon MR
+    - van Rossum EFC
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=42208956 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-8156b415-74cc-46d0-b756-158590f8466a
+  primary_identifier:
+    namespace: pmid
+    value: '42219269'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Do GLP-1 Receptor Agonists Sabotage Fat Grafts? : A Scoping Review of GLP-1 Receptor Agonist
+      Effects on Adipocyte Biology and Implications for Autologous Fat Transfer.'
+    publication_year: 2026
+    journal: Aesthetic surgery journal
+    publication_types:
+    - Journal Article
+    doi: 10.1093/asj/sjag108
+    pmcid: null
+    authors:
+    - Chalhoub X
+    - Yang Ng Z
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=42219269 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-0a2d771b-3a0c-4d90-a7c3-17e53a9350e9
+  primary_identifier:
+    namespace: pmid
+    value: '42224238'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: A Hydrophobic Tag-Assisted Liquid-Phase Strategy for the Synthesis of Retatrutide.
+    publication_year: 2026
+    journal: Organic letters
+    publication_types:
+    - Journal Article
+    doi: 10.1021/acs.orglett.6c02001
+    pmcid: null
+    authors:
+    - Mao CY
+    - Pang ZJ
+    - Qiao GY
+    - Dong L
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:33Z'
+    request_reference: NCBI ESummary db=pubmed id=42224238 (batch size 50)
+    response_locator: null
+- candidate_id: research-candidate-215430b3-a038-4f4d-a204-763bbbbd79ec
+  primary_identifier:
+    namespace: pmid
+    value: '42249250'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Synergistic Intervention for Obesity: Integrating Central Appetite Regulation and Peripheral
+      Energy Expenditure.'
+    publication_year: 2026
+    journal: Current obesity reports
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.1007/s13679-026-00722-7
+    pmcid: null
+    authors:
+    - Xie J
+    - Yang Y
+    - Chen W
+    - Wang L
+    - Weng S
+    - Lyu Q
+    - Cao G
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:35Z'
+    request_reference: NCBI ESummary db=pubmed id=42249250 (batch size 12)
+    response_locator: null
+- candidate_id: research-candidate-2afccf57-5dc6-4769-842f-679567904249
+  primary_identifier:
+    namespace: pmid
+    value: '42250575'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Efficacy and safety of retatrutide, a GIP, GLP-1, and glucagon receptor agonist, in people
+      with type 2 diabetes and inadequate glycaemic control with diet and exercise (TRANSCEND-T2D-1):
+      a double-blind, randomised, phase 3 trial.'
+    publication_year: 2026
+    journal: Lancet (London, England)
+    publication_types:
+    - Journal Article
+    - Randomized Controlled Trial
+    - Clinical Trial, Phase III
+    - Multicenter Study
+    doi: 10.1016/S0140-6736(26)00967-0
+    pmcid: null
+    authors:
+    - Bajaj HS
+    - Welch M
+    - Shah P
+    - Luna E
+    - Jaouimaa FZ
+    - Liu B
+    - Liu R
+    - Chen Y
+    - Patel H
+    - Bartee A
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:35Z'
+    request_reference: NCBI ESummary db=pubmed id=42250575 (batch size 12)
+    response_locator: null
+- candidate_id: research-candidate-6ba4b179-7103-4076-9d8a-9abf645e0d4e
+  primary_identifier:
+    namespace: pmid
+    value: '42264536'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Retatrutide: Triple acting jab for type 2 diabetes lowers blood sugar and boosts weight loss,
+      trial reports.'
+    publication_year: 2026
+    journal: BMJ (Clinical research ed.)
+    publication_types:
+    - Journal Article
+    doi: 10.1136/bmj-2026-102036
+    pmcid: null
+    authors:
+    - Lang K
+    abstract_available: false
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:35Z'
+    request_reference: NCBI ESummary db=pubmed id=42264536 (batch size 12)
+    response_locator: null
+- candidate_id: research-candidate-0984bc08-80a8-4f5e-94b3-d56669dab7a0
+  primary_identifier:
+    namespace: pmid
+    value: '42296503'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Benefits and Harms of Pharmacologic Treatments in Adults With Overweight or Obesity: A Living
+      Systematic Review and Network Meta-analysis for the American College of Physicians.'
+    publication_year: 2026
+    journal: Annals of internal medicine
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.7326/ANNALS-24-03764
+    pmcid: null
+    authors:
+    - Damen JAA
+    - Idema DL
+    - Vernooij RWM
+    - Huis In 't Veld LF
+    - Kusters MPT
+    - Lokerse ME
+    - de Kanter E
+    - Spijker R
+    - van der Braak K
+    - Jenniskens K
+    - Oerbekke MS
+    - Hooft L
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:35Z'
+    request_reference: NCBI ESummary db=pubmed id=42296503 (batch size 12)
+    response_locator: null
+- candidate_id: research-candidate-962fcf00-da1b-4ea3-a005-1321642729da
+  primary_identifier:
+    namespace: pmid
+    value: '42318576'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'GLP-1 Agonists in Adolescent Obesity: A Narrative Review of Single, Dual, and Triple Agonists.'
+    publication_year: 2026
+    journal: 'Diabetes, metabolic syndrome and obesity : targets and therapy'
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.2147/DMSO.S566414
+    pmcid: PMC13271900
+    authors:
+    - Abid M
+    - Sheikh KS
+    - Ahmad MS
+    - Jiang H
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:35Z'
+    request_reference: NCBI ESummary db=pubmed id=42318576 (batch size 12)
+    response_locator: null
+- candidate_id: research-candidate-29c5e197-d2e9-4bdd-95a7-7ffe04471c26
+  primary_identifier:
+    namespace: pmid
+    value: '42371360'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Effect of Retatrutide, a Novel Triple Receptor Agonist, on Blood Pressure and Lipid Levels:
+      A Systematic Review and Meta-analysis of Randomized Controlled Trials.'
+    publication_year: 2026
+    journal: 'High blood pressure & cardiovascular prevention : the official journal of the Italian Society
+      of Hypertension'
+    publication_types:
+    - Journal Article
+    - Review
+    doi: 10.1007/s40292-026-00812-6
+    pmcid: null
+    authors:
+    - Simental-Mendía LE
+    - Barragán-Zúñiga LJ
+    - Reyes-Avitia V
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:35Z'
+    request_reference: NCBI ESummary db=pubmed id=42371360 (batch size 12)
+    response_locator: null
+- candidate_id: research-candidate-8c491807-2647-49ab-b093-6cd997e00f42
+  primary_identifier:
+    namespace: pmid
+    value: '42385950'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: Effects of retatrutide on learning and memory in streptozotocin-induced male diabetic rats.
+    publication_year: 2026
+    journal: Behavioural brain research
+    publication_types:
+    - Journal Article
+    doi: 10.1016/j.bbr.2026.116343
+    pmcid: null
+    authors:
+    - Keskin U
+    - Altın E
+    - Kara MK
+    - Tekin B
+    - Çakırçoban KN
+    - Özatik FY
+    - Arı NS
+    - Sezgin AK
+    - Güngor E
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:35Z'
+    request_reference: NCBI ESummary db=pubmed id=42385950 (batch size 12)
+    response_locator: null
+- candidate_id: research-candidate-d85b06fa-150a-4e68-a333-8a29741e8749
+  primary_identifier:
+    namespace: pmid
+    value: '42394981'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Efficacy and safety of incretin-based therapies in patients with type 2 diabetes mellitus:
+      a network meta-analysis based on clinical trials.'
+    publication_year: 2026
+    journal: Frontiers in pharmacology
+    publication_types:
+    - Journal Article
+    - Systematic Review
+    doi: 10.3389/fphar.2026.1846714
+    pmcid: PMC13322860
+    authors:
+    - Wu X
+    - Yang Y
+    - Cui X
+    - Li X
+    - Li Y
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:35Z'
+    request_reference: NCBI ESummary db=pubmed id=42394981 (batch size 12)
+    response_locator: null
+- candidate_id: research-candidate-4515771d-13e5-4bee-a00f-add1fe61cd9e
+  primary_identifier:
+    namespace: pmid
+    value: '42419792'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Comparative effects of drugs for adults with overweight or obesity: systematic review and
+      network meta-analysis.'
+    publication_year: 2026
+    journal: BMJ (Clinical research ed.)
+    publication_types:
+    - Systematic Review
+    - Network Meta-Analysis
+    - Journal Article
+    - Comparative Study
+    doi: 10.1136/bmj-2026-372161
+    pmcid: null
+    authors:
+    - Nong K
+    - Shi Q
+    - Xie X
+    - Wang Y
+    - Agarwal A
+    - Guyatt GH
+    - Zhang H
+    - Gao Y
+    - Khunti K
+    - Le Roux CW
+    - Widyahening IS
+    - Fan Q
+    - Liu T
+    - Mao Y
+    - Florez ID
+    - Du H
+    - Pan X
+    - Zou X
+    - Wang C
+    - Sun X
+    - Li J
+    - Hao Q
+    - Jia Q
+    - Sun F
+    - Zhu Z
+    - Agoritsas T
+    - Tian H
+    - Vandvik PO
+    - Li S
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:35Z'
+    request_reference: NCBI ESummary db=pubmed id=42419792 (batch size 12)
+    response_locator: null
+- candidate_id: research-candidate-7be1b00b-60d7-4635-a90c-29f7c5e97b6f
+  primary_identifier:
+    namespace: pmid
+    value: '42425580'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Retatrutide fact check: Has a man died after taking the unapproved weight loss jab?'
+    publication_year: 2026
+    journal: BMJ (Clinical research ed.)
+    publication_types:
+    - Journal Article
+    doi: 10.1136/bmj-2026-100245
+    pmcid: null
+    authors:
+    - Mahase E
+    abstract_available: false
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:35Z'
+    request_reference: NCBI ESummary db=pubmed id=42425580 (batch size 12)
+    response_locator: null
+- candidate_id: research-candidate-279f8cba-5ee4-4474-b858-b8dbbb15a86e
+  primary_identifier:
+    namespace: pmid
+    value: '42444567'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Medical Treatments for Obesity: What Does the Future Have in Store?'
+    publication_year: 2026
+    journal: The Journal of clinical endocrinology and metabolism
+    publication_types:
+    - Journal Article
+    doi: 10.1210/clinem/dgag274
+    pmcid: null
+    authors:
+    - Bassatne A
+    - Rizo I
+    abstract_available: true
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:35Z'
+    request_reference: NCBI ESummary db=pubmed id=42444567 (batch size 12)
+    response_locator: null
+- candidate_id: research-candidate-4e1a72a1-f3b7-4bcd-aca4-c42189f4bf12
+  primary_identifier:
+    namespace: pmid
+    value: '42493254'
+  discovered_in_search_run_ids:
+  - search-run-03f55e2e-28c1-4832-83bc-265a9116c31a
+  - search-run-0b9dab9f-8b0e-4d21-85f8-1015217bbf01
+  metadata:
+    title: 'Retatrutide and the urinary tract infection signal: Is the answer hidden in timing?'
+    publication_year: 2026
+    journal: European journal of internal medicine
+    publication_types:
+    - Letter
+    doi: 10.1016/j.ejim.2026.107099
+    pmcid: null
+    authors:
+    - Koufakis T
+    - Argyrakopoulou G
+    - Kokkinos A
+    - le Roux CW
+    abstract_available: false
+    language: en
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: NCBI E-utilities ESummary
+    retrieved_at: '2026-07-27T05:31:35Z'
+    request_reference: NCBI ESummary db=pubmed id=42493254 (batch size 12)
+    response_locator: null
+created_at: '2026-07-27'
+updated_at: '2026-07-27'

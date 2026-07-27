@@ -1,0 +1,320 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "research_candidate_manifest.schema.json",
+  "title": "Research Candidate Manifest",
+  "description": "Eine versionierte, protokollgebundene, technisch-bibliographische Normalisierung der Vereinigungsmenge stabiler Identifikatoren (PMID ODER NCT-ID, nie gemischt) aus einem oder mehreren research_search_result_manifest-Datensaetzen derselben Datenbank und desselben Protokolls -- siehe ADR-0056 im Decision Log. Liegt zwischen research_search_result_manifest (unveraenderte Trefferliste EINES einzelnen Suchlaufs) und research_screening_record (wissenschaftliche Ein-/Ausschlussentscheidung): dokumentiert die normalisierte Discovery-Grundmenge samt vollstaendiger Suchlauf-Herkunft, aus der spaeter Screening Records erzeugt werden. EIN Candidate Manifest IST: protokollgebunden, rein technisch/bibliographisch, ein Discovery-Snapshot. EIN Candidate Manifest ist NICHT: eine Screening-Entscheidung, eine kanonische Quelle (data/sources/**), eine Studie, ein Claim -- und bedeutet insbesondere nicht 'relevant', 'eingeschlossen', 'wissenschaftlich geprueft', 'peer-reviewed', 'Originalstudie', 'Humanstudie', 'sicher' oder 'wirksam'. Enthaelt bewusst NUR strukturierte, sparsame bibliographische/technische Metadaten -- keine Abstracttexte, keine vollstaendigen Freitextbeschreibungen, keine Ergebnisdaten, keine Evidenz-, Wirksamkeits- oder Sicherheitsfelder. Discovery-Identitaet (id, protocol_id, database, identifier_namespace, source_search_run_ids, source_result_manifest_ids, candidate_count, candidates[].candidate_id, candidates[].primary_identifier, candidates[].discovered_in_search_run_ids) ist nach dem Merge vollstaendig unveraenderlich (siehe tools/check_research_immutability.py); nur candidates[].metadata/metadata_status/metadata_fetch_note/metadata_provenance sowie das Manifest-eigene updated_at duerfen kontrolliert nachtraeglich ergaenzt/aktualisiert werden.",
+  "type": "object",
+  "$defs": {
+    "primary_identifier": {
+      "type": "object",
+      "description": "Strukturierter stabiler Identifikator eines Kandidaten -- bewusst kein freier String, damit Namespace und Wert nie implizit vermischt werden koennen (siehe ADR-0056).",
+      "properties": {
+        "namespace": { "$ref": "common.schema.json#/$defs/search_result_identifier_type" },
+        "value": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false,
+      "required": ["namespace", "value"],
+      "allOf": [
+        {
+          "if": {
+            "properties": { "namespace": { "const": "pmid" } },
+            "required": ["namespace"]
+          },
+          "then": {
+            "properties": {
+              "value": { "type": "string", "pattern": "^[1-9][0-9]*$" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "namespace": { "const": "nct_id" } },
+            "required": ["namespace"]
+          },
+          "then": {
+            "properties": {
+              "value": { "type": "string", "pattern": "^NCT[0-9]{8}$" }
+            }
+          }
+        }
+      ]
+    },
+    "metadata_provenance": {
+      "type": ["object", "null"],
+      "description": "Nachvollziehbare Herkunft eines Metadaten-Abrufversuchs -- Pflicht (nicht null), sobald ueberhaupt ein Abrufversuch stattfand (metadata_status ungleich not_fetched), auch wenn der Versuch erfolglos war (not_found/fetch_error). Enthaelt bewusst KEINE geheimen Tokens oder vollstaendigen API-URLs mit sensiblen Parametern (siehe validate_research.py::check_candidate_manifests).",
+      "properties": {
+        "source_interface": { "type": "string", "minLength": 1 },
+        "retrieved_at": { "$ref": "common.schema.json#/$defs/date_time" },
+        "request_reference": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Technischer Hinweis auf die gestellte Anfrage (z. B. 'NCBI ESummary db=pubmed id=35985340') -- keine vollstaendige URL mit Query-String, kein Secret."
+        },
+        "response_locator": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "description": "Optionaler Hinweis auf einen lokalen, nicht versionierten Antwort-Export unter research/raw/ (Pfadhinweis, NICHT die Datei selbst) -- analog zu source_export_reference/export_reference bei Suchlaeufen/Manifesten. Darf null sein, wenn kein lokaler Export erzeugt wurde."
+        }
+      },
+      "additionalProperties": false,
+      "required": ["source_interface", "retrieved_at", "request_reference", "response_locator"]
+    },
+    "pubmed_metadata": {
+      "type": "object",
+      "description": "Zulaessige technische/bibliographische PubMed-Metadatenfelder (siehe ADR-0056). Keine vollstaendigen Abstracttexte, keine vollstaendigen Affiliationsbloecke -- Autoren sparsam als Namensliste.",
+      "properties": {
+        "title": { "type": ["string", "null"], "minLength": 1 },
+        "publication_year": { "type": ["integer", "null"], "minimum": 1900 },
+        "journal": { "type": ["string", "null"], "minLength": 1 },
+        "publication_types": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "doi": { "type": ["string", "null"], "minLength": 1 },
+        "pmcid": { "type": ["string", "null"], "pattern": "^PMC[0-9]+$" },
+        "authors": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Sparsame Namensliste, keine vollstaendigen Affiliationsblöcke."
+        },
+        "abstract_available": {
+          "type": "boolean",
+          "description": "Nur ein Boolean -- ob die Datenbank ein Abstract fuehrt. Kein Abstracttext wird versioniert."
+        },
+        "language": { "type": ["string", "null"], "pattern": "^[a-z]{2}$" }
+      },
+      "additionalProperties": false,
+      "required": [
+        "title", "publication_year", "journal", "publication_types", "doi", "pmcid",
+        "authors", "abstract_available", "language"
+      ]
+    },
+    "clinicaltrials_gov_metadata": {
+      "type": "object",
+      "description": "Zulaessige technische/bibliographische ClinicalTrials.gov-Metadatenfelder (siehe ADR-0056). Keine vollstaendigen Freitextbeschreibungen, keine Outcome-Texte, keine Ergebnisdaten.",
+      "properties": {
+        "brief_title": { "type": ["string", "null"], "minLength": 1 },
+        "official_title": { "type": ["string", "null"], "minLength": 1 },
+        "overall_status": { "type": ["string", "null"], "minLength": 1 },
+        "phases": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "sponsor": { "type": ["string", "null"], "minLength": 1 },
+        "interventions": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "conditions": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "study_type": { "type": ["string", "null"], "minLength": 1 },
+        "start_date": { "$ref": "common.schema.json#/$defs/date_or_null" },
+        "primary_completion_date": { "$ref": "common.schema.json#/$defs/date_or_null" },
+        "completion_date": { "$ref": "common.schema.json#/$defs/date_or_null" },
+        "has_results": { "type": ["boolean", "null"] },
+        "last_update_posted": { "$ref": "common.schema.json#/$defs/date_or_null" }
+      },
+      "additionalProperties": false,
+      "required": [
+        "brief_title", "official_title", "overall_status", "phases", "sponsor", "interventions",
+        "conditions", "study_type", "start_date", "primary_completion_date", "completion_date",
+        "has_results", "last_update_posted"
+      ]
+    },
+    "candidate_entry": {
+      "type": "object",
+      "description": "Ein einzelner Discovery-Kandidat innerhalb eines Candidate Manifest. Enthaelt bewusst KEIN Screening-, Evidenz-, Wirksamkeits- oder Sicherheitsfeld (siehe ADR-0056) -- eine Screening-Entscheidung entsteht ausschliesslich als eigenstaendiger research_screening_record.",
+      "properties": {
+        "candidate_id": {
+          "type": "string",
+          "pattern": "^research-candidate-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$",
+          "description": "Stabile interne ID -- einmal vergeben, bleibt sie bei jedem erneuten Lauf von tools/build_research_candidates.py fuer denselben primary_identifier erhalten (siehe ADR-0056)."
+        },
+        "primary_identifier": { "$ref": "#/$defs/primary_identifier" },
+        "discovered_in_search_run_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^search-run-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$"
+          },
+          "description": "ALLE Suchlaeufe, in denen dieser Identifikator tatsaechlich vorkam -- nicht auf einen einzigen 'primaeren' Suchlauf reduzierbar (z. B. ein PMID, das in beiden PubMed-Alias-Suchen vorkam, listet beide)."
+        },
+        "metadata": {
+          "anyOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/pubmed_metadata" },
+            { "$ref": "#/$defs/clinicaltrials_gov_metadata" }
+          ],
+          "description": "null bei metadata_status: not_fetched/not_found/fetch_error. Welche der beiden Metadaten-Formen zulaessig ist, haengt von der database des umgebenden Manifests ab (siehe die manifest-weiten allOf-Regeln unten sowie tools/validate_research.py::check_candidate_manifests)."
+        },
+        "metadata_status": { "$ref": "common.schema.json#/$defs/candidate_metadata_status" },
+        "metadata_fetch_note": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "description": "Pflicht (nicht null) bei metadata_status: not_found/fetch_error -- knappe technische Begruendung. Muss null sein bei allen anderen Statuswerten."
+        },
+        "metadata_provenance": { "$ref": "#/$defs/metadata_provenance" }
+      },
+      "additionalProperties": false,
+      "required": [
+        "candidate_id", "primary_identifier", "discovered_in_search_run_ids", "metadata",
+        "metadata_status", "metadata_fetch_note", "metadata_provenance"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": { "metadata_status": { "const": "not_fetched" } },
+            "required": ["metadata_status"]
+          },
+          "then": {
+            "properties": {
+              "metadata": { "type": "null" },
+              "metadata_fetch_note": { "type": "null" },
+              "metadata_provenance": { "type": "null" }
+            }
+          },
+          "else": {
+            "properties": {
+              "metadata_provenance": { "type": "object" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "metadata_status": { "enum": ["not_found", "fetch_error"] } },
+            "required": ["metadata_status"]
+          },
+          "then": {
+            "properties": {
+              "metadata": { "type": "null" },
+              "metadata_fetch_note": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "metadata_status": { "enum": ["fetched", "partial"] } },
+            "required": ["metadata_status"]
+          },
+          "then": {
+            "properties": {
+              "metadata": { "type": "object" },
+              "metadata_fetch_note": { "type": "null" }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "properties": {
+    "schema_version": { "$ref": "common.schema.json#/$defs/schema_version" },
+    "id": {
+      "type": "string",
+      "pattern": "^candidate-manifest-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$"
+    },
+    "protocol_id": {
+      "type": "string",
+      "pattern": "^research-protocol-[a-z0-9]+(-[a-z0-9]+)*-v[0-9]+$"
+    },
+    "database": { "$ref": "common.schema.json#/$defs/research_database" },
+    "identifier_namespace": { "$ref": "common.schema.json#/$defs/search_result_identifier_type" },
+    "source_search_run_ids": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^search-run-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$"
+      }
+    },
+    "source_result_manifest_ids": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^search-result-manifest-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$"
+      }
+    },
+    "candidate_count": { "type": "integer", "minimum": 0 },
+    "candidates": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/candidate_entry" }
+    },
+    "created_at": { "$ref": "common.schema.json#/$defs/date" },
+    "updated_at": { "$ref": "common.schema.json#/$defs/date" }
+  },
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "id", "protocol_id", "database", "identifier_namespace",
+    "source_search_run_ids", "source_result_manifest_ids", "candidate_count", "candidates",
+    "created_at", "updated_at"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": { "database": { "const": "pubmed" } },
+        "required": ["database"]
+      },
+      "then": {
+        "properties": {
+          "identifier_namespace": { "const": "pmid" },
+          "candidates": {
+            "items": {
+              "properties": {
+                "primary_identifier": {
+                  "properties": { "namespace": { "const": "pmid" } }
+                },
+                "metadata": {
+                  "anyOf": [
+                    { "type": "null" },
+                    { "$ref": "#/$defs/pubmed_metadata" }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "database": { "const": "clinicaltrials_gov" } },
+        "required": ["database"]
+      },
+      "then": {
+        "properties": {
+          "identifier_namespace": { "const": "nct_id" },
+          "candidates": {
+            "items": {
+              "properties": {
+                "primary_identifier": {
+                  "properties": { "namespace": { "const": "nct_id" } }
+                },
+                "metadata": {
+                  "anyOf": [
+                    { "type": "null" },
+                    { "$ref": "#/$defs/clinicaltrials_gov_metadata" }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "database": { "enum": ["pubmed", "clinicaltrials_gov"] } },
+        "required": ["database"]
+      },
+      "else": {
+        "not": {}
+      }
+    }
+  ]
+}
