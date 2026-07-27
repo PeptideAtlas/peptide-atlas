@@ -1,0 +1,41 @@
+schema_version: 1.0.0
+id: screening-record-86c72bb2-8374-431c-8afd-d46470d7d154
+protocol_id: research-protocol-retatrutide-v1
+search_run_ids:
+- search-run-5d02d48e-c716-4bed-990b-680c6d93ad72
+- search-run-da841b57-1a65-4927-8013-c39ed13c14c8
+candidate_identifiers:
+  doi: null
+  pmid: null
+  pmcid: null
+  nct_id: NCT07629401
+  isbn: null
+  url: null
+candidate_title: Provide Pre-approval Expanded Access of LY3437943
+candidate_source_type: trial_registry
+decision: pending
+decision_stage: deduplication
+decision_reason: null
+duplicate_of: null
+full_text_status: not_yet_obtained
+screened_by: system-screening-initializer
+screened_at: '2026-07-27'
+second_review: null
+decision_history:
+- sequence: 1
+  stage: deduplication
+  primary_decision: pending
+  primary_decision_reason: null
+  decision: pending
+  decision_reason: null
+  duplicate_of: null
+  primary_duplicate_of: null
+  decided_by: system-screening-initializer
+  decided_at: '2026-07-27'
+  full_text_status: not_yet_obtained
+  second_review: null
+canonical_source_id: null
+candidate_manifest_id: candidate-manifest-ee0b28e4-ad22-40bd-be6c-048a61e7ca6a
+candidate_id: research-candidate-d52f3840-84d8-46c6-a92a-3cc48fd76829
+created_at: '2026-07-27'
+updated_at: '2026-07-27'

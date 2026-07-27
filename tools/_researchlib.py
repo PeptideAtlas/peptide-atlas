@@ -118,6 +118,38 @@ ALLOWED_DECISIONS_BY_STAGE = {
 }
 
 
+# Stabiles Kuerzel des technischen Akteurs, der research_screening_record-Datensaetze rein
+# administrativ initialisiert (tools/initialize_screening_records.py). Kein wissenschaftlicher
+# Reviewer -- dokumentiert nur die technische Initialisierung, trifft nie eine Relevanzentscheidung
+# (validate_research.py::check_screening_system_actor_invariants erzwingt das strukturell).
+SYSTEM_SCREENING_INITIALIZER_ACTOR = "system-screening-initializer"
+
+# Datenbank -> passendster neutraler Wert aus common.schema.json#/$defs/source_type fuer einen noch
+# nicht wissenschaftlich geprueften Discovery-Kandidaten (siehe ADR-0057). Bewusst je Datenbank EIN
+# einzelner, uniform angewandter Wert -- keine Ableitung aus PubMed publication_types (z. B. "Review"),
+# da eine feinere Zuordnung selbst eine wissenschaftliche Einordnung waere, die der technischen
+# Initialisierung nicht zusteht.
+CANDIDATE_SOURCE_TYPE_BY_DATABASE = {
+    "pubmed": "peer_reviewed_publication",
+    "clinicaltrials_gov": "trial_registry",
+}
+
+
+def derive_candidate_title(database: str, metadata: dict) -> str | None:
+    """Leitet den technischen Kandidatentitel deterministisch aus den Manifest-Metadaten ab, ohne
+    jemals einen Titel zu erfinden (siehe Phase-4B-1B-1-Arbeitsauftrag). PubMed: metadata.title.
+    ClinicalTrials.gov: metadata.brief_title, ersatzweise metadata.official_title. Liefert None, wenn
+    kein zulaessiger Titel vorhanden ist (Aufrufer muss das als Datenfehler behandeln, nicht mit
+    einem Platzhalter kaschieren)."""
+    if database == "pubmed":
+        title = (metadata or {}).get("title")
+        return title if title else None
+    if database == "clinicaltrials_gov":
+        title = (metadata or {}).get("brief_title") or (metadata or {}).get("official_title")
+        return title if title else None
+    return None
+
+
 def normalize_nct_id(value: str) -> str:
     """Kanonisiert eine ClinicalTrials.gov-NCT-ID fuer die Duplikaterkennung.
 

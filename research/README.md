@@ -31,6 +31,7 @@ research/
 ├── search_results/  Versionierte Identifikator-Manifeste je Suchlauf (search-result-manifest-<uuid4>.yaml)
 ├── candidates/      Technische Discovery-Kandidaten je Protokoll+Datenbank (candidate-manifest-<uuid4>.yaml)
 ├── screening/       Ein-/Ausschlussentscheidungen pro Kandidat (screening-record-<uuid4>.yaml)
+├── screening_status/ Rein technisches Kontrollartefakt: Initialisierungsfortschritt je Protokoll (ADR-0057)
 ├── extractions/     Beobachtungen und vorläufige Kandidatenclaims (extraction-record-<uuid4>.yaml)
 ├── promotions/      Verknüpfung Kandidatenclaim → kanonischer Claim (promotion-record-<uuid4>.yaml)
 ├── vocabularies/    kontrollierte Vokabulare (Datenbanken, Statuswerte, Ausschlussgründe, ...)
@@ -53,6 +54,13 @@ research/
 Siehe [`research/candidates/README.md`](candidates/README.md) für Details zum Candidate Manifest (ADR-0056):
 die technische, protokoll-/datenbankgebundene Brücke zwischen Search Result Manifest und Screening Record.
 
+`research/screening_status/initialization_manifest.yaml` (ADR-0057) ist **kein** Research-Objekt aus obiger
+Tabelle — kein eigener `RESEARCH_KINDS`-Eintrag, keine wissenschaftliche Aussage. Es ist ein rein technisches
+Kontrollartefakt (Schema `schemas/research_screening_initialization_manifest.schema.json`), das je Protokoll
+dokumentiert, ob `tools/initialize_screening_records.py` für alle zum Zeitpunkt des letzten Laufs bekannten
+Candidate-Manifest-Einträge ohne Fehler/Konflikte durchgelaufen ist (`status: complete`). Siehe
+[`research/screening/README.md`](screening/README.md) für Details zur Initialisierung.
+
 Wie bei `data/**` muss der Dateiname exakt der `id` entsprechen (ohne `.yaml`).
 
 ## Validierung
@@ -60,7 +68,15 @@ Wie bei `data/**` muss der Dateiname exakt der `id` entsprechen (ohne `.yaml`).
 ```bash
 python tools/validate_research.py --verbose
 python tools/check_research_immutability.py
+python tools/initialize_screening_records.py --protocol-id <research-protocol-id>
 ```
+
+`initialize_screening_records.py` (ADR-0057) erzeugt für jeden Discovery-Kandidaten eines Protokolls genau
+einen rein administrativen `research_screening_record` (`decision: pending`, `decision_stage: deduplication`,
+`screened_by: system-screening-initializer`) — deterministisch, idempotent, ohne Netzwerkzugriffe und ohne
+jemals eine wissenschaftliche Entscheidung zu treffen. Siehe
+[`research/screening/README.md`](screening/README.md) für den vollständigen Initialzustand und die
+Validator-seitig erzwungenen Invarianten.
 
 `validate_research.py` läuft **getrennt** vom bestehenden `tools/validate_data.py`, prüft aber Querverweise auf
 die kanonische Datenebene (`canonical_source_id` muss unter `data/sources/**`, `canonical_study_id` unter
@@ -68,7 +84,10 @@ die kanonische Datenebene (`canonical_source_id` muss unter `data/sources/**`, `
 Protokollkonsistenz (Version/ID, Freigabestatus, ein Suchlauf darf nur eine unter
 `planned_information_sources[]` freigegebene Datenbank verwenden, protokollübergreifende Referenzen inkl. der
 gesamten `duplicate_of`-Kette, `dual_reviewer_stages` als Teilmenge von `stages`), echte Identifier-
-Deduplizierung, den vollständigen Screening-Workflow (JEDER `decision_history`-Eintrag wird geprüft, nicht nur
+Deduplizierung (ADR-0057: eine Kollision, an der noch mindestens ein nie menschlich übernommener,
+system-initialisierter Screening Record beteiligt ist, ist nur eine WARNUNG — „potenzielles Duplikat,
+menschliche Prüfung steht aus" — kein ERROR; sobald ein Mensch **jeden** beteiligten Datensatz übernommen
+hat, wird eine weiterhin ungelöste Kollision zum ERROR), den vollständigen Screening-Workflow (JEDER `decision_history`-Eintrag wird geprüft, nicht nur
 der aktuelle Zustand: Stage-/Decision-Matrix gegen alle drei Entscheidungsebenen — `primary_decision`,
 `second_review.reviewer_decision`, effektive `decision` —, strukturell getrennte, verlustfreie Drei-Ebenen-
 Provenienz inkl. eigenständiger Gründe/Duplikatverweise je Ebene, Dual-Reviewer-Pflicht (nicht für
@@ -102,10 +121,13 @@ Repository-Zugriffskontrolle abgesichert (siehe „Bekannte Grenzen" im
 2a. Ein **Candidate Manifest** (`candidates/`, siehe ADR-0056) buendelt die Search Result Manifests
     desselben Protokolls/derselben Datenbank zu einer normalisierten, technischen Discovery-Grundmenge mit
     vollstaendiger Suchlauf-Herkunft je Kandidat — noch KEINE Screening-Entscheidung.
-3. Jeder Treffer wird als **Screening-Datensatz** (`screening/`) erfasst und durchläuft Deduplizierung,
-   Titel-/Abstract- und Volltext-Screening bis zu einer **terminalen** Entscheidung
-   (`decision_stage: final`, `include`/`exclude`/`duplicate`/...) — `full_text` dokumentiert nur die
-   Volltextbewertung, ist aber selbst noch nicht extraktionsfähig.
+2b. `tools/initialize_screening_records.py` (ADR-0057) erzeugt für jeden Candidate-Manifest-Eintrag
+    genau einen **Screening-Datensatz** im rein administrativen Initialzustand (`decision: pending`,
+    `decision_stage: deduplication`, `screened_by: system-screening-initializer`) — noch keine
+    wissenschaftliche Bewertung, nur die technische Bereitstellung des Datensatzes für den nächsten Schritt.
+3. Jeder Treffer durchläuft Deduplizierung, Titel-/Abstract- und Volltext-Screening bis zu einer
+   **terminalen** Entscheidung (`decision_stage: final`, `include`/`exclude`/`duplicate`/...) — `full_text`
+   dokumentiert nur die Volltextbewertung, ist aber selbst noch nicht extraktionsfähig.
 4. Eingeschlossene, terminal bestätigte Kandidaten werden in einem **Extraktionsdatensatz** (`extractions/`)
    mit kurzen Paraphrasen und präzisen Fundstellen erfasst — inklusive vorläufiger, ausdrücklich ungeprüfter
    Kandidatenclaims.

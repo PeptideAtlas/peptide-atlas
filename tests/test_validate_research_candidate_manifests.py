@@ -473,6 +473,7 @@ def test_valid_screening_candidate_reference(tmp_path: Path):
     tree = base_tree(include_ctgov=False)
     tree[f"research/screening/{SCREENING_RECORD_ID}.yaml"] = _screening_record(
         PROTOCOL_ID, CANDIDATE_MANIFEST_ID, CANDIDATE_200, pmid="200",
+        search_run_ids=[SEARCH_RUN_A, SEARCH_RUN_B],  # CANDIDATE_200 is a dual-origin candidate
     )
     report = _run(tmp_path, tree)
     assert report.error_count == 0, "\n".join(issue.format() for issue in report.issues)
@@ -566,6 +567,7 @@ def test_valid_ctgov_screening_candidate_reference(tmp_path: Path):
     tree = base_tree(include_ctgov=True)
     tree[f"research/screening/{SCREENING_RECORD_ID}.yaml"] = _screening_record(
         PROTOCOL_ID, CTGOV_CANDIDATE_MANIFEST_ID, CTGOV_CANDIDATE, pmid=None, nct_id="NCT00000001",
+        search_run_ids=[CTGOV_SEARCH_RUN],
     )
     report = _run(tmp_path, tree)
     assert report.error_count == 0, "\n".join(issue.format() for issue in report.issues)

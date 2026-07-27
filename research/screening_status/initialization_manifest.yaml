@@ -1,0 +1,8 @@
+schema_version: 1.0.0
+protocols:
+- protocol_id: research-protocol-retatrutide-v1
+  notes: null
+  status: complete
+  expected_candidate_count: 197
+  initialized_by: system-screening-initializer
+  completed_at: '2026-07-27'

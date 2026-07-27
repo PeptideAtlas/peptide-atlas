@@ -66,6 +66,20 @@ Prueft (Ueberblick, siehe die einzelnen check_*-Funktionen fuer Details):
   MENSCHLICHE Personen sind (organisatorisch kontrolliert, siehe ADR-0041/ADR-0046).
 - Sonstige Konsistenz: Eindeutigkeit, Datumsreihenfolge, sichere export_reference.
 - Dateiebene: keine unerwuenschten Binaerdateien, research/examples/** als eigener Namensraum.
+- Screening-Initialisierung (ADR-0057, Phase 4B-1B-1): der rein technische Akteur
+  'system-screening-initializer' (tools/initialize_screening_records.py) darf in JEDEM
+  decision_history-Eintrag, den er verantwortet, nur 'pending'/'deduplication'/'not_yet_obtained'
+  ohne Duplikatverweis/Zweitpruefung dokumentieren -- nie eine wissenschaftliche Entscheidung.
+  Solange er der aktuelle effektive Bearbeiter ist, muss canonical_source_id null bleiben und
+  candidate_title (bei aufgeloester Kandidatenreferenz) exakt der aus den Candidate-Manifest-
+  Metadaten abgeleitete Titel sein. Jeder Discovery-Kandidat darf hoechstens einen Screening Record
+  haben (candidate_manifest_id+candidate_id eindeutig). Bei aufgeloester Kandidatenreferenz muss
+  search_run_ids exakt (nicht nur teilweise) den discovered_in_search_run_ids des Kandidaten
+  entsprechen. Die Vollstaendigkeitsregel "jeder Candidate eines Protokolls braucht einen Screening
+  Record" greift ausschliesslich fuer Protokolle, die im rein technischen Kontrollartefakt
+  research/screening_status/initialization_manifest.yaml ausdruecklich als status: complete markiert
+  sind (kein RESEARCH_KINDS-Eintrag, kein wissenschaftliches Objekt) -- ein teilweise laufender
+  Import macht die CI dadurch nicht zwischenzeitlich rot.
 
 Exitcode 0 bei Erfolg (nur WARNINGs erlaubt), Exitcode 1 bei mindestens einem ERROR. Keine
 Netzwerkzugriffe.
@@ -100,11 +114,15 @@ from _researchlib import (  # noqa: E402
     RESEARCH_DIR,
     RESEARCH_KIND_TO_SCHEMA_ID,
     SCREENING_STAGE_ORDER,
+    SYSTEM_SCREENING_INITIALIZER_ACTOR,
     compute_manifest_sha256,
+    derive_candidate_title,
     iter_research_files,
     load_all_research_vocabularies,
     normalize_url,
 )
+
+SCREENING_INITIALIZATION_MANIFEST_RELATIVE_PATH = Path("screening_status") / "initialization_manifest.yaml"
 
 UNWANTED_BINARY_SUFFIXES = {
     ".exe", ".dll", ".so", ".bin", ".zip", ".7z", ".tar", ".gz",
@@ -517,7 +535,20 @@ def check_deduplication(report: Report, objects: dict[str, dict[str, ResearchObj
     desselben Protokolls, die nicht als decision: duplicate markiert sind. Kollisionen ueber
     verschiedene Protokolle hinweg sind erlaubt (dieselbe Publikation kann in mehreren Reviews
     vorkommen). URL-Kollisionen sind nur eine Warnung (Redirects/Mirrors, siehe
-    tools/_datalib.py::normalize_url)."""
+    tools/_datalib.py::normalize_url).
+
+    ADR-0057 (Phase 4B-1B-1, explizite Nutzerentscheidung): eine Kollision, an der mindestens ein
+    noch NIE menschlich uebernommener, rein system-initialisierter Screening Record beteiligt ist
+    (screened_by == system-screening-initializer), ist VOR Abschluss der Deduplizierungsphase fuer
+    diesen Datensatz nur eine WARNUNG ('potential duplicate', menschliche Dedup-Pruefung steht
+    noch aus) -- kein ERROR. Sobald ein Mensch jeden beteiligten Datensatz uebernommen hat
+    (screened_by != system-screening-initializer fuer ALLE Mitglieder der Kollisionsgruppe), gilt
+    die Deduplizierungsphase fuer diese Gruppe als abgeschlossen und eine weiterhin ungeloeste
+    Kollision wird wieder zum ERROR wie zuvor. Reine PMID-Kollisionen bleiben davon unberuehrt
+    IN DEM SINNE, dass PMID unveraendert die massgebliche Identitaet des Screening Records ist --
+    diese Herabstufung gilt gleichermassen fuer jedes Feld aus DEDUPLICATION_IDENTIFIER_FIELDS,
+    nicht nur DOI, da die zugrunde liegende Unsicherheit (echtes Duplikat vs. z. B. ein
+    Correspondence-Letter+Reply-Paar mit gemeinsamer DOI) identisch ist."""
     screening = objects["screening_record"]
     by_protocol: dict[str, list[ResearchObject]] = {}
     for obj in screening.values():
@@ -542,13 +573,26 @@ def check_deduplication(report: Report, objects: dict[str, dict[str, ResearchObj
             active = [o for o in group if o.data.get("decision") in ACTIVE_SCREENING_DECISIONS]
             if len(active) >= 2:
                 ids = ", ".join(sorted(o.id for o in active))
-                for o in active:
-                    report.error(
-                        relative(o.path), f"$.candidate_identifiers.{field}",
+                dedup_phase_pending = any(
+                    o.data.get("screened_by") == SYSTEM_SCREENING_INITIALIZER_ACTOR for o in active
+                )
+                if dedup_phase_pending:
+                    message = (
+                        f"potential duplicate {field} '{normalized}' shared with other active screening "
+                        f"record(s) under the same protocol: {ids} -- flagged for human deduplication "
+                        "review, not yet an error while at least one involved record is still in its "
+                        "pristine system-initialized state (see ADR-0057)"
+                    )
+                    emit = report.warning
+                else:
+                    message = (
                         f"duplicate {field} '{normalized}' shared with other active (non-duplicate-marked) "
                         f"screening record(s) under the same protocol: {ids} -- mark all but one as "
-                        "decision: duplicate with duplicate_of pointing to the primary record",
+                        "decision: duplicate with duplicate_of pointing to the primary record"
                     )
+                    emit = report.error
+                for o in active:
+                    emit(relative(o.path), f"$.candidate_identifiers.{field}", message)
 
         for normalized, group in url_map.items():
             active = [o for o in group if o.data.get("decision") in ACTIVE_SCREENING_DECISIONS]
@@ -1750,6 +1794,15 @@ def check_screening_candidate_references(report: Report, objects: dict[str, dict
             )
             continue
 
+        expected_search_run_ids = set(candidate_entry.get("discovered_in_search_run_ids") or [])
+        actual_search_run_ids = set(data.get("search_run_ids") or [])
+        if expected_search_run_ids != actual_search_run_ids:
+            report.error(
+                file_rel, "$.search_run_ids",
+                "must exactly match the referenced candidate's discovered_in_search_run_ids "
+                f"({sorted(expected_search_run_ids)}), not just partially overlap it",
+            )
+
         primary_identifier = candidate_entry.get("primary_identifier") or {}
         namespace = primary_identifier.get("namespace")
         candidate_value = primary_identifier.get("value")
@@ -1768,6 +1821,218 @@ def check_screening_candidate_references(report: Report, objects: dict[str, dict
                     file_rel, f"$.candidate_identifiers.{field}",
                     f"conflicts with the referenced candidate's primary_identifier ('{candidate_value}')",
                 )
+
+
+def check_screening_system_actor_invariants(
+    report: Report, objects: dict[str, dict[str, ResearchObject]]
+) -> None:
+    """ADR-0057: 'system-screening-initializer' (tools/initialize_screening_records.py) dokumentiert
+    ausschliesslich die rein technische Initialisierung eines Screening Records und trifft NIE eine
+    wissenschaftliche Entscheidung. Zwei getrennte Invarianten:
+
+    1. JEDER decision_history-Eintrag, den dieser Akteur als decided_by verantwortet, muss
+       strukturell neutral bleiben -- primary_decision 'pending', stage 'deduplication',
+       full_text_status 'not_yet_obtained', kein Duplikatverweis, keine Zweitpruefung -- unabhaengig
+       davon, an welcher Position im Verlauf der Eintrag steht (verhindert nachtraegliche
+       Umdeklarierung eines echten Screening-Ergebnisses als System-Eintrag).
+    2. Solange der AKTUELLE effektive Bearbeiter (screened_by) noch dieser Akteur ist (der
+       Datensatz also noch nie von einem Menschen bearbeitet wurde), muss canonical_source_id null
+       bleiben und -- bei aufgeloester Kandidatenreferenz -- candidate_title exakt der aus den
+       Candidate-Manifest-Metadaten abgeleitete technische Titel sein (siehe
+       tools/_researchlib.py::derive_candidate_title). Sobald ein Mensch einen weiteren
+       decision_history-Eintrag anhaengt, greift diese zweite Invariante nicht mehr fuer diesen
+       Datensatz -- die erste bleibt unabhaengig davon fuer den urspruenglichen Eintrag bestehen.
+    """
+    candidate_manifests = objects["candidate_manifest"]
+
+    for obj in objects["screening_record"].values():
+        file_rel = relative(obj.path)
+        data = obj.data
+
+        for idx, entry in enumerate(data.get("decision_history") or []):
+            if entry.get("decided_by") != SYSTEM_SCREENING_INITIALIZER_ACTOR:
+                continue
+            path_prefix = f"$.decision_history[{idx}]"
+            if entry.get("primary_decision") != "pending":
+                report.error(
+                    file_rel, f"{path_prefix}.primary_decision",
+                    f"'{SYSTEM_SCREENING_INITIALIZER_ACTOR}' is a purely technical actor and must never "
+                    "record a decision other than 'pending' -- it has no scientific screening mandate "
+                    "(see ADR-0057)",
+                )
+            if entry.get("stage") != "deduplication":
+                report.error(
+                    file_rel, f"{path_prefix}.stage",
+                    f"'{SYSTEM_SCREENING_INITIALIZER_ACTOR}' may only initialize records at stage "
+                    "'deduplication' (see ADR-0057)",
+                )
+            if entry.get("full_text_status") != "not_yet_obtained":
+                report.error(
+                    file_rel, f"{path_prefix}.full_text_status",
+                    f"'{SYSTEM_SCREENING_INITIALIZER_ACTOR}' entries must use full_text_status "
+                    "'not_yet_obtained' (see ADR-0057)",
+                )
+            if entry.get("duplicate_of") is not None or entry.get("primary_duplicate_of") is not None:
+                report.error(
+                    file_rel, f"{path_prefix}.duplicate_of",
+                    f"'{SYSTEM_SCREENING_INITIALIZER_ACTOR}' must never record a duplicate reference "
+                    "(see ADR-0057)",
+                )
+            if entry.get("second_review") is not None:
+                report.error(
+                    file_rel, f"{path_prefix}.second_review",
+                    f"'{SYSTEM_SCREENING_INITIALIZER_ACTOR}' entries must never carry a second_review "
+                    "(see ADR-0057)",
+                )
+
+        if data.get("screened_by") != SYSTEM_SCREENING_INITIALIZER_ACTOR:
+            continue
+
+        if data.get("canonical_source_id") is not None:
+            report.error(
+                file_rel, "$.canonical_source_id",
+                "must stay null while the current effective screener is still the technical system "
+                "actor (see ADR-0057)",
+            )
+
+        candidate_manifest_id = data.get("candidate_manifest_id")
+        candidate_id = data.get("candidate_id")
+        if not candidate_manifest_id or not candidate_id:
+            continue
+        manifest = candidate_manifests.get(candidate_manifest_id)
+        if manifest is None:
+            continue  # already reported by check_screening_candidate_references
+        candidate_entry = next(
+            (c for c in manifest.data.get("candidates") or [] if c.get("candidate_id") == candidate_id), None,
+        )
+        if candidate_entry is None:
+            continue  # already reported by check_screening_candidate_references
+        expected_title = derive_candidate_title(manifest.data.get("database"), candidate_entry.get("metadata") or {})
+        if expected_title is not None and data.get("candidate_title") != expected_title:
+            report.error(
+                file_rel, "$.candidate_title",
+                "does not match the title derived from the referenced candidate manifest metadata, "
+                "while the technical system actor is still the current effective screener (see ADR-0057)",
+            )
+
+
+def check_screening_candidate_uniqueness(
+    report: Report, objects: dict[str, dict[str, ResearchObject]]
+) -> None:
+    """ADR-0057: hoechstens ein Screening Record je (candidate_manifest_id, candidate_id)-Paar --
+    ein Discovery-Kandidat darf nicht mehrfach als Screening Record repraesentiert werden.
+    research/examples/** ist ausgenommen (dort gelten keine realen Kandidatenreferenzen)."""
+    seen: dict[tuple[str, str], str] = {}
+    for obj in objects["screening_record"].values():
+        if "examples" in obj.path.parts:
+            continue
+        data = obj.data
+        candidate_manifest_id = data.get("candidate_manifest_id")
+        candidate_id = data.get("candidate_id")
+        if not candidate_manifest_id or not candidate_id:
+            continue
+        key = (candidate_manifest_id, candidate_id)
+        file_rel = relative(obj.path)
+        if key in seen:
+            report.error(
+                file_rel, "$.candidate_id",
+                f"duplicate screening record for candidate '{candidate_id}' in manifest "
+                f"'{candidate_manifest_id}' -- already represented by {seen[key]}",
+            )
+        else:
+            seen[key] = file_rel
+
+
+def load_screening_initialization_manifest(
+    report: Report, research_root: Path, registry, schemas
+) -> dict:
+    """Laedt und schema-validiert das rein technische Kontrollartefakt
+    research/screening_status/initialization_manifest.yaml (siehe ADR-0057) -- KEIN
+    RESEARCH_KINDS-Eintrag, KEIN wissenschaftliches Research-Objekt. Liefert {'protocols': []},
+    wenn die Datei (noch) nicht existiert -- die Vollstaendigkeitspruefung greift dann fuer kein
+    Protokoll (siehe check_screening_initialization_completeness)."""
+    path = research_root / SCREENING_INITIALIZATION_MANIFEST_RELATIVE_PATH
+    if not path.exists():
+        return {"protocols": []}
+    file_rel = relative(path)
+    try:
+        data = load_yaml_file(path)
+    except DataFileError as exc:
+        report.error(file_rel, "", str(exc))
+        return {"protocols": []}
+    if not data:
+        return {"protocols": []}
+    if not isinstance(data, dict):
+        report.error(file_rel, "", "top-level YAML content must be a mapping")
+        return {"protocols": []}
+
+    validate_against_schema(
+        report, file_rel, data, "research_screening_initialization_manifest.schema.json", registry, schemas,
+    )
+
+    seen_protocol_ids: dict[str, int] = {}
+    for idx, entry in enumerate(data.get("protocols") or []):
+        protocol_id = entry.get("protocol_id")
+        if protocol_id in seen_protocol_ids:
+            report.error(
+                file_rel, f"$.protocols[{idx}].protocol_id",
+                f"duplicate protocol_id '{protocol_id}' in screening initialization manifest, "
+                f"already listed at index {seen_protocol_ids[protocol_id]}",
+            )
+        else:
+            seen_protocol_ids[protocol_id] = idx
+
+    return data
+
+
+def check_screening_initialization_completeness(
+    report: Report, objects: dict[str, dict[str, ResearchObject]], init_manifest: dict, research_root: Path,
+) -> None:
+    """ADR-0057: die Vollstaendigkeitsregel 'jeder Candidate eines Protokolls braucht einen
+    Screening Record' greift ausschliesslich fuer Protokolle, die im Screening Initialization
+    Manifest ausdruecklich als status: complete markiert sind -- ein teilweise laufender Import
+    macht die CI dadurch nicht zwischenzeitlich rot (siehe Phase-4B-1B-1-Arbeitsauftrag). Prueft
+    zusaetzlich, dass expected_candidate_count nicht stillschweigend veraltet ist (schuetzt vor
+    einer 'complete'-Markierung, die nicht mehr zum aktuellen Datenbestand passt, z. B. weil
+    nachtraeglich ein weiteres Candidate Manifest fuer dasselbe Protokoll hinzukam)."""
+    file_rel = relative(research_root / SCREENING_INITIALIZATION_MANIFEST_RELATIVE_PATH)
+
+    covered: set[tuple[str, str]] = set()
+    for obj in objects["screening_record"].values():
+        if "examples" in obj.path.parts:
+            continue
+        candidate_manifest_id = obj.data.get("candidate_manifest_id")
+        candidate_id = obj.data.get("candidate_id")
+        if candidate_manifest_id and candidate_id:
+            covered.add((candidate_manifest_id, candidate_id))
+
+    for entry in init_manifest.get("protocols") or []:
+        if entry.get("status") != "complete":
+            continue
+        protocol_id = entry.get("protocol_id")
+        manifests = [
+            manifest for manifest in objects["candidate_manifest"].values()
+            if manifest.data.get("protocol_id") == protocol_id
+        ]
+        actual_count = sum(manifest.data.get("candidate_count") or 0 for manifest in manifests)
+        expected_count = entry.get("expected_candidate_count")
+        if expected_count != actual_count:
+            report.error(
+                file_rel, "$.protocols[].expected_candidate_count",
+                f"protocol '{protocol_id}' is marked complete with expected_candidate_count "
+                f"{expected_count}, but its candidate manifests currently total {actual_count} "
+                "candidates -- re-run tools/initialize_screening_records.py or correct the manifest",
+            )
+        for manifest in manifests:
+            for candidate in manifest.data.get("candidates") or []:
+                key = (manifest.id, candidate.get("candidate_id"))
+                if key not in covered:
+                    report.error(
+                        file_rel, "$.protocols[]",
+                        f"protocol '{protocol_id}' is marked complete, but candidate "
+                        f"'{candidate.get('candidate_id')}' in candidate manifest '{manifest.id}' has no "
+                        "screening record",
+                    )
 
 
 def check_object_temporal_bounds(report: Report, objects: dict[str, dict[str, ResearchObject]]) -> None:
@@ -1877,6 +2142,8 @@ def run_checks(report: Report, objects: dict[str, dict[str, ResearchObject]], so
     check_search_run_interface_profiles(report, objects)
     check_candidate_manifests(report, objects)
     check_screening_candidate_references(report, objects)
+    check_screening_system_actor_invariants(report, objects)
+    check_screening_candidate_uniqueness(report, objects)
     check_historical_duplicate_targets(report, objects)
     check_protocol_version_matches_id(report, objects["protocol"])
     check_deduplication(report, objects)
@@ -1901,6 +2168,9 @@ def run_validation(
 
     objects = load_research_dataset(research_root, report, registry, schemas, vocabularies)
     run_checks(report, objects, source_ids, study_ids, claim_ids)
+
+    init_manifest = load_screening_initialization_manifest(report, research_root, registry, schemas)
+    check_screening_initialization_completeness(report, objects, init_manifest, research_root)
 
     examples_root = research_root / "examples"
     example_objects = load_research_dataset(examples_root, report, registry, schemas, vocabularies)
