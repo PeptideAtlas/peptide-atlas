@@ -28,6 +28,8 @@ Der vollständige, verbindliche Prozess steht in:
 research/
 ├── protocols/       Ein Research-Protokoll (research-protocol-<slug>-v<N>.yaml) pro Wirkstoff/Fragestellung
 ├── search_runs/     Protokollierte, tatsächlich ausgeführte Suchläufe (search-run-<uuid4>.yaml)
+├── search_results/  Versionierte Identifikator-Manifeste je Suchlauf (search-result-manifest-<uuid4>.yaml)
+├── candidates/      Technische Discovery-Kandidaten je Protokoll+Datenbank (candidate-manifest-<uuid4>.yaml)
 ├── screening/       Ein-/Ausschlussentscheidungen pro Kandidat (screening-record-<uuid4>.yaml)
 ├── extractions/     Beobachtungen und vorläufige Kandidatenclaims (extraction-record-<uuid4>.yaml)
 ├── promotions/      Verknüpfung Kandidatenclaim → kanonischer Claim (promotion-record-<uuid4>.yaml)
@@ -42,9 +44,14 @@ research/
 |---|---|---|---|
 | Research-Protokoll | `research/protocols/` | `research-protocol-<slug>-v<N>` | `schemas/research_protocol.schema.json` |
 | Suchlauf | `research/search_runs/` | `search-run-<uuid4>` | `schemas/research_search_run.schema.json` |
+| Search Result Manifest | `research/search_results/` | `search-result-manifest-<uuid4>` | `schemas/research_search_result_manifest.schema.json` |
+| Candidate Manifest | `research/candidates/` | `candidate-manifest-<uuid4>` | `schemas/research_candidate_manifest.schema.json` |
 | Screening-Datensatz | `research/screening/` | `screening-record-<uuid4>` | `schemas/research_screening_record.schema.json` |
 | Extraktionsdatensatz | `research/extractions/` | `extraction-record-<uuid4>` | `schemas/research_extraction_record.schema.json` |
 | Promotion-Datensatz | `research/promotions/` | `promotion-record-<uuid4>` | `schemas/research_promotion_record.schema.json` |
+
+Siehe [`research/candidates/README.md`](candidates/README.md) für Details zum Candidate Manifest (ADR-0056):
+die technische, protokoll-/datenbankgebundene Brücke zwischen Search Result Manifest und Screening Record.
 
 Wie bei `data/**` muss der Dateiname exakt der `id` entsprechen (ohne `.yaml`).
 
@@ -89,7 +96,12 @@ Repository-Zugriffskontrolle abgesichert (siehe „Bekannte Grenzen" im
 
 1. Ein **Protokoll** (`protocols/`) legt Forschungsfragen, geplante Suchbegriffe, Datenbanken sowie Ein-/
    Ausschluss-, Dedup-, Screening-, Extraktions- und Claim-Promotion-Regeln fest, bevor gesucht wird.
-2. Ein **Suchlauf** (`search_runs/`) protokolliert exakt, was wann in welcher Datenbank gesucht wurde.
+2. Ein **Suchlauf** (`search_runs/`) protokolliert exakt, was wann in welcher Datenbank gesucht wurde; sein
+   versioniertes **Search Result Manifest** (`search_results/`) haelt die tatsaechlich erhaltene
+   Identifikatormenge fest (siehe ADR-0055).
+2a. Ein **Candidate Manifest** (`candidates/`, siehe ADR-0056) buendelt die Search Result Manifests
+    desselben Protokolls/derselben Datenbank zu einer normalisierten, technischen Discovery-Grundmenge mit
+    vollstaendiger Suchlauf-Herkunft je Kandidat — noch KEINE Screening-Entscheidung.
 3. Jeder Treffer wird als **Screening-Datensatz** (`screening/`) erfasst und durchläuft Deduplizierung,
    Titel-/Abstract- und Volltext-Screening bis zu einer **terminalen** Entscheidung
    (`decision_stage: final`, `include`/`exclude`/`duplicate`/...) — `full_text` dokumentiert nur die

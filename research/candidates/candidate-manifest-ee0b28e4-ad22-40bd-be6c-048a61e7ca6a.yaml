@@ -1,0 +1,1223 @@
+schema_version: 1.0.0
+id: candidate-manifest-ee0b28e4-ad22-40bd-be6c-048a61e7ca6a
+protocol_id: research-protocol-retatrutide-v1
+database: clinicaltrials_gov
+identifier_namespace: nct_id
+source_search_run_ids:
+- search-run-5d02d48e-c716-4bed-990b-680c6d93ad72
+- search-run-da841b57-1a65-4927-8013-c39ed13c14c8
+source_result_manifest_ids:
+- search-result-manifest-9c189c88-09df-47c2-8d6f-14f234f5965d
+- search-result-manifest-dc672420-ef9e-4ef8-80d3-d4baf9c26ee6
+candidate_count: 35
+candidates:
+- candidate_id: research-candidate-aa367a55-d535-435e-9c96-d191257f1068
+  primary_identifier:
+    namespace: nct_id
+    value: NCT03841630
+  discovered_in_search_run_ids:
+  - search-run-5d02d48e-c716-4bed-990b-680c6d93ad72
+  - search-run-da841b57-1a65-4927-8013-c39ed13c14c8
+  metadata:
+    brief_title: A Safety Study of LY3437943 Given as a Single Injection in Healthy Participants
+    official_title: A Single-Ascending Dose Study to Evaluate the Safety, Tolerability, and Pharmacokinetics
+      of LY3437943 in Healthy Subjects
+    overall_status: COMPLETED
+    phases:
+    - PHASE1
+    sponsor: Eli Lilly and Company
+    interventions:
+    - LY3437943
+    - Placebo
+    conditions:
+    - Healthy
+    study_type: INTERVENTIONAL
+    start_date: '2019-03-13'
+    primary_completion_date: '2019-07-25'
+    completion_date: '2019-07-25'
+    has_results: false
+    last_update_posted: '2019-08-06'
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: ClinicalTrials.gov API v2
+    retrieved_at: '2026-07-27T05:31:36Z'
+    request_reference: ClinicalTrials.gov API v2 studies filter.ids batch (n=35)
+    response_locator: null
+- candidate_id: research-candidate-f60284ef-f6e7-4fbb-8aab-b3488f3a058f
+  primary_identifier:
+    namespace: nct_id
+    value: NCT04143802
+  discovered_in_search_run_ids:
+  - search-run-5d02d48e-c716-4bed-990b-680c6d93ad72
+  - search-run-da841b57-1a65-4927-8013-c39ed13c14c8
+  metadata:
+    brief_title: A Study of LY3437943 in Participants With Type 2 Diabetes Mellitus (T2DM)
+    official_title: A Multiple-Ascending Dose Study to Evaluate the Safety, Tolerability, Pharmacokinetics,
+      and Pharmacodynamics of LY3437943 in Patients With Type 2 Diabetes Mellitus
+    overall_status: COMPLETED
+    phases:
+    - PHASE1
+    sponsor: Eli Lilly and Company
+    interventions:
+    - LY3437943
+    - Dulaglutide
+    - Placebo
+    conditions:
+    - Diabetes Mellitus, Type 2
+    study_type: INTERVENTIONAL
+    start_date: '2019-12-18'
+    primary_completion_date: '2020-12-28'
+    completion_date: '2020-12-28'
+    has_results: false
+    last_update_posted: '2021-01-20'
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: ClinicalTrials.gov API v2
+    retrieved_at: '2026-07-27T05:31:36Z'
+    request_reference: ClinicalTrials.gov API v2 studies filter.ids batch (n=35)
+    response_locator: null
+- candidate_id: research-candidate-454c4353-2dde-4673-b7e3-aeb4602e52e3
+  primary_identifier:
+    namespace: nct_id
+    value: NCT04823208
+  discovered_in_search_run_ids:
+  - search-run-5d02d48e-c716-4bed-990b-680c6d93ad72
+  - search-run-da841b57-1a65-4927-8013-c39ed13c14c8
+  metadata:
+    brief_title: A Study of LY3437943 in Japanese Participants With Type 2 Diabetes Mellitus (T2DM)
+    official_title: A Multiple-Ascending Dose Study to Evaluate the Safety, Tolerability, Pharmacokinetics,
+      and Pharmacodynamics of LY3437943 in Japanese Participants With Type 2 Diabetes Mellitus
+    overall_status: COMPLETED
+    phases:
+    - PHASE1
+    sponsor: Eli Lilly and Company
+    interventions:
+    - LY3437943
+    - Placebo
+    conditions:
+    - Diabetes Mellitus, Type 2
+    study_type: INTERVENTIONAL
+    start_date: '2021-05-24'
+    primary_completion_date: '2022-06-23'
+    completion_date: '2022-06-23'
+    has_results: false
+    last_update_posted: '2022-08-22'
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: ClinicalTrials.gov API v2
+    retrieved_at: '2026-07-27T05:31:36Z'
+    request_reference: ClinicalTrials.gov API v2 studies filter.ids batch (n=35)
+    response_locator: null
+- candidate_id: research-candidate-d802beca-d86d-4761-8c06-dafa9b8e4fef
+  primary_identifier:
+    namespace: nct_id
+    value: NCT04867785
+  discovered_in_search_run_ids:
+  - search-run-5d02d48e-c716-4bed-990b-680c6d93ad72
+  - search-run-da841b57-1a65-4927-8013-c39ed13c14c8
+  metadata:
+    brief_title: A Study of LY3437943 in Participants With Type 2 Diabetes
+    official_title: A Phase 2 Study of Once-Weekly LY3437943 Compared With Placebo and Dulaglutide in
+      Participants With Type 2 Diabetes
+    overall_status: COMPLETED
+    phases:
+    - PHASE2
+    sponsor: Eli Lilly and Company
+    interventions:
+    - LY3437943
+    - Dulaglutide
+    - Placebo
+    conditions:
+    - Type 2 Diabetes
+    study_type: INTERVENTIONAL
+    start_date: '2021-05-13'
+    primary_completion_date: '2022-07-08'
+    completion_date: '2022-10-27'
+    has_results: true
+    last_update_posted: '2023-07-03'
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: ClinicalTrials.gov API v2
+    retrieved_at: '2026-07-27T05:31:36Z'
+    request_reference: ClinicalTrials.gov API v2 studies filter.ids batch (n=35)
+    response_locator: null
+- candidate_id: research-candidate-b58110b7-2885-4cb7-ad89-e7ffb9366826
+  primary_identifier:
+    namespace: nct_id
+    value: NCT04881760
+  discovered_in_search_run_ids:
+  - search-run-5d02d48e-c716-4bed-990b-680c6d93ad72
+  - search-run-da841b57-1a65-4927-8013-c39ed13c14c8
+  metadata:
+    brief_title: A Study of LY3437943 in Participants Who Have Obesity or Are Overweight
+    official_title: A Phase 2 Study of Once-Weekly LY3437943 Compared With Placebo in Participants Who
+      Have Obesity or Are Overweight With Weight-Related Comorbidities
+    overall_status: COMPLETED
+    phases:
+    - PHASE2
+    sponsor: Eli Lilly and Company
+    interventions:
+    - LY3437943
+    - Placebo
+    conditions:
+    - Obesity
+    - Overweight
+    study_type: INTERVENTIONAL
+    start_date: '2021-05-20'
+    primary_completion_date: '2022-05-16'
+    completion_date: '2022-11-22'
+    has_results: true
+    last_update_posted: '2023-09-13'
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: ClinicalTrials.gov API v2
+    retrieved_at: '2026-07-27T05:31:36Z'
+    request_reference: ClinicalTrials.gov API v2 studies filter.ids batch (n=35)
+    response_locator: null
+- candidate_id: research-candidate-8c8b2d17-a28e-4129-8022-abaa5f60419d
+  primary_identifier:
+    namespace: nct_id
+    value: NCT05445232
+  discovered_in_search_run_ids:
+  - search-run-5d02d48e-c716-4bed-990b-680c6d93ad72
+  - search-run-da841b57-1a65-4927-8013-c39ed13c14c8
+  metadata:
+    brief_title: A Drug-Drug Interaction (DDI) Study of LY3437943 in Obese Participants
+    official_title: A Multiple-Dose Drug-Drug Interaction Study to Determine the Effect of LY3437943 on
+      Drug Metabolizing Enzymes
+    overall_status: COMPLETED
+    phases:
+    - PHASE1
+    sponsor: Eli Lilly and Company
+    interventions:
+    - LY3437943
+    - Midazolam
+    - Warfarin
+    - Caffeine
+    conditions:
+    - Obesity
+    study_type: INTERVENTIONAL
+    start_date: '2022-07-08'
+    primary_completion_date: '2023-02-24'
+    completion_date: '2023-02-24'
+    has_results: false
+    last_update_posted: '2023-04-18'
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: ClinicalTrials.gov API v2
+    retrieved_at: '2026-07-27T05:31:36Z'
+    request_reference: ClinicalTrials.gov API v2 studies filter.ids batch (n=35)
+    response_locator: null
+- candidate_id: research-candidate-f6c07f1f-2ae4-409c-9d98-18405cce18dd
+  primary_identifier:
+    namespace: nct_id
+    value: NCT05548231
+  discovered_in_search_run_ids:
+  - search-run-5d02d48e-c716-4bed-990b-680c6d93ad72
+  - search-run-da841b57-1a65-4927-8013-c39ed13c14c8
+  metadata:
+    brief_title: A Study of LY3437943 in Chinese Participants With Obesity Or Overweight
+    official_title: A Multiple Dose Escalation Study in Chinese Participants With Overweight BMI or Obesity
+      to Investigate the Safety, Tolerability, Pharmacokinetics, and Pharmacodynamics of LY3437943
+    overall_status: COMPLETED
+    phases:
+    - PHASE1
+    sponsor: Eli Lilly and Company
+    interventions:
+    - LY3437943
+    - Placebo
+    conditions:
+    - Overweight
+    - Obesity
+    study_type: INTERVENTIONAL
+    start_date: '2022-10-24'
+    primary_completion_date: '2023-07-27'
+    completion_date: '2023-07-27'
+    has_results: false
+    last_update_posted: '2023-08-14'
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: ClinicalTrials.gov API v2
+    retrieved_at: '2026-07-27T05:31:36Z'
+    request_reference: ClinicalTrials.gov API v2 studies filter.ids batch (n=35)
+    response_locator: null
+- candidate_id: research-candidate-251f789c-6421-4e47-8ee3-a798067473bf
+  primary_identifier:
+    namespace: nct_id
+    value: NCT05611957
+  discovered_in_search_run_ids:
+  - search-run-5d02d48e-c716-4bed-990b-680c6d93ad72
+  - search-run-da841b57-1a65-4927-8013-c39ed13c14c8
+  metadata:
+    brief_title: A Study of LY3437943 in Healthy Participants and Participants With Impaired Renal Function
+    official_title: A Parallel-group, Phase 1, Open-label Study to Investigate the Pharmacokinetics of
+      LY3437943 in Participants With Renal Impairment Compared With Healthy Participants
+    overall_status: COMPLETED
+    phases:
+    - PHASE1
+    sponsor: Eli Lilly and Company
+    interventions:
+    - LY3437943
+    conditions:
+    - Healthy
+    - Renal Insufficiency
+    study_type: INTERVENTIONAL
+    start_date: '2022-11-16'
+    primary_completion_date: '2023-09-05'
+    completion_date: '2023-09-05'
+    has_results: false
+    last_update_posted: '2023-10-02'
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: ClinicalTrials.gov API v2
+    retrieved_at: '2026-07-27T05:31:36Z'
+    request_reference: ClinicalTrials.gov API v2 studies filter.ids batch (n=35)
+    response_locator: null
+- candidate_id: research-candidate-555732fc-0d51-4e1b-aea3-c1b56f163ee4
+  primary_identifier:
+    namespace: nct_id
+    value: NCT05757531
+  discovered_in_search_run_ids:
+  - search-run-5d02d48e-c716-4bed-990b-680c6d93ad72
+  metadata:
+    brief_title: A Study of Carbon-14-Labelled [14C] LY3437943 in Healthy Male Participants
+    official_title: Disposition of [14C]-LY3437943 Following Subcutaneous Administration in Healthy Male
+      Participants
+    overall_status: COMPLETED
+    phases:
+    - PHASE1
+    sponsor: Eli Lilly and Company
+    interventions:
+    - '[¹⁴C]-LY3437943'
+    conditions:
+    - Healthy
+    study_type: INTERVENTIONAL
+    start_date: '2023-03-17'
+    primary_completion_date: '2023-06-23'
+    completion_date: '2023-06-23'
+    has_results: false
+    last_update_posted: '2023-07-05'
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: ClinicalTrials.gov API v2
+    retrieved_at: '2026-07-27T05:31:36Z'
+    request_reference: ClinicalTrials.gov API v2 studies filter.ids batch (n=35)
+    response_locator: null
+- candidate_id: research-candidate-d2c0f28c-bf63-4166-a8cf-0078102be65f
+  primary_identifier:
+    namespace: nct_id
+    value: NCT05882045
+  discovered_in_search_run_ids:
+  - search-run-5d02d48e-c716-4bed-990b-680c6d93ad72
+  - search-run-da841b57-1a65-4927-8013-c39ed13c14c8
+  metadata:
+    brief_title: A Study of Retatrutide (LY3437943) in Participants With Obesity and Cardiovascular Disease
+    official_title: A Randomized, Double-Blind, Phase 3 Study to Investigate the Efficacy and Safety of
+      LY3437943 Once Weekly Compared to Placebo in Participants With Severe Obesity and Established Cardiovascular
+      Disease
+    overall_status: ACTIVE_NOT_RECRUITING
+    phases:
+    - PHASE3
+    sponsor: Eli Lilly and Company
+    interventions:
+    - Retatrutide
+    - Placebo
+    conditions:
+    - Obesity
+    - Cardiovascular Diseases
+    study_type: INTERVENTIONAL
+    start_date: '2023-05-30'
+    primary_completion_date: '2026-04-16'
+    completion_date: null
+    has_results: false
+    last_update_posted: '2026-05-22'
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: ClinicalTrials.gov API v2
+    retrieved_at: '2026-07-27T05:31:36Z'
+    request_reference: ClinicalTrials.gov API v2 studies filter.ids batch (n=35)
+    response_locator: null
+- candidate_id: research-candidate-a1cf3bb3-ebd9-4791-9afc-8363fea11b4c
+  primary_identifier:
+    namespace: nct_id
+    value: NCT05916560
+  discovered_in_search_run_ids:
+  - search-run-5d02d48e-c716-4bed-990b-680c6d93ad72
+  - search-run-da841b57-1a65-4927-8013-c39ed13c14c8
+  metadata:
+    brief_title: A Study of LY3437943 in Participants With Impaired and Normal Liver Function
+    official_title: A Parallel-Group, Single-Dose, Phase 1, Open-Label Study to Investigate the Pharmacokinetics
+      of LY3437943 in Participants With Hepatic Impairment Compared With Healthy Participants
+    overall_status: COMPLETED
+    phases:
+    - PHASE1
+    sponsor: Eli Lilly and Company
+    interventions:
+    - LY3437943
+    conditions:
+    - Healthy
+    - Hepatic Insufficiency
+    study_type: INTERVENTIONAL
+    start_date: '2023-07-13'
+    primary_completion_date: '2025-03-02'
+    completion_date: '2025-03-02'
+    has_results: false
+    last_update_posted: '2025-04-18'
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: ClinicalTrials.gov API v2
+    retrieved_at: '2026-07-27T05:31:36Z'
+    request_reference: ClinicalTrials.gov API v2 studies filter.ids batch (n=35)
+    response_locator: null
+- candidate_id: research-candidate-71b6fdee-ced1-49e1-8a86-42e7b222de3a
+  primary_identifier:
+    namespace: nct_id
+    value: NCT05929066
+  discovered_in_search_run_ids:
+  - search-run-5d02d48e-c716-4bed-990b-680c6d93ad72
+  - search-run-da841b57-1a65-4927-8013-c39ed13c14c8
+  metadata:
+    brief_title: A Study of Retatrutide (LY3437943) in Participants Who Have Obesity or Overweight
+    official_title: 'A Master Protocol to Investigate the Efficacy and Safety of LY3437943 Once Weekly
+      in Participants Without Type 2 Diabetes Who Have Obesity or Overweight: A Randomized, Double-Blind,
+      Placebo-Controlled Trial (TRIUMPH-1)'
+    overall_status: COMPLETED
+    phases:
+    - PHASE3
+    sponsor: Eli Lilly and Company
+    interventions:
+    - Retatrutide
+    - Placebo
+    conditions:
+    - Obesity
+    - Overweight
+    - Osteoarthritis, Knee
+    - Obstructive Sleep Apnea
+    study_type: INTERVENTIONAL
+    start_date: '2023-07-10'
+    primary_completion_date: '2026-04-06'
+    completion_date: '2026-04-30'
+    has_results: false
+    last_update_posted: '2026-06-03'
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: ClinicalTrials.gov API v2
+    retrieved_at: '2026-07-27T05:31:36Z'
+    request_reference: ClinicalTrials.gov API v2 studies filter.ids batch (n=35)
+    response_locator: null
+- candidate_id: research-candidate-1079ae7e-fa61-4fd3-b849-703dbdfd10fa
+  primary_identifier:
+    namespace: nct_id
+    value: NCT05929079
+  discovered_in_search_run_ids:
+  - search-run-5d02d48e-c716-4bed-990b-680c6d93ad72
+  - search-run-da841b57-1a65-4927-8013-c39ed13c14c8
+  metadata:
+    brief_title: A Study of Retatrutide (LY3437943) in Participants With Type 2 Diabetes Mellitus Who
+      Have Obesity or Overweight
+    official_title: 'A Master Protocol to Investigate the Efficacy and Safety of LY3437943 Once Weekly
+      in Participants With Type 2 Diabetes Mellitus Who Have Obesity or Overweight: A Randomized Double-Blind,
+      Placebo-Controlled Trial'
+    overall_status: ACTIVE_NOT_RECRUITING
+    phases:
+    - PHASE3
+    sponsor: Eli Lilly and Company
+    interventions:
+    - Retatrutide
+    - Placebo
+    conditions:
+    - Type 2 Diabetes
+    - Obesity
+    - Overweight
+    - Obstructive Sleep Apnea
+    study_type: INTERVENTIONAL
+    start_date: '2023-07-11'
+    primary_completion_date: null
+    completion_date: null
+    has_results: false
+    last_update_posted: '2026-04-13'
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: ClinicalTrials.gov API v2
+    retrieved_at: '2026-07-27T05:31:36Z'
+    request_reference: ClinicalTrials.gov API v2 studies filter.ids batch (n=35)
+    response_locator: null
+- candidate_id: research-candidate-e3eaa07d-e7fe-4655-a702-518b06836990
+  primary_identifier:
+    namespace: nct_id
+    value: NCT05931367
+  discovered_in_search_run_ids:
+  - search-run-5d02d48e-c716-4bed-990b-680c6d93ad72
+  - search-run-da841b57-1a65-4927-8013-c39ed13c14c8
+  metadata:
+    brief_title: A Study of Retatrutide (LY3437943) Once Weekly in Participants Who Have Obesity or Overweight
+      and Osteoarthritis of the Knee
+    official_title: 'A Phase 3 Study to Investigate the Efficacy and Safety of LY3437943 Once Weekly in
+      Participants Who Have Obesity or Overweight and Osteoarthritis of the Knee: A Randomized, Double-Blind,
+      Placebo-Controlled Trial'
+    overall_status: COMPLETED
+    phases:
+    - PHASE3
+    sponsor: Eli Lilly and Company
+    interventions:
+    - Retatrutide
+    - Placebo
+    conditions:
+    - Obesity
+    - Overweight
+    - Osteo Arthritis Knee
+    study_type: INTERVENTIONAL
+    start_date: '2023-08-01'
+    primary_completion_date: '2025-11-14'
+    completion_date: '2025-11-14'
+    has_results: false
+    last_update_posted: '2026-01-21'
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: ClinicalTrials.gov API v2
+    retrieved_at: '2026-07-27T05:31:36Z'
+    request_reference: ClinicalTrials.gov API v2 studies filter.ids batch (n=35)
+    response_locator: null
+- candidate_id: research-candidate-ccb65792-a76f-43b0-8fc5-22be0d0df41a
+  primary_identifier:
+    namespace: nct_id
+    value: NCT05936151
+  discovered_in_search_run_ids:
+  - search-run-5d02d48e-c716-4bed-990b-680c6d93ad72
+  - search-run-da841b57-1a65-4927-8013-c39ed13c14c8
+  metadata:
+    brief_title: A Study of Retatrutide (LY3437943) on Renal Function in Participants With Overweight
+      or Obesity and Chronic Kidney Disease With or Without Type 2 Diabetes
+    official_title: A Phase 2b, Double-Blind Study to Investigate the Effect of Retatrutide on Renal Function
+      in Participants With Overweight or Obesity and Chronic Kidney Disease With or Without Type 2 Diabetes
+    overall_status: COMPLETED
+    phases:
+    - PHASE2
+    sponsor: Eli Lilly and Company
+    interventions:
+    - Retatrutide
+    - Placebo
+    conditions:
+    - Overweight or Obesity
+    - CKD
+    - Type 2 Diabetes
+    study_type: INTERVENTIONAL
+    start_date: '2023-07-20'
+    primary_completion_date: '2025-10-01'
+    completion_date: '2025-10-21'
+    has_results: false
+    last_update_posted: '2025-11-25'
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: ClinicalTrials.gov API v2
+    retrieved_at: '2026-07-27T05:31:36Z'
+    request_reference: ClinicalTrials.gov API v2 studies filter.ids batch (n=35)
+    response_locator: null
+- candidate_id: research-candidate-775e3c96-0d15-4ba9-a50f-d6c9976c2f00
+  primary_identifier:
+    namespace: nct_id
+    value: NCT05959096
+  discovered_in_search_run_ids:
+  - search-run-5d02d48e-c716-4bed-990b-680c6d93ad72
+  - search-run-da841b57-1a65-4927-8013-c39ed13c14c8
+  metadata:
+    brief_title: A Study of LY3437943 in Healthy Participants With a High Body Mass Index
+    official_title: Effect of Injection Site on the Relative Bioavailability of a Single Dose of LY3437943
+      in Healthy Participants With a High Body Mass Index
+    overall_status: COMPLETED
+    phases:
+    - PHASE1
+    sponsor: Eli Lilly and Company
+    interventions:
+    - LY3437943
+    - LY3437943
+    conditions:
+    - Healthy
+    study_type: INTERVENTIONAL
+    start_date: '2023-07-18'
+    primary_completion_date: '2024-07-25'
+    completion_date: '2024-07-25'
+    has_results: false
+    last_update_posted: '2024-10-01'
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: ClinicalTrials.gov API v2
+    retrieved_at: '2026-07-27T05:31:36Z'
+    request_reference: ClinicalTrials.gov API v2 studies filter.ids batch (n=35)
+    response_locator: null
+- candidate_id: research-candidate-ae6644e5-6ff1-4199-99ea-529f4e3973ca
+  primary_identifier:
+    namespace: nct_id
+    value: NCT06003465
+  discovered_in_search_run_ids:
+  - search-run-5d02d48e-c716-4bed-990b-680c6d93ad72
+  - search-run-da841b57-1a65-4927-8013-c39ed13c14c8
+  metadata:
+    brief_title: A Research Study Looking at Similarity Between LY3437943 Versions for Different Injection
+      Devices
+    official_title: A Relative Bioavailability Study to Compare the Pharmacokinetics of LY3437943 Administered
+      Subcutaneously by a Test Device (Test Formulation) Versus Reference Device (Reference Formulation)
+      in Healthy Participants
+    overall_status: COMPLETED
+    phases:
+    - PHASE1
+    sponsor: Eli Lilly and Company
+    interventions:
+    - LY3437943
+    - Test
+    - Reference
+    conditions:
+    - Healthy
+    study_type: INTERVENTIONAL
+    start_date: '2023-08-29'
+    primary_completion_date: '2024-02-08'
+    completion_date: '2024-02-08'
+    has_results: false
+    last_update_posted: '2024-03-29'
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: ClinicalTrials.gov API v2
+    retrieved_at: '2026-07-27T05:31:36Z'
+    request_reference: ClinicalTrials.gov API v2 studies filter.ids batch (n=35)
+    response_locator: null
+- candidate_id: research-candidate-970cfd62-d9c0-4425-bf7c-0bda0fd3499e
+  primary_identifier:
+    namespace: nct_id
+    value: NCT06039826
+  discovered_in_search_run_ids:
+  - search-run-5d02d48e-c716-4bed-990b-680c6d93ad72
+  - search-run-da841b57-1a65-4927-8013-c39ed13c14c8
+  metadata:
+    brief_title: A Study of LY3437943 in Postmenopausal Female Participants Who Are Overweight or Obese
+    official_title: A Phase 1 Study to Investigate the Effect of LY3437943 on the Pharmacokinetics of
+      the Combined Oral Contraceptive Ethinyl Estradiol and Drospirenone in Female Participants
+    overall_status: COMPLETED
+    phases:
+    - PHASE1
+    sponsor: Eli Lilly and Company
+    interventions:
+    - LY3437943
+    - Ethinyl Estradiol
+    - Drospirenone
+    conditions:
+    - Overweight
+    study_type: INTERVENTIONAL
+    start_date: '2023-09-12'
+    primary_completion_date: '2024-07-11'
+    completion_date: '2024-07-11'
+    has_results: false
+    last_update_posted: '2024-07-26'
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: ClinicalTrials.gov API v2
+    retrieved_at: '2026-07-27T05:31:36Z'
+    request_reference: ClinicalTrials.gov API v2 studies filter.ids batch (n=35)
+    response_locator: null
+- candidate_id: research-candidate-b3bb4cc6-c6ce-4806-8bd3-2d0e3f4b49a1
+  primary_identifier:
+    namespace: nct_id
+    value: NCT06260722
+  discovered_in_search_run_ids:
+  - search-run-5d02d48e-c716-4bed-990b-680c6d93ad72
+  - search-run-da841b57-1a65-4927-8013-c39ed13c14c8
+  metadata:
+    brief_title: Effect of Retatrutide Compared With Semaglutide in Adult Participants With Type 2 Diabetes
+      and Inadequate Glycemic Control With Metformin With or Without SGLT2 Inhibitor (TRANSCEND-T2D-2)
+    official_title: A Phase 3, Randomized, Multicenter, Open-label Study to Investigate the Efficacy and
+      Safety of Retatrutide Once Weekly Compared With Semaglutide Once Weekly in Adult Participants With
+      Type 2 Diabetes and Inadequate Glycemic Control With Metformin With or Without SGLT2 Inhibitor (TRANSCEND-T2D-2)
+    overall_status: ACTIVE_NOT_RECRUITING
+    phases:
+    - PHASE3
+    sponsor: Eli Lilly and Company
+    interventions:
+    - Retatrutide
+    - Semaglutide
+    conditions:
+    - Diabetes Mellitus, Type 2
+    study_type: INTERVENTIONAL
+    start_date: '2024-02-21'
+    primary_completion_date: null
+    completion_date: null
+    has_results: false
+    last_update_posted: '2026-04-13'
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: ClinicalTrials.gov API v2
+    retrieved_at: '2026-07-27T05:31:36Z'
+    request_reference: ClinicalTrials.gov API v2 studies filter.ids batch (n=35)
+    response_locator: null
+- candidate_id: research-candidate-1f7c1186-b094-4196-9302-715fde0b9fca
+  primary_identifier:
+    namespace: nct_id
+    value: NCT06297603
+  discovered_in_search_run_ids:
+  - search-run-5d02d48e-c716-4bed-990b-680c6d93ad72
+  - search-run-da841b57-1a65-4927-8013-c39ed13c14c8
+  metadata:
+    brief_title: Effect of Retatrutide Compared With Placebo in Participants With Type 2 Diabetes and
+      Moderate or Severe Renal Impairment, With Inadequate Glycemic Control on Basal Insulin, With or
+      Without Metformin and/or SGLT2 Inhibitor (TRANSCEND-T2D-3)
+    official_title: A Phase 3, Randomized, Multicenter, Double-Blind Study to Investigate the Efficacy
+      and Safety of Retatrutide Once Weekly Compared With Placebo in Adult Participants With Type 2 Diabetes,
+      Moderate or Severe Renal Impairment With Inadequate Glycemic Control on Basal Insulin With or Without
+      Metformin and/or SGLT2 Inhibitor
+    overall_status: ACTIVE_NOT_RECRUITING
+    phases:
+    - PHASE3
+    sponsor: Eli Lilly and Company
+    interventions:
+    - Retatrutide
+    - Placebo
+    conditions:
+    - Type 2 Diabetes
+    study_type: INTERVENTIONAL
+    start_date: '2024-03-15'
+    primary_completion_date: null
+    completion_date: null
+    has_results: false
+    last_update_posted: '2026-07-20'
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: ClinicalTrials.gov API v2
+    retrieved_at: '2026-07-27T05:31:36Z'
+    request_reference: ClinicalTrials.gov API v2 studies filter.ids batch (n=35)
+    response_locator: null
+- candidate_id: research-candidate-9078f3d7-c229-44f3-b924-fa005ccc396d
+  primary_identifier:
+    namespace: nct_id
+    value: NCT06313528
+  discovered_in_search_run_ids:
+  - search-run-5d02d48e-c716-4bed-990b-680c6d93ad72
+  - search-run-da841b57-1a65-4927-8013-c39ed13c14c8
+  metadata:
+    brief_title: A Study to Measure Calorie Consumption and Usage in Participants With Obesity Using LY3437943
+    official_title: A Randomized, Double-Blind, Phase 1 Study to Investigate the Effect of LY3437943 Versus
+      Placebo on Calorie Intake and Energy Expenditure in Participants With Obesity Under Calorie Restriction
+    overall_status: COMPLETED
+    phases:
+    - PHASE1
+    sponsor: Eli Lilly and Company
+    interventions:
+    - LY3437943
+    - Placebo
+    conditions:
+    - Obesity
+    study_type: INTERVENTIONAL
+    start_date: '2024-03-20'
+    primary_completion_date: '2025-08-26'
+    completion_date: '2025-08-26'
+    has_results: false
+    last_update_posted: '2025-09-23'
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: ClinicalTrials.gov API v2
+    retrieved_at: '2026-07-27T05:31:36Z'
+    request_reference: ClinicalTrials.gov API v2 studies filter.ids batch (n=35)
+    response_locator: null
+- candidate_id: research-candidate-6024c7b6-a1ed-4466-8e5a-f22953cc0c5f
+  primary_identifier:
+    namespace: nct_id
+    value: NCT06354660
+  discovered_in_search_run_ids:
+  - search-run-5d02d48e-c716-4bed-990b-680c6d93ad72
+  - search-run-da841b57-1a65-4927-8013-c39ed13c14c8
+  metadata:
+    brief_title: Effect of Retatrutide Compared With Placebo in Adult Participants With Type 2 Diabetes
+      and Inadequate Glycemic Control With Diet and Exercise Alone (TRANSCEND-T2D-1)
+    official_title: A Phase 3, Randomized, Multicenter, Double-Blind Study to Investigate the Efficacy
+      and Safety of Retatrutide Once Weekly Compared With Placebo in Adult Participants With Type 2 Diabetes
+      and Inadequate Glycemic Control With Diet and Exercise Alone (TRANSCEND-T2D-1)
+    overall_status: COMPLETED
+    phases:
+    - PHASE3
+    sponsor: Eli Lilly and Company
+    interventions:
+    - Retatrutide
+    - Placebo
+    conditions:
+    - Diabetes Type 2
+    study_type: INTERVENTIONAL
+    start_date: '2024-04-10'
+    primary_completion_date: '2026-01-22'
+    completion_date: '2026-02-20'
+    has_results: false
+    last_update_posted: '2026-03-05'
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: ClinicalTrials.gov API v2
+    retrieved_at: '2026-07-27T05:31:36Z'
+    request_reference: ClinicalTrials.gov API v2 studies filter.ids batch (n=35)
+    response_locator: null
+- candidate_id: research-candidate-8407c00c-6457-4ab4-8be7-8c337687a76e
+  primary_identifier:
+    namespace: nct_id
+    value: NCT06383390
+  discovered_in_search_run_ids:
+  - search-run-5d02d48e-c716-4bed-990b-680c6d93ad72
+  - search-run-da841b57-1a65-4927-8013-c39ed13c14c8
+  metadata:
+    brief_title: The Effect of Retatrutide Once Weekly on Cardiovascular Outcomes and Kidney Outcomes
+      in Adults Living With Obesity (TRIUMPH-Outcomes)
+    official_title: A Phase 3, Randomized, Double-Blind, Placebo-Controlled, Event-Driven Study to Investigate
+      the Effect of Retatrutide on the Incidence of Major Adverse Cardiovascular Events and Major Adverse
+      Kidney Events in Participants With Body Mass Index ≥27 kg/m2 and Atherosclerotic Cardiovascular
+      Disease and/or Chronic Kidney Disease
+    overall_status: ACTIVE_NOT_RECRUITING
+    phases:
+    - PHASE3
+    sponsor: Eli Lilly and Company
+    interventions:
+    - Retatrutide
+    - Placebo
+    conditions:
+    - Atherosclerotic Cardiovascular Disease (ASCVD)
+    - Chronic Kidney Disease (CKD)
+    study_type: INTERVENTIONAL
+    start_date: '2024-04-30'
+    primary_completion_date: null
+    completion_date: null
+    has_results: false
+    last_update_posted: '2026-07-20'
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: ClinicalTrials.gov API v2
+    retrieved_at: '2026-07-27T05:31:36Z'
+    request_reference: ClinicalTrials.gov API v2 studies filter.ids batch (n=35)
+    response_locator: null
+- candidate_id: research-candidate-63d0015d-8e7f-475a-a765-562f240fdf9c
+  primary_identifier:
+    namespace: nct_id
+    value: NCT06662383
+  discovered_in_search_run_ids:
+  - search-run-5d02d48e-c716-4bed-990b-680c6d93ad72
+  - search-run-da841b57-1a65-4927-8013-c39ed13c14c8
+  metadata:
+    brief_title: A Study of Retatrutide (LY3437943) Compared to Tirzepatide (LY3298176) in Adults Who
+      Have Obesity
+    official_title: A Phase 3, Randomized, Double-Blind Study to Evaluate the Efficacy and Safety of Retatrutide
+      Compared to Tirzepatide in Adults Who Have Obesity
+    overall_status: ACTIVE_NOT_RECRUITING
+    phases:
+    - PHASE3
+    sponsor: Eli Lilly and Company
+    interventions:
+    - Retatrutide
+    - Tirzepatide
+    conditions:
+    - Obesity
+    study_type: INTERVENTIONAL
+    start_date: '2024-11-01'
+    primary_completion_date: null
+    completion_date: null
+    has_results: false
+    last_update_posted: '2026-07-20'
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: ClinicalTrials.gov API v2
+    retrieved_at: '2026-07-27T05:31:36Z'
+    request_reference: ClinicalTrials.gov API v2 studies filter.ids batch (n=35)
+    response_locator: null
+- candidate_id: research-candidate-b6518647-a574-454c-bfc2-63b7a5a5b656
+  primary_identifier:
+    namespace: nct_id
+    value: NCT06808802
+  discovered_in_search_run_ids:
+  - search-run-5d02d48e-c716-4bed-990b-680c6d93ad72
+  - search-run-da841b57-1a65-4927-8013-c39ed13c14c8
+  metadata:
+    brief_title: To Investigate the Effect of Retatrutide (LY3437943) on Metoprolol Pharmacokinetics in
+      Healthy Participants
+    official_title: A Phase 1, Open-label, Single-arm Study to Investigate the Effect of Retatrutide on
+      Metoprolol Pharmacokinetics in Healthy Participants
+    overall_status: COMPLETED
+    phases:
+    - PHASE1
+    sponsor: Eli Lilly and Company
+    interventions:
+    - Retatrutide
+    - Metoprolol
+    conditions:
+    - Healthy
+    study_type: INTERVENTIONAL
+    start_date: '2025-02-03'
+    primary_completion_date: '2025-04-15'
+    completion_date: '2025-04-15'
+    has_results: false
+    last_update_posted: '2025-06-05'
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: ClinicalTrials.gov API v2
+    retrieved_at: '2026-07-27T05:31:36Z'
+    request_reference: ClinicalTrials.gov API v2 studies filter.ids batch (n=35)
+    response_locator: null
+- candidate_id: research-candidate-c30a85f8-fca4-4625-ac6b-a303a0f9dee9
+  primary_identifier:
+    namespace: nct_id
+    value: NCT06859268
+  discovered_in_search_run_ids:
+  - search-run-5d02d48e-c716-4bed-990b-680c6d93ad72
+  - search-run-da841b57-1a65-4927-8013-c39ed13c14c8
+  metadata:
+    brief_title: A Study of Retatrutide (LY3437943) in the Maintenance of Weight Reduction in Individuals
+      With Obesity
+    official_title: A Phase 3b, Randomized, Double-Blind, Placebo-Controlled Study to Evaluate Retatrutide
+      Treatment in the Maintenance of Weight Reduction in Individuals With Obesity
+    overall_status: ACTIVE_NOT_RECRUITING
+    phases:
+    - PHASE3
+    sponsor: Eli Lilly and Company
+    interventions:
+    - Retatrutide
+    - Placebo
+    conditions:
+    - Obesity
+    study_type: INTERVENTIONAL
+    start_date: '2025-03-05'
+    primary_completion_date: null
+    completion_date: null
+    has_results: false
+    last_update_posted: '2026-03-03'
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: ClinicalTrials.gov API v2
+    retrieved_at: '2026-07-27T05:31:36Z'
+    request_reference: ClinicalTrials.gov API v2 studies filter.ids batch (n=35)
+    response_locator: null
+- candidate_id: research-candidate-6c4ef27b-d609-4d85-bc0e-d85ccc2bbd6e
+  primary_identifier:
+    namespace: nct_id
+    value: NCT06982846
+  discovered_in_search_run_ids:
+  - search-run-5d02d48e-c716-4bed-990b-680c6d93ad72
+  - search-run-da841b57-1a65-4927-8013-c39ed13c14c8
+  metadata:
+    brief_title: A Study to Investigate the Response of Participants With Type 2 Diabetes Mellitus on
+      Once-Weekly Retatrutide to Hypoglycemia
+    official_title: A Randomized, Placebo-Controlled, Parallel Study to Investigate the Response of Participants
+      With Type 2 Diabetes Mellitus on Once-Weekly Retatrutide to Hypoglycemia
+    overall_status: COMPLETED
+    phases:
+    - PHASE1
+    sponsor: Eli Lilly and Company
+    interventions:
+    - Retatrutide
+    - Placebo
+    conditions:
+    - Type 2 Diabetes Mellitus
+    study_type: INTERVENTIONAL
+    start_date: '2025-06-06'
+    primary_completion_date: '2026-05-04'
+    completion_date: '2026-05-04'
+    has_results: false
+    last_update_posted: '2026-06-18'
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: ClinicalTrials.gov API v2
+    retrieved_at: '2026-07-27T05:31:36Z'
+    request_reference: ClinicalTrials.gov API v2 studies filter.ids batch (n=35)
+    response_locator: null
+- candidate_id: research-candidate-8703b545-c947-49ed-80e3-c2e8fdce9a23
+  primary_identifier:
+    namespace: nct_id
+    value: NCT06982859
+  discovered_in_search_run_ids:
+  - search-run-5d02d48e-c716-4bed-990b-680c6d93ad72
+  - search-run-da841b57-1a65-4927-8013-c39ed13c14c8
+  metadata:
+    brief_title: A Study to Evaluate the Effect of Retatrutide on Insulin Secretion and Insulin Sensitivity
+      in Adult Participants With Type 2 Diabetes Mellitus
+    official_title: A Phase 1, Investigator- and Participant-Blinded Study to Evaluate the Effect of Retatrutide
+      on α- and β- Cell Function and Insulin Sensitivity in Adult Participants With Type 2 Diabetes Mellitus
+    overall_status: ACTIVE_NOT_RECRUITING
+    phases:
+    - PHASE1
+    sponsor: Eli Lilly and Company
+    interventions:
+    - Retatrutide
+    - Semaglutide
+    - Placebo
+    conditions:
+    - Diabetes Mellitus
+    - Insulin Sensitivity
+    study_type: INTERVENTIONAL
+    start_date: '2025-06-02'
+    primary_completion_date: null
+    completion_date: null
+    has_results: false
+    last_update_posted: '2026-07-16'
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: ClinicalTrials.gov API v2
+    retrieved_at: '2026-07-27T05:31:36Z'
+    request_reference: ClinicalTrials.gov API v2 studies filter.ids batch (n=35)
+    response_locator: null
+- candidate_id: research-candidate-961657da-72bb-42e7-87fe-f25365a7b047
+  primary_identifier:
+    namespace: nct_id
+    value: NCT07035093
+  discovered_in_search_run_ids:
+  - search-run-5d02d48e-c716-4bed-990b-680c6d93ad72
+  - search-run-da841b57-1a65-4927-8013-c39ed13c14c8
+  metadata:
+    brief_title: A Study of Retatrutide (LY3437943) in Participants Who Have Obesity or Overweight and
+      Chronic Low Back Pain
+    official_title: A Phase 3, Randomized, Double-Blind, Placebo-Controlled Study to Investigate the Efficacy
+      and Safety of Retatrutide Once Weekly in Participants Who Have Obesity or Overweight and Chronic
+      Low Back Pain
+    overall_status: ACTIVE_NOT_RECRUITING
+    phases:
+    - PHASE3
+    sponsor: Eli Lilly and Company
+    interventions:
+    - Retatrutide
+    - Placebo
+    conditions:
+    - Obesity
+    - Overweight
+    - Chronic Low Back Pain (CLBP)
+    study_type: INTERVENTIONAL
+    start_date: '2025-05-29'
+    primary_completion_date: null
+    completion_date: null
+    has_results: false
+    last_update_posted: '2026-07-23'
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: ClinicalTrials.gov API v2
+    retrieved_at: '2026-07-27T05:31:36Z'
+    request_reference: ClinicalTrials.gov API v2 studies filter.ids batch (n=35)
+    response_locator: null
+- candidate_id: research-candidate-eab19a5b-03e6-4900-9b9e-d08f127e54c6
+  primary_identifier:
+    namespace: nct_id
+    value: NCT07165028
+  discovered_in_search_run_ids:
+  - search-run-5d02d48e-c716-4bed-990b-680c6d93ad72
+  - search-run-da841b57-1a65-4927-8013-c39ed13c14c8
+  metadata:
+    brief_title: A Master Protocol of Multiple Agents in Adults With Metabolic Dysfunction-Associated
+      Steatotic Liver Disease (SYNERGY-Outcomes)
+    official_title: A Master Protocol for a Randomized, Controlled, Clinical Trial of Multiple Pharmacologic
+      Agents in Adult Participants With Metabolic Dysfunction-Associated Steatotic Liver Disease Who Are
+      at Increased Risk of Developing Major Adverse Liver Outcomes
+    overall_status: RECRUITING
+    phases:
+    - PHASE3
+    sponsor: Eli Lilly and Company
+    interventions:
+    - Tirzepatide
+    - Retatrutide
+    - Placebo
+    conditions:
+    - Metabolic Dysfunction-Associated Steatotic Liver Disease
+    study_type: INTERVENTIONAL
+    start_date: '2025-10-15'
+    primary_completion_date: null
+    completion_date: null
+    has_results: false
+    last_update_posted: '2026-07-17'
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: ClinicalTrials.gov API v2
+    retrieved_at: '2026-07-27T05:31:36Z'
+    request_reference: ClinicalTrials.gov API v2 studies filter.ids batch (n=35)
+    response_locator: null
+- candidate_id: research-candidate-d86d95a8-604e-40d5-b2d0-c7bd2a1e77bb
+  primary_identifier:
+    namespace: nct_id
+    value: NCT07226947
+  discovered_in_search_run_ids:
+  - search-run-da841b57-1a65-4927-8013-c39ed13c14c8
+  metadata:
+    brief_title: Body Composition and Exercise to Prevent Muscle Loss With GLP1 Agonist Treatment
+    official_title: BIA Monitoring and Exercise for the Prevention of Muscle Loss With Incretin Therapy
+      (BICEP Study)
+    overall_status: RECRUITING
+    phases:
+    - NA
+    sponsor: Massachusetts General Hospital
+    interventions:
+    - Smartwatch activity and body composition monitor
+    - General guidance on recommended exercise
+    conditions:
+    - Obesity
+    - Body Composition
+    study_type: INTERVENTIONAL
+    start_date: '2025-11-24'
+    primary_completion_date: null
+    completion_date: null
+    has_results: false
+    last_update_posted: '2025-12-30'
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: ClinicalTrials.gov API v2
+    retrieved_at: '2026-07-27T05:31:36Z'
+    request_reference: ClinicalTrials.gov API v2 studies filter.ids batch (n=35)
+    response_locator: null
+- candidate_id: research-candidate-32970b5c-c11c-4d8b-8b35-82d4007cdd67
+  primary_identifier:
+    namespace: nct_id
+    value: NCT07232719
+  discovered_in_search_run_ids:
+  - search-run-5d02d48e-c716-4bed-990b-680c6d93ad72
+  - search-run-da841b57-1a65-4927-8013-c39ed13c14c8
+  metadata:
+    brief_title: A Study of Retatrutide (LY3437943) in Participants With Obesity or Overweight
+    official_title: 'A Phase 3b Study to Investigate the Efficacy and Safety of Retatrutide Once Weekly
+      in Participants Without Type 2 Diabetes Who Have Obesity or Overweight: A Randomized, Double-Blind,
+      Placebo-Controlled Trial'
+    overall_status: ACTIVE_NOT_RECRUITING
+    phases:
+    - PHASE3
+    sponsor: Eli Lilly and Company
+    interventions:
+    - Retatrutide
+    - Placebo
+    conditions:
+    - Obesity
+    - Overweight
+    study_type: INTERVENTIONAL
+    start_date: '2025-11-17'
+    primary_completion_date: null
+    completion_date: null
+    has_results: false
+    last_update_posted: '2026-04-17'
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: ClinicalTrials.gov API v2
+    retrieved_at: '2026-07-27T05:31:36Z'
+    request_reference: ClinicalTrials.gov API v2 studies filter.ids batch (n=35)
+    response_locator: null
+- candidate_id: research-candidate-f4556833-6428-4439-9170-ffd983250530
+  primary_identifier:
+    namespace: nct_id
+    value: NCT07357415
+  discovered_in_search_run_ids:
+  - search-run-5d02d48e-c716-4bed-990b-680c6d93ad72
+  - search-run-da841b57-1a65-4927-8013-c39ed13c14c8
+  metadata:
+    brief_title: A Study of Retatrutide (LY3437943) in Participants Without Type 2 Diabetes Who Have Obesity
+      or Overweight
+    official_title: 'A Phase 3b Study to Investigate the Efficacy and Safety of Different Retatrutide
+      Dose Escalation Schemes in Participants Without Type 2 Diabetes Who Have Obesity or Overweight:
+      A Randomized, Controlled, Double-Blind Trial'
+    overall_status: ACTIVE_NOT_RECRUITING
+    phases:
+    - PHASE3
+    sponsor: Eli Lilly and Company
+    interventions:
+    - Retatrutide
+    conditions:
+    - Obesity
+    - Overweight
+    study_type: INTERVENTIONAL
+    start_date: '2026-01-24'
+    primary_completion_date: null
+    completion_date: null
+    has_results: false
+    last_update_posted: '2026-06-09'
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: ClinicalTrials.gov API v2
+    retrieved_at: '2026-07-27T05:31:36Z'
+    request_reference: ClinicalTrials.gov API v2 studies filter.ids batch (n=35)
+    response_locator: null
+- candidate_id: research-candidate-b0f5cb49-589e-4064-9399-a9b8242418cf
+  primary_identifier:
+    namespace: nct_id
+    value: NCT07467447
+  discovered_in_search_run_ids:
+  - search-run-5d02d48e-c716-4bed-990b-680c6d93ad72
+  - search-run-da841b57-1a65-4927-8013-c39ed13c14c8
+  metadata:
+    brief_title: Effect of LY3437943 Versus Placebo in Participants Who Have Obesity or Are Overweight
+    official_title: A Phase 2 Study of Once-Weekly LY3437943 Compared With Placebo in Participants Who
+      Have Obesity or Are Overweight With Weight-Related Comorbidities
+    overall_status: RECRUITING
+    phases:
+    - PHASE2
+    sponsor: Hudson Biotech
+    interventions:
+    - Retatrutide (LY3437943)
+    - Placebo
+    - Standardized diet and physical activity counseling throughout the study.
+    conditions:
+    - Obesity
+    study_type: INTERVENTIONAL
+    start_date: '2026-02-15'
+    primary_completion_date: '2027-03-14'
+    completion_date: '2028-02-17'
+    has_results: false
+    last_update_posted: '2026-03-12'
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: ClinicalTrials.gov API v2
+    retrieved_at: '2026-07-27T05:31:36Z'
+    request_reference: ClinicalTrials.gov API v2 studies filter.ids batch (n=35)
+    response_locator: null
+- candidate_id: research-candidate-d52f3840-84d8-46c6-a92a-3cc48fd76829
+  primary_identifier:
+    namespace: nct_id
+    value: NCT07629401
+  discovered_in_search_run_ids:
+  - search-run-5d02d48e-c716-4bed-990b-680c6d93ad72
+  - search-run-da841b57-1a65-4927-8013-c39ed13c14c8
+  metadata:
+    brief_title: Provide Pre-approval Expanded Access of LY3437943
+    official_title: Provide Pre-approval Expanded Access of Retatrutide
+    overall_status: AVAILABLE
+    phases: []
+    sponsor: Eli Lilly and Company
+    interventions:
+    - Retatrutide
+    conditions: []
+    study_type: EXPANDED_ACCESS
+    start_date: null
+    primary_completion_date: null
+    completion_date: null
+    has_results: false
+    last_update_posted: '2026-06-05'
+  metadata_status: fetched
+  metadata_fetch_note: null
+  metadata_provenance:
+    source_interface: ClinicalTrials.gov API v2
+    retrieved_at: '2026-07-27T05:31:36Z'
+    request_reference: ClinicalTrials.gov API v2 studies filter.ids batch (n=35)
+    response_locator: null
+created_at: '2026-07-27'
+updated_at: '2026-07-27'

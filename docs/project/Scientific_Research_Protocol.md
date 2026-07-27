@@ -161,6 +161,58 @@ eines stillen Verzichts auf Profilierung. Die Versionsnummer ist bewusst Teil de
 eine künftige Änderung der Profilregeln führt ein neues Profil ein, statt historische Search Runs rückwirkend
 umzudeuten (siehe `research/search_runs/README.md`, ADR-0055).
 
+## 7b. Candidate Manifests: technische Discovery-Kandidaten
+
+Zwischen dem Search Result Manifest (Abschnitt 7a — die unveränderte Trefferliste **eines einzelnen**
+Suchlaufs) und dem `screening_record` (die wissenschaftliche Ein-/Ausschlussentscheidung, Abschnitt 8ff.) liegt
+seit Phase 4B-1B-0 eine vorgelagerte, rein technische Objektart: `research_candidate_manifest` (Schema:
+`schemas/research_candidate_manifest.schema.json`, Ordner `research/candidates/`, ID-Muster
+`candidate-manifest-<uuid4>`, siehe ADR-0056 im [Decision Log](Decision_Log.md)).
+
+Ein Candidate Manifest ist **protokoll- und datenbankgebunden** und bildet die **normalisierte
+Vereinigungsmenge** der Identifikatoren aus einem oder mehreren Search Result Manifests derselben Datenbank
+desselben Protokolls (z. B. zwei Alias-Suchen nach demselben Wirkstoff) — samt vollständiger
+Suchlauf-Herkunft je Identifikator (`discovered_in_search_run_ids`, nicht auf einen einzigen „primären“
+Suchlauf reduzierbar). Jeder Kandidat erhält eine stabile interne `candidate_id`
+(`research-candidate-<uuid4>`), die bei wiederholter Ausführung von `tools/build_research_candidates.py` für
+denselben Identifikator erhalten bleibt.
+
+**Ein Candidate Manifest ist NICHT:** eine Screening-Entscheidung, eine kanonische Quelle, eine Studie oder ein
+Claim. Es enthält ausschließlich technische/bibliographische Metadaten (Titel, Publikationsjahr, Journal,
+Publikationstyp, DOI, PMCID, Autoren, `abstract_available` als reiner Boolean, Sprache für PubMed;
+`brief_title`/`official_title`, Status, Phasen, Sponsor, Interventionen, Bedingungen, Studientyp, Datumsfelder,
+`has_results` für ClinicalTrials.gov) — keine Abstracttexte, keine Freitextbeschreibungen, keine Ergebnisdaten,
+keine Evidenz-, Wirksamkeits- oder Sicherheitsfelder. `metadata_status` (kontrolliertes Vokabular
+`research/vocabularies/candidate_metadata_statuses.yaml`: `not_fetched`/`fetched`/`partial`/`not_found`/
+`fetch_error`) ist ein rein technischer Metadaten-Abrufzustand, keine wissenschaftliche Aussage.
+
+**Unveränderlichkeit (ADR-0056):** die Discovery-Identität (`id`, `protocol_id`, `database`,
+`identifier_namespace`, `source_search_run_ids`, `source_result_manifest_ids`, `candidate_count`,
+`candidates[].candidate_id`/`primary_identifier`/`discovered_in_search_run_ids`) ist nach dem Merge
+vollständig unveränderlich (siehe `tools/check_research_immutability.py`). Metadaten
+(`candidates[].metadata`/`metadata_status`/`metadata_fetch_note`/`metadata_provenance`) sowie das
+Manifest-eigene `updated_at` dürfen kontrolliert nachträglich ergänzt/aktualisiert werden — ein Metadaten-Refresh
+verändert nie, welche Kandidaten entdeckt wurden oder woher.
+
+**Erzeugung:** `tools/build_research_candidates.py --from-manifests` baut/aktualisiert ein Candidate Manifest
+offline aus den bereits versionierten Search Result Manifests (deterministisch, bestehende `candidate_id`-Werte
+bleiben erhalten); `--refresh-metadata` ruft fehlende Metadaten über die offiziellen APIs (NCBI ESummary,
+ClinicalTrials.gov API v2) ab. Ein fehlgeschlagener Abruf entfernt nie die Discovery-Identität eines Kandidaten
+— er setzt lediglich `metadata_status: fetch_error`/`not_found` mit einer knappen technischen Begründung.
+
+**Verhältnis zum Screening Record:** ein `screening_record` kann über `candidate_manifest_id`/`candidate_id` auf
+genau den technischen Discovery-Kandidaten zurückverweisen, aus dem er hervorgegangen ist. Die Pflicht dazu ist
+**datengetrieben** (siehe `tools/validate_research.py::check_screening_candidate_references`, CSO-Review-Nachtrag
+zu ADR-0056 im [Decision Log](Decision_Log.md)): existiert mindestens ein `research_candidate_manifest` mit
+derselben `protocol_id`, müssen neue (nicht unter `research/examples/**` liegende) Screening Records dieses
+Protokolls die Referenz setzen; existiert (noch) kein Candidate Manifest für ein Protokoll, bleibt die Referenz
+dort optional (Migrationskompatibilität für ältere Protokolle). Liegt eine Referenz vor, muss der zum Namespace
+des Kandidaten passende externe Identifikator (`candidate_identifiers.pmid` bzw. `.nct_id`) gesetzt sein und mit
+dem Kandidaten übereinstimmen — ein fehlender und ein abweichender Identifikator sind zwei getrennte
+Validierungsfehler. Diese Verknüpfung ist ansonsten rein referenziell (Ziel existiert, gleiches Protokoll) und
+setzt **niemals** automatisch eine Screening-Entscheidung — das Erzeugen eines Candidate Manifest ist selbst
+keine Include-/Exclude-Entscheidung und keine Bewertung der Relevanz eines einzelnen PMID/NCT-ID.
+
 ## 8. Deduplizierung
 
 **Deduplizierung** bedeutet: erkennen, dass zwei gefundene Datensätze dieselbe zugrunde liegende Publikation

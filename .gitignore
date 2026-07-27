@@ -11,3 +11,7 @@ build/
 # aus rechtlichen/technischen Gruenden nicht versioniert. Siehe research/raw/README.md.
 research/raw/*
 !research/raw/README.md
+
+# Temporaerer Scratch-Bereich fuer tests/test_validate_research_candidate_manifests.py -- wird pro
+# Test angelegt/geloescht, nur als Netz fuer den Fall eines abgebrochenen Testlaufs hier ignoriert.
+tests/fixtures/_scratch_candidate_manifests/

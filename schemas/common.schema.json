@@ -293,6 +293,11 @@
       "enum": ["complete", "unavailable"],
       "description": "Kontrolliertes Vokabular fuer research_search_run.result_capture.status (siehe ADR-0055). 'complete': das vollstaendige, tatsaechlich erhaltene Identifikator-Result-Set ist als research_search_result_manifest versioniert. 'unavailable': aus einem dokumentierten Grund (z. B. keine stabile/reproduzierbare Gesamtmenge, Interface liefert keine Identifikatorliste) wurde bewusst kein Manifest erzeugt -- die Trefferzahl bleibt im Suchlauf selbst dokumentiert, ist aber nicht identifikatorgenau nachvollziehbar."
     },
+    "candidate_metadata_status": {
+      "type": "string",
+      "enum": ["not_fetched", "fetched", "partial", "not_found", "fetch_error"],
+      "description": "Kontrolliertes Vokabular fuer research_candidate_manifest.candidates[].metadata_status (siehe ADR-0056, research/vocabularies/candidate_metadata_statuses.yaml). Rein technischer Metadaten-Abrufzustand -- ausdruecklich KEINE wissenschaftliche Screening-Aussage (kein 'relevant'/'included'/'excluded'). 'not_fetched': noch kein Abrufversuch. 'fetched': vollstaendige, fuer diese Datenbank definierte Pflichtmetadaten liegen vor. 'partial': ein Abrufversuch fand statt, aber nicht alle Pflichtmetadaten konnten ermittelt werden. 'not_found': die Datenbank kannte den Identifikator zum Abrufzeitpunkt nicht. 'fetch_error': der Abrufversuch scheiterte aus einem technischen Grund (z. B. Netzwerkfehler, Rate Limit)."
+    },
     "evidence_link": {
       "type": "object",
       "properties": {

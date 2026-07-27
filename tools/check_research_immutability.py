@@ -52,11 +52,59 @@ from _datalib import DataFileError, load_yaml_file  # noqa: E402
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
+# ADR-0056: ein Candidate Manifest trennt eine unveraenderliche Discovery-Identitaet (welche
+# Kandidaten wurden von welchen Suchlaeufen entdeckt) von kontrolliert nachtraeglich
+# aktualisierbaren externen Metadaten (metadata/metadata_status/metadata_fetch_note/
+# metadata_provenance je Kandidat). Anders als bei search_runs/search_results reicht ein flacher
+# Top-Level-Feldvergleich dafuer nicht aus, da die mutable/immutable-Trennung INNERHALB des
+# Listenfelds "candidates" verlaeuft (siehe _check_candidate_manifest_modification).
+CANDIDATE_MANIFEST_IMMUTABLE_TOP_FIELDS = frozenset({
+    "id", "protocol_id", "database", "identifier_namespace",
+    "source_search_run_ids", "source_result_manifest_ids", "candidate_count", "created_at",
+})
+CANDIDATE_ENTRY_IMMUTABLE_FIELDS = frozenset({"candidate_id", "primary_identifier", "discovered_in_search_run_ids"})
+
+
+def _check_candidate_manifest_modification(old_data: dict, new_data: dict) -> list[str]:
+    """Vergleicht zwei Versionen desselben research_candidate_manifest (siehe ADR-0056): die
+    Discovery-Identitaet (Top-Level-Felder ausser updated_at, sowie candidate_id/primary_identifier/
+    discovered_in_search_run_ids je Kandidat) ist vollstaendig unveraenderlich und darf auch nicht
+    entfernt werden. metadata/metadata_status/metadata_fetch_note/metadata_provenance je Kandidat
+    sowie das Manifest-eigene updated_at duerfen sich kontrolliert aendern (Metadaten-Refresh)."""
+    errors: list[str] = []
+    for field in CANDIDATE_MANIFEST_IMMUTABLE_TOP_FIELDS:
+        if old_data.get(field) != new_data.get(field):
+            errors.append(f"modifies immutable field '{field}' of an already-committed candidate manifest")
+
+    old_candidates = {c.get("candidate_id"): c for c in (old_data.get("candidates") or []) if isinstance(c, dict)}
+    new_candidates = {c.get("candidate_id"): c for c in (new_data.get("candidates") or []) if isinstance(c, dict)}
+
+    removed = set(old_candidates) - set(new_candidates)
+    if removed:
+        errors.append(
+            f"removes already-committed candidate(s) {sorted(removed)} -- candidates are immutable discovery "
+            "identity and are never deleted from a candidate manifest"
+        )
+
+    for candidate_id, old_entry in old_candidates.items():
+        new_entry = new_candidates.get(candidate_id)
+        if new_entry is None:
+            continue
+        for field in CANDIDATE_ENTRY_IMMUTABLE_FIELDS:
+            if old_entry.get(field) != new_entry.get(field):
+                errors.append(
+                    f"modifies immutable field '{field}' of already-committed candidate '{candidate_id}'"
+                )
+
+    return errors
+
+
 @dataclass(frozen=True)
 class ImmutableTarget:
     pathspec: str
     mutable_fields: frozenset[str]
     label: str
+    custom_compare: object = None  # Callable[[dict, dict], list[str]] | None
 
 
 IMMUTABLE_TARGETS = [
@@ -69,6 +117,12 @@ IMMUTABLE_TARGETS = [
         pathspec="research/search_results",
         mutable_fields=frozenset(),
         label="search result manifest",
+    ),
+    ImmutableTarget(
+        pathspec="research/candidates",
+        mutable_fields=frozenset(),  # unused when custom_compare is set; see _check_target
+        label="candidate manifest",
+        custom_compare=_check_candidate_manifest_modification,
     ),
 ]
 
@@ -147,6 +201,10 @@ def _check_target(repo_root: Path, merge_base: str, target: ImmutableTarget) -> 
                 errors.append(f"{path}: could not parse working tree version: {exc}")
                 continue
             if not isinstance(old_data, dict) or not isinstance(new_data, dict):
+                continue
+            if target.custom_compare is not None:
+                for message in target.custom_compare(old_data, new_data):
+                    errors.append(f"{path}: {message}")
                 continue
             changed_keys = {
                 key for key in set(old_data) | set(new_data) if old_data.get(key) != new_data.get(key)

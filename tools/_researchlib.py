@@ -32,6 +32,7 @@ RESEARCH_KIND_TO_FOLDER = {
     "protocol": "protocols",
     "search_run": "search_runs",
     "search_result_manifest": "search_results",
+    "candidate_manifest": "candidates",
     "screening_record": "screening",
     "extraction_record": "extractions",
     "promotion_record": "promotions",
@@ -41,6 +42,7 @@ RESEARCH_KIND_TO_SCHEMA_ID = {
     "protocol": "research_protocol.schema.json",
     "search_run": "research_search_run.schema.json",
     "search_result_manifest": "research_search_result_manifest.schema.json",
+    "candidate_manifest": "research_candidate_manifest.schema.json",
     "screening_record": "research_screening_record.schema.json",
     "extraction_record": "research_extraction_record.schema.json",
     "promotion_record": "research_promotion_record.schema.json",
@@ -50,6 +52,7 @@ RESEARCH_KIND_TO_ID_PREFIX = {
     "protocol": "research-protocol-",
     "search_run": "search-run-",
     "search_result_manifest": "search-result-manifest-",
+    "candidate_manifest": "candidate-manifest-",
     "screening_record": "screening-record-",
     "extraction_record": "extraction-record-",
     "promotion_record": "promotion-record-",
@@ -67,6 +70,7 @@ RESEARCH_VOCABULARY_NAMES = [
     "search_run_statuses",
     "promotion_statuses",
     "search_interface_profiles",
+    "candidate_metadata_statuses",
 ]
 
 # Kanonische Reihenfolge der Screening-Stufen, fuer Monotonie-Pruefungen in decision_history

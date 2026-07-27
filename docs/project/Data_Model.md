@@ -27,7 +27,10 @@ Dieses Dokument entwirft ein **universelles, technologieunabhängiges Datenmodel
     ADR-0033 im [Decision Log](Decision_Log.md)), die Rechercheverlauf, Kandidaten, Screening- und
     Extraktionsdaten hält. `research/**` ist **kein** kanonisches Wissen und fließt nicht in dieses Datenmodell
     ein — erst nach manueller Prüfung wird eine Information als Entität, Quelle, Studie oder Claim unter
-    `data/**` angelegt. Details: [Scientific Research Protocol](Scientific_Research_Protocol.md),
+    `data/**` angelegt. Seit Phase 4B-1B-0 gehört dazu zusätzlich `research_candidate_manifest`
+    (`research/candidates/**`) — eine protokoll-/datenbankgebundene, rein technisch-bibliographische
+    Normalisierung der Discovery-Grundmenge zwischen Search Result Manifest und Screening Record (siehe
+    ADR-0056). Details: [Scientific Research Protocol](Scientific_Research_Protocol.md),
     [Evidence Curation Workflow](Evidence_Curation_Workflow.md).
 
 ## Leitprinzipien

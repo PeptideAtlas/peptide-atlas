@@ -113,7 +113,8 @@ UNWANTED_BINARY_SUFFIXES = {
 }
 
 RESEARCH_KINDS = (
-    "protocol", "search_run", "search_result_manifest", "screening_record", "extraction_record", "promotion_record",
+    "protocol", "search_run", "search_result_manifest", "candidate_manifest", "screening_record",
+    "extraction_record", "promotion_record",
 )
 
 DATABASE_TO_IDENTIFIER_TYPE = {
@@ -283,7 +284,7 @@ def check_research_references(
     screening = objects["screening_record"]
     extractions = objects["extraction_record"]
 
-    for kind in ("search_run", "screening_record", "extraction_record"):
+    for kind in ("search_run", "candidate_manifest", "screening_record", "extraction_record"):
         for obj in objects[kind].values():
             file_rel = relative(obj.path)
             protocol_id = obj.data.get("protocol_id")
@@ -1111,6 +1112,11 @@ def check_misc_consistency(report: Report, objects: dict[str, dict[str, Research
         file_rel = relative(obj.path)
         data = obj.data
         _check_unique(report, file_rel, "$.search_run_ids", data.get("search_run_ids") or [])
+
+    for obj in objects["candidate_manifest"].values():
+        file_rel = relative(obj.path)
+        data = obj.data
+        _check_date_order(report, file_rel, "created_at/updated_at", data.get("created_at"), data.get("updated_at"))
         _check_date_order(report, file_rel, "created_at/updated_at", data.get("created_at"), data.get("updated_at"))
 
     for obj in objects["extraction_record"].values():
@@ -1417,6 +1423,353 @@ def check_search_run_interface_profiles(report: Report, objects: dict[str, dict[
                         )
 
 
+def _check_candidate_reference_safety(
+    report: Report, file_rel: str, path: str, value: str | None, *, require_raw_path: bool
+) -> None:
+    """Prueft ein Metadaten-Provenienzfeld (request_reference oder response_locator) auf
+    Sicherheit (siehe ADR-0056): keine vollstaendige URL, keine offensichtlichen Secret-Parameter
+    (api_key/apikey/token/secret), kein absoluter oder '..'-Pfad. `require_raw_path` erzwingt
+    zusaetzlich, dass ein gesetzter Wert unter research/raw/ liegt (wie export_reference/
+    source_export_reference bei Suchlaeufen/Manifesten) -- fuer response_locator, nicht fuer
+    request_reference (das ist eine reine technische Kurzbeschreibung, kein Dateipfad)."""
+    if not value:
+        return
+    lowered = value.lower()
+    if "://" in value:
+        report.error(file_rel, path, "must not be a full URL -- only a short technical reference is allowed")
+        return
+    for secret_marker in ("api_key", "apikey", "token", "secret"):
+        if secret_marker in lowered:
+            report.error(file_rel, path, f"must not contain what looks like a secret parameter ('{secret_marker}')")
+            return
+    if not require_raw_path:
+        return
+    if value.startswith("/") or value.startswith("\\") or re.match(r"^[a-zA-Z]:[\\/]", value):
+        report.error(file_rel, path, "must be a relative path, not an absolute path")
+        return
+    normalized = value.replace("\\", "/")
+    if ".." in normalized.split("/"):
+        report.error(file_rel, path, "must not contain '..' path segments")
+        return
+    if not normalized.lstrip("./").startswith("research/raw/"):
+        report.error(file_rel, path, "must point to a path under research/raw/")
+
+
+CANDIDATE_METADATA_FETCHED_REQUIRED_FIELDS = {
+    "pubmed": (("title", "a non-empty title"), ("abstract_available", "abstract_available to be set")),
+    "clinicaltrials_gov": (
+        ("brief_title", "a non-empty brief_title"),
+        ("overall_status", "a non-empty overall_status"),
+        ("has_results", "has_results to be set"),
+    ),
+}
+
+
+def check_candidate_manifests(report: Report, objects: dict[str, dict[str, ResearchObject]]) -> None:
+    """Prueft research_candidate_manifest (siehe ADR-0056, Phase 4B-1B-0-Arbeitsauftrag Abschnitt 6):
+
+    - source_search_run_ids/source_result_manifest_ids existieren, gehoeren zum selben Protokoll bzw.
+      Suchlauf, und database/identifier_namespace stimmen ueberein.
+    - Die Kandidatenmenge ist die exakte, bijektive Vereinigung der Identifikatoren aller
+      referenzierten Search Result Manifests -- kein fehlender, kein zusaetzlicher Identifikator.
+    - candidate_count == len(candidates); candidate_id projektweit eindeutig; primary_identifier
+      innerhalb von Protokoll+Namespace eindeutig.
+    - discovered_in_search_run_ids ist die vollstaendige, korrekte Herkunftsmenge (weder zu wenig
+      noch zu viele Suchlaeufe).
+    - metadata_provenance.retrieved_at liegt innerhalb [created_at, updated_at] des Manifests.
+    - metadata_status: fetched verlangt die je Datenbank definierten Pflichtmetadaten.
+    """
+    search_runs = objects["search_run"]
+    result_manifests = objects["search_result_manifest"]
+    candidate_manifests = objects["candidate_manifest"]
+
+    seen_candidate_ids: dict[str, str] = {}
+    seen_primary_identifiers: dict[tuple[str, str, str], str] = {}
+
+    for obj in candidate_manifests.values():
+        file_rel = relative(obj.path)
+        data = obj.data
+        protocol_id = data.get("protocol_id")
+        database = data.get("database")
+        identifier_namespace = data.get("identifier_namespace")
+        expected_namespace = DATABASE_TO_IDENTIFIER_TYPE.get(database)
+
+        if expected_namespace and identifier_namespace != expected_namespace:
+            report.error(
+                file_rel, "$.identifier_namespace",
+                f"database '{database}' requires identifier_namespace '{expected_namespace}', got "
+                f"'{identifier_namespace}'",
+            )
+
+        run_objs: list[ResearchObject] = []
+        for search_run_id in data.get("source_search_run_ids") or []:
+            run = search_runs.get(search_run_id)
+            if run is None:
+                report.error(file_rel, "$.source_search_run_ids", f"references missing search run: {search_run_id}")
+                continue
+            if run.data.get("protocol_id") != protocol_id:
+                report.error(
+                    file_rel, "$.source_search_run_ids",
+                    f"search run '{search_run_id}' belongs to protocol '{run.data.get('protocol_id')}', not this "
+                    f"candidate manifest's protocol '{protocol_id}'",
+                )
+            if run.data.get("database") != database:
+                report.error(
+                    file_rel, "$.source_search_run_ids",
+                    f"search run '{search_run_id}' uses database '{run.data.get('database')}', not this candidate "
+                    f"manifest's database '{database}'",
+                )
+            run_objs.append(run)
+
+        manifest_objs: list[ResearchObject] = []
+        for manifest_id in data.get("source_result_manifest_ids") or []:
+            manifest = result_manifests.get(manifest_id)
+            if manifest is None:
+                report.error(
+                    file_rel, "$.source_result_manifest_ids",
+                    f"references missing search result manifest: {manifest_id}",
+                )
+                continue
+            if manifest.data.get("identifier_type") != identifier_namespace:
+                report.error(
+                    file_rel, "$.source_result_manifest_ids",
+                    f"search result manifest '{manifest_id}' has identifier_type "
+                    f"'{manifest.data.get('identifier_type')}', not this candidate manifest's identifier_namespace "
+                    f"'{identifier_namespace}'",
+                )
+            manifest_objs.append(manifest)
+
+        source_manifest_ids = set(data.get("source_result_manifest_ids") or [])
+        for run in run_objs:
+            manifest_id = (run.data.get("result_capture") or {}).get("manifest_id")
+            if manifest_id and manifest_id not in source_manifest_ids:
+                report.error(
+                    file_rel, "$.source_result_manifest_ids",
+                    f"search run '{run.id}' is referenced via source_search_run_ids, but its manifest "
+                    f"'{manifest_id}' is missing from source_result_manifest_ids",
+                )
+        source_run_ids = set(data.get("source_search_run_ids") or [])
+        for manifest in manifest_objs:
+            search_run_id = manifest.data.get("search_run_id")
+            if search_run_id and search_run_id not in source_run_ids:
+                report.error(
+                    file_rel, "$.source_search_run_ids",
+                    f"search result manifest '{manifest.id}' belongs to search run '{search_run_id}', which is "
+                    "missing from source_search_run_ids",
+                )
+
+        normalize = NORMALIZERS.get(identifier_namespace)
+        discovered: dict[str, set[str]] = {}
+        if normalize is not None:
+            for manifest in manifest_objs:
+                search_run_id = manifest.data.get("search_run_id")
+                for raw_identifier in manifest.data.get("identifiers") or []:
+                    discovered.setdefault(normalize(raw_identifier), set()).add(search_run_id)
+
+        candidate_list = data.get("candidates") or []
+        if data.get("candidate_count") != len(candidate_list):
+            report.error(
+                file_rel, "$.candidate_count",
+                f"candidate_count ({data.get('candidate_count')!r}) does not match the number of candidates "
+                f"({len(candidate_list)})",
+            )
+
+        seen_in_manifest: dict[str, str] = {}
+        for idx, candidate in enumerate(candidate_list):
+            entry_label = f"$.candidates[{idx}]"
+            candidate_id = candidate.get("candidate_id")
+            primary_identifier = candidate.get("primary_identifier") or {}
+            namespace = primary_identifier.get("namespace")
+            value = primary_identifier.get("value")
+            normalized = normalize(value) if (normalize is not None and value) else value
+
+            if candidate_id:
+                if candidate_id in seen_candidate_ids:
+                    report.error(
+                        file_rel, f"{entry_label}.candidate_id",
+                        f"duplicate candidate_id '{candidate_id}', already used in "
+                        f"{seen_candidate_ids[candidate_id]}",
+                    )
+                else:
+                    seen_candidate_ids[candidate_id] = file_rel
+
+            if normalized:
+                key = (protocol_id, namespace, normalized)
+                if key in seen_primary_identifiers:
+                    report.error(
+                        file_rel, f"{entry_label}.primary_identifier",
+                        f"duplicate {namespace} '{normalized}' within protocol '{protocol_id}', already used by "
+                        f"candidate '{seen_primary_identifiers[key]}'",
+                    )
+                else:
+                    seen_primary_identifiers[key] = candidate_id
+
+            if normalized and normalized not in discovered:
+                report.error(
+                    file_rel, f"{entry_label}.primary_identifier",
+                    f"identifier '{normalized}' is not present in any of this manifest's referenced search result "
+                    "manifests -- a candidate manifest may only contain identifiers actually discovered by "
+                    "source_result_manifest_ids",
+                )
+            elif normalized:
+                if normalized in seen_in_manifest:
+                    report.error(
+                        file_rel, f"{entry_label}.primary_identifier",
+                        f"duplicate {namespace} '{normalized}' within this candidate manifest, already used by "
+                        f"candidate '{seen_in_manifest[normalized]}'",
+                    )
+                else:
+                    seen_in_manifest[normalized] = candidate_id
+
+            declared_runs = set(candidate.get("discovered_in_search_run_ids") or [])
+            actual_runs = discovered.get(normalized, set()) if normalized else set()
+            missing_runs = actual_runs - declared_runs
+            extra_runs = declared_runs - actual_runs
+            if missing_runs:
+                report.error(
+                    file_rel, f"{entry_label}.discovered_in_search_run_ids",
+                    f"is missing search run(s) that actually contained this identifier: {sorted(missing_runs)}",
+                )
+            if extra_runs:
+                report.error(
+                    file_rel, f"{entry_label}.discovered_in_search_run_ids",
+                    f"lists search run(s) that did not actually contain this identifier: {sorted(extra_runs)}",
+                )
+
+            provenance = candidate.get("metadata_provenance") or {}
+            retrieved_at = provenance.get("retrieved_at")
+            if retrieved_at:
+                retrieved_date = retrieved_at[:10]
+                created_at = data.get("created_at")
+                updated_at = data.get("updated_at")
+                if created_at and retrieved_date < created_at:
+                    report.error(
+                        file_rel, f"{entry_label}.metadata_provenance.retrieved_at",
+                        f"retrieved_at ('{retrieved_at}') is before this manifest's created_at ('{created_at}')",
+                    )
+                if updated_at and retrieved_date > updated_at:
+                    report.error(
+                        file_rel, f"{entry_label}.metadata_provenance.retrieved_at",
+                        f"retrieved_at ('{retrieved_at}') is after this manifest's updated_at ('{updated_at}')",
+                    )
+            _check_candidate_reference_safety(
+                report, file_rel, f"{entry_label}.metadata_provenance.request_reference",
+                provenance.get("request_reference"), require_raw_path=False,
+            )
+            _check_candidate_reference_safety(
+                report, file_rel, f"{entry_label}.metadata_provenance.response_locator",
+                provenance.get("response_locator"), require_raw_path=True,
+            )
+
+            metadata_status = candidate.get("metadata_status")
+            metadata = candidate.get("metadata") or {}
+            if metadata_status == "fetched":
+                for field, description in CANDIDATE_METADATA_FETCHED_REQUIRED_FIELDS.get(database, ()):
+                    if metadata.get(field) is None or metadata.get(field) == "":
+                        report.error(
+                            file_rel, f"{entry_label}.metadata.{field}",
+                            f"metadata_status 'fetched' requires {description} for a '{database}' candidate",
+                        )
+
+        missing_candidates = set(discovered) - set(seen_in_manifest)
+        if missing_candidates:
+            shown = sorted(missing_candidates)[:10]
+            suffix = "..." if len(missing_candidates) > 10 else ""
+            report.error(
+                file_rel, "$.candidates",
+                f"{len(missing_candidates)} identifier(s) discovered by the referenced search result manifest(s) "
+                f"are missing from candidates: {shown}{suffix}",
+            )
+
+
+def check_screening_candidate_references(report: Report, objects: dict[str, dict[str, ResearchObject]]) -> None:
+    """Prueft die optionale Rueckverknuepfung eines Screening Records auf einen Discovery-
+    Kandidaten (candidate_manifest_id/candidate_id, siehe ADR-0056, Migrationsstrategie): Ziel
+    existiert, gehoert zum selben Protokoll, und der referenzierte Kandidat ist innerhalb des
+    Manifests tatsaechlich vorhanden.
+
+    Die Referenzpflicht ist DATENGETRIEBEN (CSO-Review, siehe Nachtrag zu ADR-0056) statt ueber eine
+    hartkodierte Protokoll-Allowlist: existiert mindestens ein research_candidate_manifest mit
+    derselben protocol_id, muessen NEUE (nicht unter research/examples/** liegende) Screening
+    Records dieses Protokolls candidate_manifest_id/candidate_id setzen. Existiert (noch) kein
+    Candidate Manifest fuer ein Protokoll, bleiben dessen Screening Records migrationskompatibel --
+    keine Pflicht. research/examples/** ist davon unabhaengig immer ausgenommen.
+
+    Liegt eine aufgeloeste Kandidatenreferenz vor, muss der zum Namespace des Kandidaten passende
+    externe Identifikator (candidate_identifiers.pmid fuer pmid, .nct_id fuer nct_id) im Screening
+    Record gesetzt sein UND mit dem Kandidaten uebereinstimmen -- ein fehlender Identifikator und ein
+    abweichender Identifikator sind zwei getrennte, eigenstaendige Validierungsfehler."""
+    candidate_manifests = objects["candidate_manifest"]
+    protocols_with_candidate_manifests = {
+        manifest.data.get("protocol_id") for manifest in candidate_manifests.values()
+    }
+
+    for obj in objects["screening_record"].values():
+        file_rel = relative(obj.path)
+        data = obj.data
+        is_example = "examples" in obj.path.parts
+        candidate_manifest_id = data.get("candidate_manifest_id")
+        candidate_id = data.get("candidate_id")
+
+        if (
+            not is_example
+            and data.get("protocol_id") in protocols_with_candidate_manifests
+            and not (candidate_manifest_id and candidate_id)
+        ):
+            report.error(
+                file_rel, "$.candidate_manifest_id",
+                f"protocol '{data.get('protocol_id')}' has at least one candidate manifest -- new screening "
+                "records for this protocol must reference a candidate_manifest_id/candidate_id (see ADR-0056 "
+                "migration plan)",
+            )
+
+        if not candidate_manifest_id and not candidate_id:
+            continue
+
+        manifest = candidate_manifests.get(candidate_manifest_id)
+        if manifest is None:
+            report.error(
+                file_rel, "$.candidate_manifest_id",
+                f"references missing candidate manifest: {candidate_manifest_id}",
+            )
+            continue
+        if manifest.data.get("protocol_id") != data.get("protocol_id"):
+            report.error(
+                file_rel, "$.candidate_manifest_id",
+                f"candidate manifest '{candidate_manifest_id}' belongs to a different protocol "
+                f"('{manifest.data.get('protocol_id')}') than this screening record ('{data.get('protocol_id')}')",
+            )
+
+        candidate_entry = next(
+            (c for c in manifest.data.get("candidates") or [] if c.get("candidate_id") == candidate_id), None,
+        )
+        if candidate_entry is None:
+            report.error(
+                file_rel, "$.candidate_id",
+                f"references missing candidate '{candidate_id}' in candidate manifest '{candidate_manifest_id}'",
+            )
+            continue
+
+        primary_identifier = candidate_entry.get("primary_identifier") or {}
+        namespace = primary_identifier.get("namespace")
+        candidate_value = primary_identifier.get("value")
+        field = {"pmid": "pmid", "nct_id": "nct_id"}.get(namespace)
+        if field:
+            screening_value = (data.get("candidate_identifiers") or {}).get(field)
+            normalize = NORMALIZERS.get(field)
+            if not screening_value:
+                report.error(
+                    file_rel, f"$.candidate_identifiers.{field}",
+                    f"must not be null -- candidate_id references a '{namespace}' candidate manifest entry, so "
+                    f"candidate_identifiers.{field} must be set and match it",
+                )
+            elif normalize and normalize(screening_value) != normalize(candidate_value):
+                report.error(
+                    file_rel, f"$.candidate_identifiers.{field}",
+                    f"conflicts with the referenced candidate's primary_identifier ('{candidate_value}')",
+                )
+
+
 def check_object_temporal_bounds(report: Report, objects: dict[str, dict[str, ResearchObject]]) -> None:
     """ADR-0046: jedes von einem Research-Objekt SELBST dokumentierte Ereignisdatum muss innerhalb
     des Intervalls [created_at, updated_at] DIESES Objekts liegen -- ein Datensatz darf nicht
@@ -1522,6 +1875,8 @@ def run_checks(report: Report, objects: dict[str, dict[str, ResearchObject]], so
     check_research_references(report, objects, source_ids, study_ids)
     check_search_result_manifests(report, objects)
     check_search_run_interface_profiles(report, objects)
+    check_candidate_manifests(report, objects)
+    check_screening_candidate_references(report, objects)
     check_historical_duplicate_targets(report, objects)
     check_protocol_version_matches_id(report, objects["protocol"])
     check_deduplication(report, objects)

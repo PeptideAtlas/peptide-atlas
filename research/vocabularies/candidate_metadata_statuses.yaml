@@ -1,0 +1,29 @@
+# Kontrolliertes Vokabular: metadata_status (research_candidate_manifest.candidates[])
+# Geteilt mit schemas/common.schema.json#/$defs/candidate_metadata_status -- siehe
+# tests/test_research_vocabulary_consistency.py fuer die Drift-Absicherung.
+# Rein technischer Metadaten-Abrufzustand -- KEINE wissenschaftliche Screening-Aussage.
+schema_version: "1.0.0"
+values:
+  - value: not_fetched
+    labels: { de: Noch nicht abgerufen, en: Not Fetched }
+    note_de: >
+      Noch kein Abrufversuch fuer diesen Kandidaten unternommen. metadata und
+      metadata_provenance muessen null sein.
+  - value: fetched
+    labels: { de: Abgerufen, en: Fetched }
+    note_de: >
+      Vollstaendige, fuer diese Datenbank definierte Pflichtmetadaten liegen vor.
+  - value: partial
+    labels: { de: Teilweise abgerufen, en: Partial }
+    note_de: >
+      Ein Abrufversuch fand statt, aber nicht alle Pflichtmetadaten konnten ermittelt werden.
+  - value: not_found
+    labels: { de: Nicht gefunden, en: Not Found }
+    note_de: >
+      Die Datenbank kannte den Identifikator zum Abrufzeitpunkt nicht. Erfordert eine knappe
+      technische Begruendung in metadata_fetch_note.
+  - value: fetch_error
+    labels: { de: Abruffehler, en: Fetch Error }
+    note_de: >
+      Der Abrufversuch scheiterte aus einem technischen Grund (z. B. Netzwerkfehler, Rate Limit).
+      Erfordert eine knappe technische Begruendung in metadata_fetch_note.

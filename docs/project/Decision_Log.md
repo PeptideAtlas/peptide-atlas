@@ -1234,6 +1234,111 @@ ohne die Validierung zu beeinflussen. Keine der vier Identifikatorlisten, Counts
 Queries, Ausführungszeitpunkte oder Exportreferenzen wurde verändert; keine Datenbanksuche wurde
 erneut ausgeführt.
 
+### ADR-0056: `research_candidate_manifest` als technische Discovery-Bruecke zwischen Search Result Manifest und Screening Record
+- **Status:** Entschieden
+- **Datum:** 2026-07-27
+- **Kontext:** Phase 4B-1B-0 (Retatrutide-Screening-Preflight) benoetigte eine reproduzierbare, validierbare
+  Bruecke zwischen den vier Phase-4B-1A-Suchlaeufen/-Search-Result-Manifesten und den zukuenftigen
+  `research_screening_record`-Dateien: welche Identifikatoren wurden entdeckt, aus welchen Suchlaeufen stammt
+  jeder Identifikator, welche Datenbank hat ihn geliefert, wurde jeder Manifest-Identifikator genau einem
+  protokollspezifischen Kandidaten zugeordnet, und ist noch keine wissenschaftliche Screening-Entscheidung
+  getroffen worden? Ein globales kanonisches Candidate-Objekt unter `data/**` waere verfrueht gewesen (echte
+  Screening-Entscheidungen fehlen noch); 197 einzelne Kandidatendateien (162 PMID + 35 NCT-ID) waeren
+  unpraktikabel gewesen und haetten die Herkunfts-/Vereinigungslogik nicht als ein zusammenhaengendes,
+  pruefbares Objekt abgebildet.
+- **Entscheidung:** Neue, ausschliesslich technisch-bibliographische Objektart `research_candidate_manifest`
+  (Schema `schemas/research_candidate_manifest.schema.json`, Ordner `research/candidates/`, ID-Muster
+  `candidate-manifest-<uuid4>`) — ein Manifest je Protokoll **und** Datenbank (nicht je Kandidat), das die
+  normalisierte Vereinigungsmenge mehrerer Search Result Manifests derselben Datenbank/desselben Protokolls
+  buendelt. Jeder Kandidat traegt eine stabile `candidate_id` (`research-candidate-<uuid4>`), ein strukturiertes
+  `primary_identifier` (`namespace: pmid|nct_id` + `value`, nie freier String), die vollstaendige
+  `discovered_in_search_run_ids`-Herkunft (nicht auf einen "primaeren" Suchlauf reduzierbar) sowie sparsame,
+  datenbankspezifische Metadatenfelder (siehe `#/$defs/pubmed_metadata`/`#/$defs/clinicaltrials_gov_metadata`)
+  mit einem rein technischen `metadata_status` (neues Vokabular
+  `research/vocabularies/candidate_metadata_statuses.yaml`: `not_fetched`/`fetched`/`partial`/`not_found`/
+  `fetch_error` — bewusst ohne wissenschaftliche Begriffe wie `relevant`/`included`/`excluded`) und
+  nachvollziehbarer `metadata_provenance` (Interface, Zeitpunkt, technische Anfragereferenz, niemals geheime
+  Tokens oder vollstaendige API-URLs). `identifier_namespace` referenziert bewusst das bereits bestehende
+  `common.schema.json#/$defs/search_result_identifier_type` (kein neues, redundantes
+  `identifier_namespaces.yaml`-Vokabular, da dieselbe Werte-Menge `pmid`/`nct_id` bereits fuer
+  `research_search_result_manifest.identifier_type` gilt und schema-seitig ohne eigene YAML-Vokabulardatei
+  auskommt).
+
+  `tools/validate_research.py::check_candidate_manifests` erzwingt referenzielle Existenz (Protokoll,
+  Suchlaeufe, Search Result Manifests, jeweils gleiches Protokoll), Datenbank-/Namespace-Konsistenz, die
+  bijektive Abdeckung (jeder Manifest-Identifikator kommt genau einmal vor, kein zusaetzlicher unentdeckter
+  Identifikator), projektweite Eindeutigkeit von `candidate_id`, protokoll-/namespace-weite Eindeutigkeit von
+  `primary_identifier`, vollstaendige und korrekte `discovered_in_search_run_ids` (weder zu wenig noch zu
+  viele Suchlaeufe), zeitliche Provenienz (`created_at <= metadata_provenance.retrieved_at <= updated_at`) und
+  die je Datenbank definierten Pflichtmetadaten bei `metadata_status: fetched`. `tools/check_research_immutability.py`
+  erhaelt ein drittes `ImmutableTarget` mit einer eigenen, verschachtelten Vergleichsfunktion (anders als der
+  flache Feldvergleich fuer Suchlaeufe/Manifeste): Discovery-Identitaet (Top-Level-Felder ausser `updated_at`,
+  sowie `candidate_id`/`primary_identifier`/`discovered_in_search_run_ids` je Kandidat) ist unveraenderlich und
+  darf nicht entfernt werden; Metadatenfelder je Kandidat sowie `updated_at` bleiben mutable.
+
+  Deterministisches Importwerkzeug `tools/build_research_candidates.py` mit zwei getrennten Modi:
+  `--from-manifests` (offline, baut/aktualisiert Candidate Manifests aus den Search Result Manifests, erhaelt
+  bestehende `candidate_id`/Metadaten) und `--refresh-metadata` (online, ruft Metadaten ueber NCBI ESummary
+  bzw. ClinicalTrials.gov API v2 ab; ein Netzwerkfehler setzt nur `metadata_status: fetch_error`, verliert aber
+  nie die Discovery-Identitaet). Beide Modi erzeugen niemals einen `screening_record` und setzen niemals eine
+  Entscheidung.
+
+  Migrationsstrategie fuer `research_screening_record`: zwei neue, **optionale** Felder
+  `candidate_manifest_id`/`candidate_id` (schema-seitig entweder beide gesetzt oder beide `null`, referenziell
+  gegen das Manifest geprueft inkl. Identifikator-Konsistenz) — `schema_version` bleibt bei `1.0.0` (keine
+  Schema-Versionsbump noetig, da additiv-optional). Bestehende Fixtures/Beispiele unter `research/examples/**`
+  bleiben unveraendert gueltig. Eine neue, explizite Protokoll-Allowlist
+  `CANDIDATE_REFERENCE_REQUIRED_PROTOCOLS` (aktuell nur `research-protocol-retatrutide-v1`) macht die Referenz
+  fuer neue, nicht unter `research/examples/**` liegende Screening Records dieser Protokolle verpflichtend —
+  greift in Phase 4B-1B-0 selbst noch nicht (keine realen Screening Records in diesem PR), erst im
+  Folge-PR Phase 4B-1B-1.
+
+  Die zwei realen Candidate Manifests fuer Retatrutid (162 PubMed-Kandidaten, 35 ClinicalTrials.gov-Kandidaten
+  — Vereinigung der vier Phase-4B-1A-Suchlaeufe/-Manifeste, siehe ADR-0055) wurden aus den bereits
+  versionierten Search Result Manifests erzeugt, ohne einen einzigen Kandidaten wegen Publikationstyp, Titel
+  oder vermuteter Relevanz vorab auszuschliessen.
+
+- **Konsequenzen:** `research/**` erhaelt eine sechste Objektart, `RESEARCH_KINDS`/`RESEARCH_KIND_TO_FOLDER`/
+  `RESEARCH_KIND_TO_SCHEMA_ID`/`RESEARCH_KIND_TO_ID_PREFIX`/`RESEARCH_VOCABULARY_NAMES` in `tools/_researchlib.py`
+  wachsen entsprechend. `data/**`, `build/catalog.json` und `build/graph.json` bleiben unveraendert (0 Objekte/
+  Knoten/Kanten) — ein Candidate Manifest ist Provenienz-/Arbeitsebene, kein kanonisches Wissen (ADR-0033
+  gilt unveraendert). Kein Kandidat in den beiden erzeugten Manifesten stellt eine wissenschaftliche
+  Screening-Entscheidung, eine kanonische Quelle, eine Studie oder einen Claim dar. Verworfen wurde: ein
+  globales `data/**`-Candidate-Objekt (verfrueht vor echten Screening-Entscheidungen), 197 einzelne
+  Kandidatendateien (unpraktikabel, verliert die Vereinigungs-/Herkunftslogik als ein Objekt), sowie ein
+  eigenes `identifier_namespaces.yaml`-Vokabular (redundant zum bereits bestehenden
+  `search_result_identifier_type`-Enum).
+
+**Nachtrag (CSO-Review, 2026-07-27) — datengetriebene Referenzpflicht statt Protokoll-Allowlist, kein neuer
+ADR:** die urspruengliche Migrationsstrategie (`CANDIDATE_REFERENCE_REQUIRED_PROTOCOLS`, eine hartkodierte
+Menge von Protokoll-IDs, fuer die `candidate_manifest_id`/`candidate_id` bei neuen Screening Records
+verpflichtend war) haette bei jedem neuen Protokoll mit einem Candidate Manifest eine manuelle
+Code-Aenderung erfordert und war damit nicht selbsterklaerend an den tatsaechlichen Datenzustand gekoppelt.
+
+**Entscheidung:** Die Pflicht ist jetzt **datengetrieben**: `check_screening_candidate_references` bildet die
+Menge aller `protocol_id`-Werte, fuer die mindestens ein `research_candidate_manifest` existiert, und
+erzwingt die Referenz fuer jeden neuen (nicht unter `research/examples/**` liegenden) Screening Record eines
+Protokolls in dieser Menge. Existiert (noch) kein Candidate Manifest fuer ein Protokoll, bleibt dessen
+Screening Records weiterhin migrationskompatibel (keine Pflicht) — die Konstante
+`CANDIDATE_REFERENCE_REQUIRED_PROTOCOLS` entfaellt ersatzlos. `research/examples/**` bleibt davon
+unabhaengig immer ausgenommen.
+
+Zusaetzlich verschaerft: liegt eine aufgeloeste Kandidatenreferenz vor (Manifest und Kandidat existieren),
+muss der zum `primary_identifier.namespace` des Kandidaten passende externe Identifikator
+(`candidate_identifiers.pmid` fuer `pmid`, `.nct_id` fuer `nct_id`) im Screening Record gesetzt sein.
+Zuvor wurde ein fehlender (`null`) Identifikator stillschweigend akzeptiert -- nur ein tatsaechlich
+abweichender Wert wurde als Konflikt gemeldet. Jetzt erzeugen ein fehlender und ein abweichender
+Identifikator zwei strukturell getrennte Validierungsfehler (unterschiedliche Meldungstexte, beide am
+selben JSON-Pfad `$.candidate_identifiers.<namespace>`), damit ein Screening Record mit Kandidatenreferenz
+den referenzierten externen Identifikator nicht mehr unbemerkt aussparen kann.
+
+**Konsequenzen:** `schemas/research_screening_record.schema.json` (Feldbeschreibung),
+`docs/project/Scientific_Research_Protocol.md` (Abschnitt 7b) und `research/candidates/README.md` wurden
+entsprechend aktualisiert. Bestehende Fixtures/Beispiele unter `research/examples/**` bleiben unveraendert
+gueltig. Die beiden bereits erzeugten realen Retatrutide-Candidate-Manifests (162 PubMed + 35
+ClinicalTrials.gov) sind von dieser Aenderung inhaltlich nicht betroffen -- es existieren weiterhin keine
+realen Screening Records (Phase 4B-1B-1 bleibt ein separater Folge-PR).
+
 ## Format für neue Einträge
 
 ```markdown

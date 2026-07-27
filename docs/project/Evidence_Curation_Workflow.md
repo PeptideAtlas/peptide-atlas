@@ -23,7 +23,9 @@ die *Zustandsmaschine* (welche konkreten Objekte/Felder sich wann ändern).
 
 ```mermaid
 flowchart LR
-    A[Suchtreffer] --> B[Kandidat]
+    Z1["Search Result Manifest"] --> Z2["Candidate Manifest"]
+    Z2 --> A[Suchtreffer]
+    A --> B[Kandidat]
     B --> C[Deduplizierung]
     C --> D["Titel-/Abstract-Screening"]
     D --> E["Volltext-Screening"]
@@ -59,6 +61,15 @@ erforderlichen Prüfungen, Abbruchkriterien, gespeicherter Provenienz und mögli
     versioniert im zugehörigen `research_search_result_manifest` (`result_capture.status: complete`, siehe
     [Scientific Research Protocol, Abschnitt 7a](Scientific_Research_Protocol.md#7a-search-result-manifests-versionierte-identifikatormengen)
     und ADR-0055 im [Decision Log](Decision_Log.md)) — nicht in einer neu ausgeführten Wiederholung der Query.
+
+!!! info "Technische Vorstufe seit Phase 4B-1B-0: Candidate Manifest"
+    Bevor ein einzelner Treffer als `screening_record` erfasst wird, normalisiert ein `research_candidate_manifest`
+    (siehe [Scientific Research Protocol, Abschnitt 7b](Scientific_Research_Protocol.md#7b-candidate-manifests-technische-discovery-kandidaten)
+    und ADR-0056 im [Decision Log](Decision_Log.md)) die protokoll- und datenbankgebundene
+    Vereinigungsmenge mehrerer Search Result Manifests samt vollständiger Suchlauf-Herkunft und stabiler
+    interner `candidate_id`. Das ist selbst **keine** Screening-Entscheidung — ein `screening_record` kann
+    optional (für ausgewählte Protokolle ab Phase 4B-1B-1 verpflichtend) über `candidate_manifest_id`/
+    `candidate_id` darauf zurückverweisen.
 
 ## 2. Kandidat → Deduplizierung
 
