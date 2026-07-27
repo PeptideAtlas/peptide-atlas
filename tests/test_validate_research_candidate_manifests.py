@@ -435,13 +435,16 @@ def test_ctgov_fetched_missing_overall_status(tmp_path: Path):
 SCREENING_RECORD_ID = "screening-record-50000000-0000-4000-8000-000000000001"
 
 
-def _screening_record(protocol_id: str, candidate_manifest_id=None, candidate_id=None, pmid="200") -> dict:
+def _screening_record(
+    protocol_id: str, candidate_manifest_id=None, candidate_id=None, pmid="200", nct_id=None,
+    search_run_ids=None,
+) -> dict:
     return {
         "schema_version": "1.0.0",
         "id": SCREENING_RECORD_ID,
         "protocol_id": protocol_id,
-        "search_run_ids": [SEARCH_RUN_A],
-        "candidate_identifiers": {"doi": None, "pmid": pmid, "pmcid": None, "nct_id": None, "isbn": None, "url": None},
+        "search_run_ids": search_run_ids if search_run_ids is not None else [SEARCH_RUN_A],
+        "candidate_identifiers": {"doi": None, "pmid": pmid, "pmcid": None, "nct_id": nct_id, "isbn": None, "url": None},
         "candidate_title": "Test Candidate",
         "candidate_source_type": "peer_reviewed_publication",
         "decision": "pending",
@@ -506,24 +509,84 @@ def test_screening_candidate_reference_identifier_conflict(tmp_path: Path):
     assert any("conflicts with the referenced candidate's primary_identifier" in message for message in messages), messages
 
 
-def test_screening_record_for_required_protocol_without_reference_is_rejected(tmp_path: Path):
+def test_screening_record_for_protocol_with_candidate_manifest_without_reference_is_rejected(tmp_path: Path):
+    """CSO-Review-Nachtrag zu ADR-0056: die Referenzpflicht ist datengetrieben -- PROTOCOL_ID hat
+    im base_tree bereits ein Candidate Manifest, also ist die Referenz fuer einen neuen Screening
+    Record dieses Protokolls verpflichtend, auch ohne eine hartkodierte Protokoll-Allowlist."""
     tree = base_tree(include_ctgov=False)
-    tree[f"research/protocols/{RETATRUTIDE_PROTOCOL_ID}.yaml"] = _protocol(RETATRUTIDE_PROTOCOL_ID)
-    tree[f"research/screening/{SCREENING_RECORD_ID}.yaml"] = _screening_record(RETATRUTIDE_PROTOCOL_ID)
+    tree[f"research/screening/{SCREENING_RECORD_ID}.yaml"] = _screening_record(PROTOCOL_ID)
     report = _run(tmp_path, tree)
     messages = [issue.message for issue in report.issues if issue.level == "ERROR"]
-    assert any("requires new screening records to reference a candidate_manifest_id" in message for message in messages), messages
+    assert any(
+        "has at least one candidate manifest -- new screening records for this protocol must reference"
+        in message
+        for message in messages
+    ), messages
 
 
-def test_screening_record_for_required_protocol_with_reference_is_accepted(tmp_path: Path):
+OTHER_PROTOCOL_SEARCH_RUN = "search-run-40000000-0000-4000-8000-000000000005"
+OTHER_PROTOCOL_MANIFEST = "search-result-manifest-90000000-0000-4000-8000-000000000005"
+
+
+def test_screening_record_for_protocol_without_candidate_manifest_is_still_valid(tmp_path: Path):
+    """CSO-Review-Nachtrag zu ADR-0056: ein Protokoll ohne jegliches Candidate Manifest bleibt
+    migrationskompatibel -- ein Screening Record ohne candidate_manifest_id/candidate_id ist dafuer
+    weiterhin gueltig."""
     tree = base_tree(include_ctgov=False)
     tree[f"research/protocols/{RETATRUTIDE_PROTOCOL_ID}.yaml"] = _protocol(RETATRUTIDE_PROTOCOL_ID)
-    candidate_manifest = tree[f"research/candidates/{CANDIDATE_MANIFEST_ID}.yaml"]
-    candidate_manifest["protocol_id"] = RETATRUTIDE_PROTOCOL_ID
-    for run_key in (f"research/search_runs/{SEARCH_RUN_A}.yaml", f"research/search_runs/{SEARCH_RUN_B}.yaml"):
-        tree[run_key]["protocol_id"] = RETATRUTIDE_PROTOCOL_ID
+    tree[f"research/search_runs/{OTHER_PROTOCOL_SEARCH_RUN}.yaml"] = _search_run(
+        OTHER_PROTOCOL_SEARCH_RUN, "pubmed", "other protocol query", OTHER_PROTOCOL_MANIFEST, 1,
+        protocol_id=RETATRUTIDE_PROTOCOL_ID,
+    )
+    tree[f"research/search_results/{OTHER_PROTOCOL_MANIFEST}.yaml"] = _manifest(
+        OTHER_PROTOCOL_MANIFEST, OTHER_PROTOCOL_SEARCH_RUN, "pmid", ["500"],
+    )
     tree[f"research/screening/{SCREENING_RECORD_ID}.yaml"] = _screening_record(
-        RETATRUTIDE_PROTOCOL_ID, CANDIDATE_MANIFEST_ID, CANDIDATE_200, pmid="200",
+        RETATRUTIDE_PROTOCOL_ID, pmid="500", search_run_ids=[OTHER_PROTOCOL_SEARCH_RUN],
     )
     report = _run(tmp_path, tree)
     assert report.error_count == 0, "\n".join(issue.format() for issue in report.issues)
+
+
+def test_screening_candidate_reference_missing_pmid_is_rejected(tmp_path: Path):
+    tree = base_tree(include_ctgov=False)
+    tree[f"research/screening/{SCREENING_RECORD_ID}.yaml"] = _screening_record(
+        PROTOCOL_ID, CANDIDATE_MANIFEST_ID, CANDIDATE_200, pmid=None,
+    )
+    report = _run(tmp_path, tree)
+    messages = [issue.message for issue in report.issues if issue.level == "ERROR"]
+    assert any(
+        "candidate_identifiers.pmid must not be null" in message or "must not be null" in message
+        for message in messages
+    ), messages
+    assert any("$.candidate_identifiers.pmid" == issue.path for issue in report.issues if issue.level == "ERROR")
+
+
+def test_valid_ctgov_screening_candidate_reference(tmp_path: Path):
+    tree = base_tree(include_ctgov=True)
+    tree[f"research/screening/{SCREENING_RECORD_ID}.yaml"] = _screening_record(
+        PROTOCOL_ID, CTGOV_CANDIDATE_MANIFEST_ID, CTGOV_CANDIDATE, pmid=None, nct_id="NCT00000001",
+    )
+    report = _run(tmp_path, tree)
+    assert report.error_count == 0, "\n".join(issue.format() for issue in report.issues)
+
+
+def test_screening_candidate_reference_missing_nct_id_is_rejected(tmp_path: Path):
+    tree = base_tree(include_ctgov=True)
+    tree[f"research/screening/{SCREENING_RECORD_ID}.yaml"] = _screening_record(
+        PROTOCOL_ID, CTGOV_CANDIDATE_MANIFEST_ID, CTGOV_CANDIDATE, pmid=None, nct_id=None,
+    )
+    report = _run(tmp_path, tree)
+    messages = [issue.message for issue in report.issues if issue.level == "ERROR"]
+    assert any("must not be null" in message for message in messages), messages
+    assert any("$.candidate_identifiers.nct_id" == issue.path for issue in report.issues if issue.level == "ERROR")
+
+
+def test_ctgov_screening_candidate_reference_identifier_conflict(tmp_path: Path):
+    tree = base_tree(include_ctgov=True)
+    tree[f"research/screening/{SCREENING_RECORD_ID}.yaml"] = _screening_record(
+        PROTOCOL_ID, CTGOV_CANDIDATE_MANIFEST_ID, CTGOV_CANDIDATE, pmid=None, nct_id="NCT99999999",
+    )
+    report = _run(tmp_path, tree)
+    messages = [issue.message for issue in report.issues if issue.level == "ERROR"]
+    assert any("conflicts with the referenced candidate's primary_identifier" in message for message in messages), messages

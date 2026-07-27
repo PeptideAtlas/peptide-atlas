@@ -78,10 +78,15 @@ mit einer knappen technischen Begründung).
 
 ## Verhältnis zum Screening Record
 
-Ein `screening_record` kann optional über `candidate_manifest_id`/`candidate_id` auf genau den
+Ein `screening_record` kann über `candidate_manifest_id`/`candidate_id` auf genau den
 Discovery-Kandidaten zurückverweisen, aus dem er hervorgegangen ist (siehe
-`schemas/research_screening_record.schema.json`). Für ausgewählte Protokolle
-(`tools/validate_research.py::CANDIDATE_REFERENCE_REQUIRED_PROTOCOLS`) ist diese Referenz für neue,
-reale Screening Records verpflichtend — bestehende Beispiele/Fixtures unter `research/examples/**`
-bleiben davon unberührt. Diese Verknüpfung ist rein referenziell und löst **niemals** automatisch
-eine Include-/Exclude-Entscheidung aus.
+`schemas/research_screening_record.schema.json`). Die Pflicht dazu ist **datengetrieben**
+(`tools/validate_research.py::check_screening_candidate_references`): existiert mindestens ein
+Candidate Manifest mit derselben `protocol_id`, müssen neue, reale Screening Records dieses
+Protokolls die Referenz setzen; existiert (noch) keins für ein Protokoll, bleibt die Referenz dort
+optional (Migrationskompatibilität für ältere Protokolle). `research/examples/**` bleibt davon immer
+ausgenommen. Liegt eine Referenz vor, muss der zum Namespace passende externe Identifikator
+(`candidate_identifiers.pmid` bzw. `.nct_id`) gesetzt sein und mit dem Kandidaten übereinstimmen —
+ein fehlender und ein abweichender Identifikator sind zwei getrennte Validierungsfehler. Diese
+Verknüpfung ist ansonsten rein referenziell und löst **niemals** automatisch eine
+Include-/Exclude-Entscheidung aus.

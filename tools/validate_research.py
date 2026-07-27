@@ -122,15 +122,6 @@ DATABASE_TO_IDENTIFIER_TYPE = {
     "clinicaltrials_gov": "nct_id",
 }
 
-# Protokolle, fuer deren NEUE (nicht unter research/examples/** liegende) Screening Records ein
-# Verweis auf einen Discovery-Kandidaten (candidate_manifest_id/candidate_id) verpflichtend ist
-# (siehe ADR-0056, Migrationsstrategie Abschnitt 7 des Phase-4B-1B-0-Arbeitsauftrags). Bewusst als
-# explizite Protokoll-Allowlist statt einer globalen Pflicht, damit bestehende Fixtures/Beispiele
-# fuer andere (Test-)Protokolle nicht rueckwirkend brechen. Phase 4B-1B-0 selbst legt noch KEINE
-# realen Screening Records an (siehe Arbeitsauftrag Abschnitt 14) -- diese Regel greift daher erst
-# im Folge-PR Phase 4B-1B-1.
-CANDIDATE_REFERENCE_REQUIRED_PROTOCOLS = {"research-protocol-retatrutide-v1"}
-
 ALLOWED_SEARCH_RUN_PROTOCOL_STATUSES = {"approved", "superseded"}
 
 TERMINAL_SCREENING_STAGE = "final"
@@ -1695,10 +1686,24 @@ def check_screening_candidate_references(report: Report, objects: dict[str, dict
     """Prueft die optionale Rueckverknuepfung eines Screening Records auf einen Discovery-
     Kandidaten (candidate_manifest_id/candidate_id, siehe ADR-0056, Migrationsstrategie): Ziel
     existiert, gehoert zum selben Protokoll, und der referenzierte Kandidat ist innerhalb des
-    Manifests tatsaechlich vorhanden. Fuer Protokolle in CANDIDATE_REFERENCE_REQUIRED_PROTOCOLS
-    ist die Referenz fuer NEUE (nicht unter research/examples/** liegende) Screening Records
-    verpflichtend -- bestehende Beispiele/Fixtures bleiben unberuehrt."""
+    Manifests tatsaechlich vorhanden.
+
+    Die Referenzpflicht ist DATENGETRIEBEN (CSO-Review, siehe Nachtrag zu ADR-0056) statt ueber eine
+    hartkodierte Protokoll-Allowlist: existiert mindestens ein research_candidate_manifest mit
+    derselben protocol_id, muessen NEUE (nicht unter research/examples/** liegende) Screening
+    Records dieses Protokolls candidate_manifest_id/candidate_id setzen. Existiert (noch) kein
+    Candidate Manifest fuer ein Protokoll, bleiben dessen Screening Records migrationskompatibel --
+    keine Pflicht. research/examples/** ist davon unabhaengig immer ausgenommen.
+
+    Liegt eine aufgeloeste Kandidatenreferenz vor, muss der zum Namespace des Kandidaten passende
+    externe Identifikator (candidate_identifiers.pmid fuer pmid, .nct_id fuer nct_id) im Screening
+    Record gesetzt sein UND mit dem Kandidaten uebereinstimmen -- ein fehlender Identifikator und ein
+    abweichender Identifikator sind zwei getrennte, eigenstaendige Validierungsfehler."""
     candidate_manifests = objects["candidate_manifest"]
+    protocols_with_candidate_manifests = {
+        manifest.data.get("protocol_id") for manifest in candidate_manifests.values()
+    }
+
     for obj in objects["screening_record"].values():
         file_rel = relative(obj.path)
         data = obj.data
@@ -1708,13 +1713,14 @@ def check_screening_candidate_references(report: Report, objects: dict[str, dict
 
         if (
             not is_example
-            and data.get("protocol_id") in CANDIDATE_REFERENCE_REQUIRED_PROTOCOLS
+            and data.get("protocol_id") in protocols_with_candidate_manifests
             and not (candidate_manifest_id and candidate_id)
         ):
             report.error(
                 file_rel, "$.candidate_manifest_id",
-                f"protocol '{data.get('protocol_id')}' requires new screening records to reference a "
-                "candidate_manifest_id/candidate_id (see ADR-0056 migration plan)",
+                f"protocol '{data.get('protocol_id')}' has at least one candidate manifest -- new screening "
+                "records for this protocol must reference a candidate_manifest_id/candidate_id (see ADR-0056 "
+                "migration plan)",
             )
 
         if not candidate_manifest_id and not candidate_id:
@@ -1751,7 +1757,13 @@ def check_screening_candidate_references(report: Report, objects: dict[str, dict
         if field:
             screening_value = (data.get("candidate_identifiers") or {}).get(field)
             normalize = NORMALIZERS.get(field)
-            if screening_value and normalize and normalize(screening_value) != normalize(candidate_value):
+            if not screening_value:
+                report.error(
+                    file_rel, f"$.candidate_identifiers.{field}",
+                    f"must not be null -- candidate_id references a '{namespace}' candidate manifest entry, so "
+                    f"candidate_identifiers.{field} must be set and match it",
+                )
+            elif normalize and normalize(screening_value) != normalize(candidate_value):
                 report.error(
                     file_rel, f"$.candidate_identifiers.{field}",
                     f"conflicts with the referenced candidate's primary_identifier ('{candidate_value}')",

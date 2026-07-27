@@ -287,7 +287,7 @@
     "candidate_manifest_id": {
       "type": ["string", "null"],
       "pattern": "^candidate-manifest-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$",
-      "description": "Optionale Rueckverknuepfung auf den technischen Discovery-Kandidaten (siehe research_candidate_manifest.schema.json, ADR-0056), aus dem dieser Screening Record hervorgegangen ist. Fuer bestehende Screening Records (vor Phase 4B-1B-0) und research/examples/** bleibt dieses Feld optional/null; fuer neue reale Screening Records ausgewaehlter Protokolle ist es ab Phase 4B-1B-1 verpflichtend (siehe validate_research.py::CANDIDATE_REFERENCE_REQUIRED_PROTOCOLS und den Migrationsplan im Decision Log). Muss zusammen mit candidate_id gesetzt oder zusammen null sein -- niemals nur eines von beiden."
+      "description": "Optionale Rueckverknuepfung auf den technischen Discovery-Kandidaten (siehe research_candidate_manifest.schema.json, ADR-0056), aus dem dieser Screening Record hervorgegangen ist. Die Pflicht ist DATENGETRIEBEN (siehe validate_research.py::check_screening_candidate_references und den Nachtrag zu ADR-0056 im Decision Log): existiert mindestens ein research_candidate_manifest mit derselben protocol_id, muessen neue (nicht unter research/examples/** liegende) Screening Records dieses Protokolls dieses Feld setzen; existiert (noch) kein Candidate Manifest fuer ein Protokoll, bleibt es dort optional/null (Migrationskompatibilitaet fuer aeltere Protokolle). research/examples/** bleibt davon immer ausgenommen. Muss zusammen mit candidate_id gesetzt oder zusammen null sein -- niemals nur eines von beiden."
     },
     "candidate_id": {
       "type": ["string", "null"],

@@ -200,13 +200,18 @@ bleiben erhalten); `--refresh-metadata` ruft fehlende Metadaten über die offizi
 ClinicalTrials.gov API v2) ab. Ein fehlgeschlagener Abruf entfernt nie die Discovery-Identität eines Kandidaten
 — er setzt lediglich `metadata_status: fetch_error`/`not_found` mit einer knappen technischen Begründung.
 
-**Verhältnis zum Screening Record:** ein `screening_record` kann optional (für ausgewählte Protokolle ab Phase
-4B-1B-1 verpflichtend, siehe `tools/validate_research.py::CANDIDATE_REFERENCE_REQUIRED_PROTOCOLS`) über
-`candidate_manifest_id`/`candidate_id` auf genau den technischen Discovery-Kandidaten zurückverweisen, aus dem
-er hervorgegangen ist. Diese Verknüpfung ist rein referenziell (Ziel existiert, gleiches Protokoll, kein
-Identifikator-Widerspruch) und setzt **niemals** automatisch eine Screening-Entscheidung — das Erzeugen eines
-Candidate Manifest ist selbst keine Include-/Exclude-Entscheidung und keine Bewertung der Relevanz eines
-einzelnen PMID/NCT-ID.
+**Verhältnis zum Screening Record:** ein `screening_record` kann über `candidate_manifest_id`/`candidate_id` auf
+genau den technischen Discovery-Kandidaten zurückverweisen, aus dem er hervorgegangen ist. Die Pflicht dazu ist
+**datengetrieben** (siehe `tools/validate_research.py::check_screening_candidate_references`, CSO-Review-Nachtrag
+zu ADR-0056 im [Decision Log](Decision_Log.md)): existiert mindestens ein `research_candidate_manifest` mit
+derselben `protocol_id`, müssen neue (nicht unter `research/examples/**` liegende) Screening Records dieses
+Protokolls die Referenz setzen; existiert (noch) kein Candidate Manifest für ein Protokoll, bleibt die Referenz
+dort optional (Migrationskompatibilität für ältere Protokolle). Liegt eine Referenz vor, muss der zum Namespace
+des Kandidaten passende externe Identifikator (`candidate_identifiers.pmid` bzw. `.nct_id`) gesetzt sein und mit
+dem Kandidaten übereinstimmen — ein fehlender und ein abweichender Identifikator sind zwei getrennte
+Validierungsfehler. Diese Verknüpfung ist ansonsten rein referenziell (Ziel existiert, gleiches Protokoll) und
+setzt **niemals** automatisch eine Screening-Entscheidung — das Erzeugen eines Candidate Manifest ist selbst
+keine Include-/Exclude-Entscheidung und keine Bewertung der Relevanz eines einzelnen PMID/NCT-ID.
 
 ## 8. Deduplizierung
 

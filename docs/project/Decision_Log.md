@@ -1309,6 +1309,36 @@ erneut ausgeführt.
   eigenes `identifier_namespaces.yaml`-Vokabular (redundant zum bereits bestehenden
   `search_result_identifier_type`-Enum).
 
+**Nachtrag (CSO-Review, 2026-07-27) — datengetriebene Referenzpflicht statt Protokoll-Allowlist, kein neuer
+ADR:** die urspruengliche Migrationsstrategie (`CANDIDATE_REFERENCE_REQUIRED_PROTOCOLS`, eine hartkodierte
+Menge von Protokoll-IDs, fuer die `candidate_manifest_id`/`candidate_id` bei neuen Screening Records
+verpflichtend war) haette bei jedem neuen Protokoll mit einem Candidate Manifest eine manuelle
+Code-Aenderung erfordert und war damit nicht selbsterklaerend an den tatsaechlichen Datenzustand gekoppelt.
+
+**Entscheidung:** Die Pflicht ist jetzt **datengetrieben**: `check_screening_candidate_references` bildet die
+Menge aller `protocol_id`-Werte, fuer die mindestens ein `research_candidate_manifest` existiert, und
+erzwingt die Referenz fuer jeden neuen (nicht unter `research/examples/**` liegenden) Screening Record eines
+Protokolls in dieser Menge. Existiert (noch) kein Candidate Manifest fuer ein Protokoll, bleibt dessen
+Screening Records weiterhin migrationskompatibel (keine Pflicht) — die Konstante
+`CANDIDATE_REFERENCE_REQUIRED_PROTOCOLS` entfaellt ersatzlos. `research/examples/**` bleibt davon
+unabhaengig immer ausgenommen.
+
+Zusaetzlich verschaerft: liegt eine aufgeloeste Kandidatenreferenz vor (Manifest und Kandidat existieren),
+muss der zum `primary_identifier.namespace` des Kandidaten passende externe Identifikator
+(`candidate_identifiers.pmid` fuer `pmid`, `.nct_id` fuer `nct_id`) im Screening Record gesetzt sein.
+Zuvor wurde ein fehlender (`null`) Identifikator stillschweigend akzeptiert -- nur ein tatsaechlich
+abweichender Wert wurde als Konflikt gemeldet. Jetzt erzeugen ein fehlender und ein abweichender
+Identifikator zwei strukturell getrennte Validierungsfehler (unterschiedliche Meldungstexte, beide am
+selben JSON-Pfad `$.candidate_identifiers.<namespace>`), damit ein Screening Record mit Kandidatenreferenz
+den referenzierten externen Identifikator nicht mehr unbemerkt aussparen kann.
+
+**Konsequenzen:** `schemas/research_screening_record.schema.json` (Feldbeschreibung),
+`docs/project/Scientific_Research_Protocol.md` (Abschnitt 7b) und `research/candidates/README.md` wurden
+entsprechend aktualisiert. Bestehende Fixtures/Beispiele unter `research/examples/**` bleiben unveraendert
+gueltig. Die beiden bereits erzeugten realen Retatrutide-Candidate-Manifests (162 PubMed + 35
+ClinicalTrials.gov) sind von dieser Aenderung inhaltlich nicht betroffen -- es existieren weiterhin keine
+realen Screening Records (Phase 4B-1B-1 bleibt ein separater Folge-PR).
+
 ## Format für neue Einträge
 
 ```markdown
