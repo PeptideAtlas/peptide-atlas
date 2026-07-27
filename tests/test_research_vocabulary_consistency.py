@@ -43,6 +43,11 @@ DUPLICATED_ENUMS = [
     ("extraction_status", set(_COMMON["$defs"]["extraction_status"]["enum"]), "extraction_statuses"),
     ("search_run_status", set(_COMMON["$defs"]["search_run_status"]["enum"]), "search_run_statuses"),
     ("promotion_status", set(_COMMON["$defs"]["promotion_status"]["enum"]), "promotion_statuses"),
+    (
+        "search_interface_profile_id",
+        set(_COMMON["$defs"]["search_interface_profile_id"]["enum"]),
+        "search_interface_profiles",
+    ),
 ]
 
 # research_protocol_statuses.yaml dupliziert das status-Enum, das direkt (nicht ueber

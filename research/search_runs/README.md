@@ -11,3 +11,114 @@ wurden.
   überschrieben (siehe [Scientific Research Protocol](../../docs/project/Scientific_Research_Protocol.md)).
 - Rohexporte gehören nicht hierher, sondern (falls überhaupt lokal benötigt) nach `research/raw/` — hier wird
   nur die Metadaten-Beschreibung des Suchlaufs versioniert.
+
+## `filters` vs. `request_parameters`
+
+Zwei getrennte, beide offen gehaltene (`additionalProperties: true`) Objektfelder mit unterschiedlichem Zweck
+(siehe ADR-0055 im [Decision Log](../../docs/project/Decision_Log.md)):
+
+- `filters`: **inhaltliche/wissenschaftliche** Suchentscheidungen (Sprache, Publikationstyp, Spezies, ...).
+- `request_parameters`: rein **technische** API-/Interface-Parameter, die zusätzlich zu `interface` und
+  `exact_query` für eine Reproduktion nötig sind — z. B. bei NCBI E-utilities ESearch
+  `{db, retmode, retmax, retstart}`, bei der ClinicalTrials.gov API v2
+  `{query_parameter, countTotal, pageSize, format}`. **Niemals** API-Schlüssel, Tokens oder andere Geheimnisse
+  eintragen — nur öffentlich unbedenkliche technische Parameter.
+
+`pagination` (optional) dokumentiert bei einem paginierenden Interface, dass tatsächlich **alle** Seiten
+abgerufen wurden (`pages_retrieved`, `completion_confirmed: true` — kein weiterer `nextPageToken` mehr vorhanden).
+Entfällt, wenn das Ergebnis vollständig in einer einzigen Seite lag oder das Interface nicht paginiert.
+
+## `result_capture`: Verknüpfung mit dem Search Result Manifest
+
+Jeder ausgeführte Suchlauf muss `result_capture` setzen (siehe ADR-0055 und
+[`research/search_results/README.md`](../search_results/README.md)):
+
+- `status: complete` — das vollständige, tatsächlich erhaltene Identifikator-Set ist als
+  `research_search_result_manifest` unter `research/search_results/` versioniert. `manifest_id` verweist auf
+  dieses Manifest, `rationale` bleibt `null`.
+- `status: unavailable` — aus einem echten, dokumentierten Grund (z. B. keine stabile/reproduzierbare
+  Gesamttrefferzahl, gesperrte automatisierte Anfrage, Interface liefert keine Identifikatorliste) wurde bewusst
+  **kein** Manifest erzeugt. `manifest_id` bleibt `null`, `rationale` ist Pflicht und muss einen echten Grund
+  nennen — kein Platzhalter für "wurde vergessen".
+
+Die reine Trefferzahl (`result_count`) reicht für historische Reproduzierbarkeit **nicht** aus: Datenbanken
+verändern sich über Zeit (neue Publikationen, zurückgezogene Einträge, geänderte Indexierung), sodass eine
+identische Query zu einem späteren Zeitpunkt ein anderes Ergebnis liefern kann. `result_capture` stellt sicher,
+dass entweder das tatsächlich erhaltene Identifikator-Set selbst versioniert ist, oder dass dokumentiert ist,
+warum das nicht möglich war.
+
+## `interface` vs. `interface_profile`: menschenlesbar vs. maschinenlesbar (R3, ADR-0055-Härtung)
+
+`interface` bleibt eine **frei formulierte, menschenlesbare** Bezeichnung (z. B. „NCBI E-utilities ESearch
+(eutils.ncbi.nlm.nih.gov/...)", „Legacy PubMed search portal (internal rename)"). Sie darf beliebig umformuliert
+werden, ohne dass sich dadurch die angewendeten Validierungsregeln ändern.
+
+`interface_profile` ist das davon **unabhängige, kontrollierte** Pflichtfeld, das die tatsächlich angewendete
+API-Profilsemantik trägt:
+
+```yaml
+interface_profile:
+  id: ncbi_eutils_esearch_v1
+  rationale: null
+```
+
+`id` stammt aus dem kontrollierten Vokabular `research/vocabularies/search_interface_profiles.yaml` /
+`common.schema.json#/$defs/search_interface_profile_id`:
+
+- `ncbi_eutils_esearch_v1`, `clinicaltrials_gov_api_v2_v1` — bekannte, implementierte Profile. `rationale` muss
+  `null` sein.
+- `unprofiled` — transparenter Fallback für ein Interface, für das (noch) keine maschinelle Profilvalidierung
+  existiert. `rationale` ist dann Pflicht (nicht leer) und muss einen echten Grund nennen — kein stiller Verzicht.
+
+Die Versionsnummer ist bewusst Teil des Profilnamens selbst (`_v1`): eine künftige Änderung an den Profilregeln
+führt ein **neues** Profil ein (`_v2` usw.), statt bereits ausgeführte historische Search Runs rückwirkend unter
+geänderten Regeln umzudeuten.
+
+**Wichtig:** `tools/validate_research.py::check_search_run_interface_profiles` entscheidet **ausschließlich**
+anhand von `interface_profile.id`, welches Regelprofil gilt — niemals anhand von Textfragmenten in `interface`.
+Eine beliebige Umformulierung von `interface` kann die Profilvalidierung damit nicht umgehen.
+
+**`ncbi_eutils_esearch_v1`** — erfordert zusätzlich `database: pubmed`:
+
+```yaml
+request_parameters:
+  db: pubmed
+  retmode: json
+  retmax: <positive Ganzzahl>
+  retstart: <nicht negative Ganzzahl>
+```
+
+Ist `result_capture.status: complete` und liegt **keine** `pagination` vor, muss zusätzlich `retmax >=
+result_count` gelten — sonst könnte die Antwort strukturell gar nicht das vollständige Ergebnis enthalten haben.
+
+**`clinicaltrials_gov_api_v2_v1`** — erfordert zusätzlich `database: clinicaltrials_gov`:
+
+```yaml
+request_parameters:
+  query_parameter: query.term
+  countTotal: true
+  pageSize: <positive Ganzzahl>
+  format: json
+  fields: NCTId
+```
+
+Zusätzlich ist bei `result_capture.status: complete` `pagination` **verpflichtend**, und es muss gelten:
+`pagination.completion_confirmed: true` sowie `pagination.pages_retrieved × request_parameters.pageSize >=
+result_count`. `completion_confirmed: true` bedeutet konkret: die letzte abgerufene Seite enthielt **keinen**
+weiteren `nextPageToken` (oder äquivalenten Fortsetzungsmarker) mehr — es wurde also nicht nur "genug" Seiten für
+die Trefferzahl abgerufen, sondern die API selbst hat bestätigt, dass keine weitere Seite folgt.
+
+**`unprofiled`** — keine API-spezifischen Parameterregeln, keine Datenbank-Voraussetzung. Diese Regeln beweisen
+nicht allein die tatsächliche API-Antwort, verhindern aber strukturell unmögliche Vollständigkeitsangaben.
+
+## Zeitliche Provenienz und Exportreferenz gegenüber dem Manifest
+
+Für jeden Suchlauf mit `result_capture.status: complete` gilt zusätzlich (siehe
+[`research/search_results/README.md`](../search_results/README.md)):
+
+- Das Datum von `executed_at` muss `<=` dem `created_at` seines Manifests sein — ein Manifest kann nicht vor dem
+  Suchereignis entstanden sein, dessen Momentaufnahme es ist.
+- `export_reference` (auf diesem Suchlauf) muss **exakt** `manifest.source_export_reference` entsprechen — ein
+  Suchlauf darf nicht auf einen anderen lokalen Ursprung verweisen als das Manifest, das er als sein eigenes
+  ausgibt. Das schließt `export_reference: null` bei einem sonst vollständigen Suchlauf aus, da das zugehörige
+  Manifest `source_export_reference` als Pflichtfeld immer setzt.

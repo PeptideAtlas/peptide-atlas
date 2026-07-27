@@ -278,6 +278,21 @@
       "additionalProperties": false,
       "required": ["summary", "locator"]
     },
+    "search_result_identifier_type": {
+      "type": "string",
+      "enum": ["pmid", "nct_id"],
+      "description": "Kontrolliertes Vokabular fuer research_search_result_manifest.identifier_type -- welche Art stabiler Identifikator ein Manifest enthaelt. Bewusst auf die Datenbanken beschraenkt, fuer die Phase 4B-1A tatsaechlich Manifeste erzeugt (siehe ADR-0055); weitere Werte koennen ergaenzt werden, sobald ein Manifest fuer eine andere Datenbank benoetigt wird."
+    },
+    "search_interface_profile_id": {
+      "type": "string",
+      "enum": ["ncbi_eutils_esearch_v1", "clinicaltrials_gov_api_v2_v1", "unprofiled"],
+      "description": "Kontrolliertes Vokabular fuer research_search_run.interface_profile.id -- die MASCHINENLESBARE Semantik des verwendeten API-Profils, unabhaengig vom frei formulierten `interface`-Text (siehe research/vocabularies/search_interface_profiles.yaml, ADR-0055 R3-Nachtrag). Die Versionsnummer ist bewusst Teil des Werts selbst -- eine kuenftige Aenderung an den Profilregeln fuehrt ein neues Profil ein (z. B. '_v2'), statt bereits ausgefuehrte Search Runs rueckwirkend umzudeuten. 'unprofiled' ist ein transparenter Fallback fuer noch nicht profilierte Interfaces, kein stiller Verzicht -- erfordert eine nicht leere rationale."
+    },
+    "search_run_result_capture_status": {
+      "type": "string",
+      "enum": ["complete", "unavailable"],
+      "description": "Kontrolliertes Vokabular fuer research_search_run.result_capture.status (siehe ADR-0055). 'complete': das vollstaendige, tatsaechlich erhaltene Identifikator-Result-Set ist als research_search_result_manifest versioniert. 'unavailable': aus einem dokumentierten Grund (z. B. keine stabile/reproduzierbare Gesamtmenge, Interface liefert keine Identifikatorliste) wurde bewusst kein Manifest erzeugt -- die Trefferzahl bleibt im Suchlauf selbst dokumentiert, ist aber nicht identifikatorgenau nachvollziehbar."
+    },
     "evidence_link": {
       "type": "object",
       "properties": {

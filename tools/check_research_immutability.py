@@ -1,14 +1,27 @@
 #!/usr/bin/env python3
-"""Prueft, dass bereits committete research/search_runs/**.yaml-Dateien nicht rueckwirkend
-veraendert werden (siehe Scientific Research Protocol, Abschnitt 7: ein Suchlauf wird nie
-nachtraeglich veraendert -- eine Korrektur oder Wiederholung erhaelt eine neue id).
+"""Prueft, dass bereits committete research/search_runs/**.yaml- und
+research/search_results/**.yaml-Dateien nicht rueckwirkend veraendert werden (siehe Scientific
+Research Protocol, Abschnitt 7, und ADR-0055: ein Suchlauf/Manifest wird nie nachtraeglich
+veraendert -- eine Korrektur oder Wiederholung erhaelt eine neue id).
 
 Vergleicht den aktuellen Arbeitsbaum (inkl. noch nicht committeter Aenderungen) gegen den
-Merge-Base mit einem Basis-Ref (typischerweise der Zielbranch eines Pull Requests). Erlaubt
-sind ausschliesslich Aenderungen an status/updated_at/review/notes. Jede Aenderung an einem
-Ausfuehrungsfeld (id, schema_version, protocol_id, database, interface, executed_at,
-executed_by, exact_query, filters, date_range, result_count, export_reference) sowie das
-Loeschen oder Umbenennen einer bereits committeten Datei ist ein Fehler.
+Merge-Base mit einem Basis-Ref (typischerweise der Zielbranch eines Pull Requests). Zwei
+getrennte Ziele mit je eigener Mutable-Field-Menge (siehe IMMUTABLE_TARGETS):
+
+- research/search_runs/**: erlaubt sind ausschliesslich Aenderungen an
+  status/updated_at/review/notes. Jede Aenderung an einem Ausfuehrungsfeld (id, schema_version,
+  protocol_id, database, interface, interface_profile, executed_at, executed_by, exact_query,
+  filters, request_parameters, pagination, result_capture, date_range, result_count,
+  export_reference) ist ein Fehler. interface_profile.id ist dabei besonders wichtig (ADR-0055
+  R3-Nachtrag): eine nachtraegliche Aenderung wuerde einen bereits ausgefuehrten Suchlauf rueckwirkend
+  einem anderen (ggf. neu eingefuehrten) API-Parameterprofil unterwerfen, das zum Ausfuehrungszeitpunkt
+  gar nicht galt.
+- research/search_results/**: VOLLSTAENDIG unveraenderlich -- ein Search Result Manifest hat
+  kein redaktionelles status/review-Feld wie der Suchlauf (es ist die reine Tatsachenfeststellung
+  "diese Identifikatoren wurden erhalten", kein Workflow-Dokument), daher ist JEDE Aenderung
+  (auch an notes/updated_at) ein Fehler.
+
+Das Loeschen oder Umbenennen einer bereits committeten Datei ist in beiden Faellen ein Fehler.
 
 Bekannte Grenze (siehe Scientific Research Protocol, Abschnitt 34): dieser Check vergleicht
 nur gegen einen einzelnen Basis-Ref und erkennt daher keine Manipulation, die bereits vor
@@ -28,6 +41,7 @@ import argparse
 import os
 import subprocess
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 
 import yaml
@@ -36,9 +50,32 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _datalib import DataFileError, load_yaml_file  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-SEARCH_RUNS_PATHSPEC = "research/search_runs"
 
-MUTABLE_FIELDS = {"status", "updated_at", "review", "notes"}
+
+@dataclass(frozen=True)
+class ImmutableTarget:
+    pathspec: str
+    mutable_fields: frozenset[str]
+    label: str
+
+
+IMMUTABLE_TARGETS = [
+    ImmutableTarget(
+        pathspec="research/search_runs",
+        mutable_fields=frozenset({"status", "updated_at", "review", "notes"}),
+        label="search run",
+    ),
+    ImmutableTarget(
+        pathspec="research/search_results",
+        mutable_fields=frozenset(),
+        label="search result manifest",
+    ),
+]
+
+# Rueckwaertskompatibel fuer bestehende Importe/Tests, die die frueher einzige Konstante
+# referenzieren.
+SEARCH_RUNS_PATHSPEC = IMMUTABLE_TARGETS[0].pathspec
+MUTABLE_FIELDS = IMMUTABLE_TARGETS[0].mutable_fields
 
 
 class GitError(RuntimeError):
@@ -58,14 +95,13 @@ def find_merge_base(repo_root: Path, base_ref: str) -> str:
     return _run_git(repo_root, ["merge-base", base_ref, "HEAD"]).strip()
 
 
-def diff_status(repo_root: Path, merge_base: str) -> list[tuple[str, str]]:
-    """Liefert (status, path)-Paare fuer research/search_runs/** zwischen merge_base und dem
-    aktuellen Arbeitsbaum (inkl. noch nicht committeter Aenderungen). --no-renames sorgt
-    dafuer, dass eine Umbenennung als Loeschen + Hinzufuegen erscheint, nicht als 'R' --
-    Umbenennen einer bereits committeten Suchlaufdatei soll denselben Fehler ausloesen wie
-    ein Loeschen."""
+def diff_status(repo_root: Path, merge_base: str, pathspec: str) -> list[tuple[str, str]]:
+    """Liefert (status, path)-Paare fuer `pathspec` zwischen merge_base und dem aktuellen
+    Arbeitsbaum (inkl. noch nicht committeter Aenderungen). --no-renames sorgt dafuer, dass eine
+    Umbenennung als Loeschen + Hinzufuegen erscheint, nicht als 'R' -- Umbenennen einer bereits
+    committeten Datei soll denselben Fehler ausloesen wie ein Loeschen."""
     output = _run_git(
-        repo_root, ["diff", "--no-renames", "--name-status", merge_base, "--", SEARCH_RUNS_PATHSPEC]
+        repo_root, ["diff", "--no-renames", "--name-status", merge_base, "--", pathspec]
     )
     entries = []
     for line in output.splitlines():
@@ -85,18 +121,17 @@ def load_at_ref(repo_root: Path, ref: str, path: str):
     return yaml.safe_load(result.stdout)
 
 
-def check(repo_root: Path, base_ref: str) -> list[str]:
+def _check_target(repo_root: Path, merge_base: str, target: ImmutableTarget) -> list[str]:
     errors: list[str] = []
-    merge_base = find_merge_base(repo_root, base_ref)
 
-    for status, path in diff_status(repo_root, merge_base):
+    for status, path in diff_status(repo_root, merge_base, target.pathspec):
         if not path.endswith((".yaml", ".yml")):
             continue
 
         if status == "D":
             errors.append(
-                f"{path}: already-committed search run file was deleted or renamed -- search runs are "
-                "immutable, a correction or repeated search run must get a new id instead"
+                f"{path}: already-committed {target.label} file was deleted or renamed -- {target.label}s "
+                "are immutable, a correction or repeated one must get a new id instead"
             )
             continue
         if status == "A":
@@ -116,16 +151,25 @@ def check(repo_root: Path, base_ref: str) -> list[str]:
             changed_keys = {
                 key for key in set(old_data) | set(new_data) if old_data.get(key) != new_data.get(key)
             }
-            disallowed = changed_keys - MUTABLE_FIELDS
+            disallowed = changed_keys - target.mutable_fields
             if disallowed:
+                mutable_desc = ", ".join(sorted(target.mutable_fields)) or "(no field -- fully immutable)"
                 errors.append(
-                    f"{path}: modifies execution field(s) {sorted(disallowed)} of an already-committed "
-                    "search run -- only status/updated_at/review/notes may change; a corrected or "
-                    "repeated search run must get a new id instead"
+                    f"{path}: modifies field(s) {sorted(disallowed)} of an already-committed {target.label} "
+                    f"-- only {mutable_desc} may change; a corrected or repeated {target.label} must get a "
+                    "new id instead"
                 )
             continue
-        errors.append(f"{path}: unexpected git status '{status}' for a committed search run file")
+        errors.append(f"{path}: unexpected git status '{status}' for a committed {target.label} file")
 
+    return errors
+
+
+def check(repo_root: Path, base_ref: str) -> list[str]:
+    merge_base = find_merge_base(repo_root, base_ref)
+    errors: list[str] = []
+    for target in IMMUTABLE_TARGETS:
+        errors.extend(_check_target(repo_root, merge_base, target))
     return errors
 
 
@@ -155,10 +199,10 @@ def main(argv: list[str] | None = None) -> int:
 
     if errors:
         print()
-        print(f"{len(errors)} immutability violation(s) in research/search_runs/**")
+        print(f"{len(errors)} immutability violation(s) in research/search_runs/** or research/search_results/**")
         return 1
 
-    print("No immutability violations in research/search_runs/**")
+    print("No immutability violations in research/search_runs/** or research/search_results/**")
     return 0
 
 

@@ -100,6 +100,7 @@ from _researchlib import (  # noqa: E402
     RESEARCH_DIR,
     RESEARCH_KIND_TO_SCHEMA_ID,
     SCREENING_STAGE_ORDER,
+    compute_manifest_sha256,
     iter_research_files,
     load_all_research_vocabularies,
     normalize_url,
@@ -111,7 +112,14 @@ UNWANTED_BINARY_SUFFIXES = {
     ".ris", ".bib", ".csv",
 }
 
-RESEARCH_KINDS = ("protocol", "search_run", "screening_record", "extraction_record", "promotion_record")
+RESEARCH_KINDS = (
+    "protocol", "search_run", "search_result_manifest", "screening_record", "extraction_record", "promotion_record",
+)
+
+DATABASE_TO_IDENTIFIER_TYPE = {
+    "pubmed": "pmid",
+    "clinicaltrials_gov": "nct_id",
+}
 
 ALLOWED_SEARCH_RUN_PROTOCOL_STATUSES = {"approved", "superseded"}
 
@@ -1030,24 +1038,31 @@ def _check_date_order(report: Report, file_rel: str, label: str, earlier, later)
         report.error(file_rel, f"$.{label}", f"'{label}' out of order: '{later}' is before '{earlier}'")
 
 
-def _check_export_reference_safety(report: Report, file_rel: str, export_reference: str | None) -> None:
+def _check_export_reference_safety(
+    report: Report, file_rel: str, export_reference: str | None, path: str = "$.export_reference"
+) -> None:
+    """Prueft ein Feld, das (wie research_search_run.export_reference oder
+    research_search_result_manifest.source_export_reference) auf einen lokalen, nicht versionierten
+    Export unter research/raw/ verweisen soll -- niemals eine URL, absoluter Pfad oder '..'-Segment.
+    `path` parametrisiert den gemeldeten JSON-Pfad, damit dieselbe Pruefung fuer beide Feldnamen
+    wiederverwendbar bleibt."""
     if not export_reference:
         return
     if "://" in export_reference:
         report.error(
-            file_rel, "$.export_reference",
+            file_rel, path,
             "must not be a URL -- only a relative path hint under research/raw/ is allowed",
         )
         return
     if export_reference.startswith("/") or export_reference.startswith("\\") or re.match(r"^[a-zA-Z]:[\\/]", export_reference):
-        report.error(file_rel, "$.export_reference", "must be a relative path, not an absolute path")
+        report.error(file_rel, path, "must be a relative path, not an absolute path")
         return
     normalized = export_reference.replace("\\", "/")
     if ".." in normalized.split("/"):
-        report.error(file_rel, "$.export_reference", "must not contain '..' path segments")
+        report.error(file_rel, path, "must not contain '..' path segments")
         return
     if not normalized.lstrip("./").startswith("research/raw/"):
-        report.error(file_rel, "$.export_reference", "must point to a path under research/raw/")
+        report.error(file_rel, path, "must point to a path under research/raw/")
 
 
 def check_misc_consistency(report: Report, objects: dict[str, dict[str, ResearchObject]]) -> None:
@@ -1112,6 +1127,294 @@ def check_misc_consistency(report: Report, objects: dict[str, dict[str, Research
         file_rel = relative(obj.path)
         data = obj.data
         _check_date_order(report, file_rel, "created_at/updated_at", data.get("created_at"), data.get("updated_at"))
+
+    for obj in objects["search_result_manifest"].values():
+        file_rel = relative(obj.path)
+        data = obj.data
+        _check_date_order(report, file_rel, "created_at/updated_at", data.get("created_at"), data.get("updated_at"))
+        _check_export_reference_safety(
+            report, file_rel, data.get("source_export_reference"), path="$.source_export_reference"
+        )
+
+
+def check_search_result_manifests(report: Report, objects: dict[str, dict[str, ResearchObject]]) -> None:
+    """Prueft research_search_result_manifest gegen research_search_run (siehe ADR-0055):
+    referenzielle Existenz, gegenseitige Verknuepfung ueber result_capture.manifest_id, hoechstens
+    ein Manifest je Suchlauf, Uebereinstimmung von count mit sowohl len(identifiers) als auch dem
+    result_count des Suchlaufs, Konsistenz von identifier_type mit der Datenbank des Suchlaufs,
+    kanonische Sortierreihenfolge (numerisch fuer pmid, lexikografisch fuer nct_id -- JSON Schema
+    allein kann eine Sortierreihenfolge nicht ausdruecken, nur das jeweilige Identifikator-Pattern
+    selbst, siehe research_search_result_manifest.schema.json), und den verbindlichen SHA-256 ueber
+    die (bereits sortierten) identifiers (siehe _researchlib.compute_manifest_sha256).
+    Eindeutigkeit der identifiers selbst ist bereits schema-seitig erzwungen (uniqueItems: true)."""
+    search_runs = objects["search_run"]
+    manifests = objects["search_result_manifest"]
+
+    manifests_by_search_run: dict[str, list[ResearchObject]] = {}
+    for obj in manifests.values():
+        search_run_id = obj.data.get("search_run_id")
+        if search_run_id:
+            manifests_by_search_run.setdefault(search_run_id, []).append(obj)
+
+    for obj in manifests.values():
+        file_rel = relative(obj.path)
+        data = obj.data
+        search_run_id = data.get("search_run_id")
+        search_run = search_runs.get(search_run_id)
+        if search_run is None:
+            report.error(file_rel, "$.search_run_id", f"references missing search run: {search_run_id}")
+            continue
+
+        result_capture = search_run.data.get("result_capture") or {}
+        if result_capture.get("manifest_id") != obj.id:
+            report.error(
+                file_rel, "$.search_run_id",
+                f"search run '{search_run_id}' does not reference this manifest back via its own "
+                f"result_capture.manifest_id (points to {result_capture.get('manifest_id')!r} instead) -- a "
+                "manifest and its search run must reference each other, and a manifest must not be left "
+                "orphaned or attached to a search run that actually belongs to a different result set",
+            )
+
+        identifiers = data.get("identifiers") or []
+        count = data.get("count")
+        if count != len(identifiers):
+            report.error(
+                file_rel, "$.count",
+                f"count ({count!r}) does not match the number of identifiers ({len(identifiers)})",
+            )
+
+        result_count = search_run.data.get("result_count")
+        if count != result_count:
+            report.error(
+                file_rel, "$.count",
+                f"count ({count!r}) does not match result_count ({result_count!r}) of referenced search "
+                f"run '{search_run_id}'",
+            )
+
+        database = search_run.data.get("database")
+        identifier_type = data.get("identifier_type")
+        expected_type = DATABASE_TO_IDENTIFIER_TYPE.get(database)
+        if expected_type and identifier_type != expected_type:
+            report.error(
+                file_rel, "$.identifier_type",
+                f"database '{database}' (of referenced search run '{search_run_id}') requires "
+                f"identifier_type '{expected_type}', got '{identifier_type}'",
+            )
+
+        if identifier_type == "pmid":
+            valid_pmids = [ident for ident in identifiers if re.fullmatch(r"[1-9][0-9]*", ident)]
+            if len(valid_pmids) == len(identifiers) and identifiers != sorted(identifiers, key=int):
+                report.error(
+                    file_rel, "$.identifiers", "PMIDs are not sorted in canonical (numeric ascending) order",
+                )
+        elif identifier_type == "nct_id":
+            if identifiers != sorted(identifiers):
+                report.error(
+                    file_rel, "$.identifiers",
+                    "NCT IDs are not sorted in canonical (lexicographic ascending) order",
+                )
+
+        expected_hash = compute_manifest_sha256(identifiers)
+        if data.get("sha256") != expected_hash:
+            report.error(
+                file_rel, "$.sha256",
+                "does not match the mandated hash rule sha256(('\\n'.join(identifiers) + '\\n').encode"
+                "('utf-8')) over the identifiers exactly as stored in this manifest",
+            )
+
+        # R2 -- Punkt 3: zeitliche Provenienz. Ein Manifest ist die Momentaufnahme EINES bereits
+        # ausgefuehrten Suchlaufs und kann daher nicht vor dessen Ausfuehrung entstanden sein.
+        # executed_at ist ein date-time, created_at ein reines Datum -- Vergleich auf Datumsebene.
+        executed_date = (search_run.data.get("executed_at") or "")[:10]
+        created_at = data.get("created_at")
+        if executed_date and created_at and created_at < executed_date:
+            report.error(
+                file_rel, "$.created_at",
+                f"created_at ('{created_at}') is before the executed_at date of its own search run "
+                f"'{search_run_id}' ('{executed_date}') -- a manifest cannot predate the search event "
+                "it is a snapshot of",
+            )
+
+        # R2 -- Punkt 4: bei result_capture.status: complete muss das Manifest exakt dieselbe lokale
+        # Exportreferenz dokumentieren wie sein Suchlauf -- ein Suchlauf darf nicht auf einen anderen
+        # lokalen Ursprung verweisen als das Manifest, das er als sein eigenes ausgibt. Deckt implizit
+        # auch den Fall search_run.export_reference: null ab (ungleich einem nicht-leeren
+        # source_export_reference, das das Manifest-Schema bereits als Pflichtfeld erzwingt).
+        if result_capture.get("status") == "complete":
+            search_run_export_ref = search_run.data.get("export_reference")
+            manifest_export_ref = data.get("source_export_reference")
+            if search_run_export_ref != manifest_export_ref:
+                report.error(
+                    file_rel, "$.source_export_reference",
+                    f"does not match export_reference ({search_run_export_ref!r}) of referenced search run "
+                    f"'{search_run_id}' -- a complete manifest must document the exact same local export "
+                    "source as its search run",
+                )
+
+    for search_run_id, group in manifests_by_search_run.items():
+        if len(group) > 1:
+            ids = ", ".join(sorted(o.id for o in group))
+            for o in group:
+                report.error(
+                    relative(o.path), "$.search_run_id",
+                    f"more than one search_result_manifest references search run '{search_run_id}': {ids} -- "
+                    "a search run may have at most one active, complete manifest",
+                )
+
+    for obj in search_runs.values():
+        file_rel = relative(obj.path)
+        result_capture = obj.data.get("result_capture") or {}
+        if result_capture.get("status") == "complete":
+            manifest_id = result_capture.get("manifest_id")
+            if manifest_id not in manifests:
+                report.error(
+                    file_rel, "$.result_capture.manifest_id",
+                    f"references missing search_result_manifest: {manifest_id}",
+                )
+
+
+def _is_positive_int(value) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool) and value > 0
+
+
+def _is_nonnegative_int(value) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool) and value >= 0
+
+
+# database, das ein bestimmtes interface_profile.id strukturell voraussetzt (siehe ADR-0055
+# R3-Nachtrag) -- 'unprofiled' erzwingt bewusst KEINE Datenbank.
+PROFILE_REQUIRED_DATABASE = {
+    "ncbi_eutils_esearch_v1": "pubmed",
+    "clinicaltrials_gov_api_v2_v1": "clinicaltrials_gov",
+}
+
+
+def check_search_run_interface_profiles(report: Report, objects: dict[str, dict[str, ResearchObject]]) -> None:
+    """R2/R3 (Haertung von ADR-0055): technische Mindestvalidierung fuer die derzeit implementierten
+    API-Profile. Dispatch ausschliesslich ueber das kontrollierte, maschinenlesbare
+    `interface_profile.id` (siehe research/vocabularies/search_interface_profiles.yaml) -- NICHT mehr
+    ueber Textfragmente im frei formulierten `interface`-Feld (das bleibt rein menschenlesbar, siehe
+    ADR-0055 R3-Nachtrag). Eine beliebige Umformulierung von `interface` kann diese Regeln damit nicht
+    mehr umgehen. `id: unprofiled` unterliegt bewusst KEINEN API-spezifischen Parameterregeln --
+    schema-seitig ist dafuer aber eine nicht leere `rationale` erzwungen (kein stiller Verzicht).
+    Beweist nicht allein die tatsaechliche API-Antwort, verhindert aber strukturell unmoegliche
+    Vollstaendigkeitsangaben (z. B. `retmax` kleiner als `result_count` ohne dokumentierte Pagination)."""
+    for obj in objects["search_run"].values():
+        file_rel = relative(obj.path)
+        data = obj.data
+        database = data.get("database")
+        interface_profile = data.get("interface_profile") or {}
+        profile_id = interface_profile.get("id")
+        request_parameters = data.get("request_parameters") or {}
+        result_capture = data.get("result_capture") or {}
+        pagination = data.get("pagination")
+        result_count = data.get("result_count")
+        is_complete = result_capture.get("status") == "complete"
+
+        required_database = PROFILE_REQUIRED_DATABASE.get(profile_id)
+        if required_database and database != required_database:
+            report.error(
+                file_rel, "$.interface_profile.id",
+                f"interface_profile '{profile_id}' requires database == '{required_database}', got "
+                f"'{database}'",
+            )
+
+        if profile_id == "ncbi_eutils_esearch_v1":
+            if request_parameters.get("db") != "pubmed":
+                report.error(
+                    file_rel, "$.request_parameters.db",
+                    "NCBI E-utilities ESearch profile requires request_parameters.db == 'pubmed'",
+                )
+            if request_parameters.get("retmode") != "json":
+                report.error(
+                    file_rel, "$.request_parameters.retmode",
+                    "NCBI E-utilities ESearch profile requires request_parameters.retmode == 'json'",
+                )
+            retmax = request_parameters.get("retmax")
+            if not _is_positive_int(retmax):
+                report.error(
+                    file_rel, "$.request_parameters.retmax",
+                    "NCBI E-utilities ESearch profile requires request_parameters.retmax to be a positive "
+                    "integer",
+                )
+            retstart = request_parameters.get("retstart")
+            if not _is_nonnegative_int(retstart):
+                report.error(
+                    file_rel, "$.request_parameters.retstart",
+                    "NCBI E-utilities ESearch profile requires request_parameters.retstart to be a "
+                    "non-negative integer",
+                )
+            if (
+                is_complete and pagination is None
+                and _is_positive_int(retmax) and isinstance(result_count, int)
+                and retmax < result_count
+            ):
+                report.error(
+                    file_rel, "$.request_parameters.retmax",
+                    f"retmax ({retmax}) is less than result_count ({result_count}) with no pagination "
+                    "documented -- the response cannot have contained the full result set",
+                )
+
+        elif profile_id == "clinicaltrials_gov_api_v2_v1":
+            if request_parameters.get("query_parameter") != "query.term":
+                report.error(
+                    file_rel, "$.request_parameters.query_parameter",
+                    "ClinicalTrials.gov API v2 profile requires request_parameters.query_parameter == "
+                    "'query.term'",
+                )
+            if request_parameters.get("countTotal") is not True:
+                report.error(
+                    file_rel, "$.request_parameters.countTotal",
+                    "ClinicalTrials.gov API v2 profile requires request_parameters.countTotal == true",
+                )
+            page_size = request_parameters.get("pageSize")
+            if not _is_positive_int(page_size):
+                report.error(
+                    file_rel, "$.request_parameters.pageSize",
+                    "ClinicalTrials.gov API v2 profile requires request_parameters.pageSize to be a "
+                    "positive integer",
+                )
+            if request_parameters.get("format") != "json":
+                report.error(
+                    file_rel, "$.request_parameters.format",
+                    "ClinicalTrials.gov API v2 profile requires request_parameters.format == 'json'",
+                )
+            if request_parameters.get("fields") != "NCTId":
+                report.error(
+                    file_rel, "$.request_parameters.fields",
+                    "ClinicalTrials.gov API v2 profile requires request_parameters.fields == 'NCTId'",
+                )
+
+            if is_complete:
+                if not isinstance(pagination, dict):
+                    report.error(
+                        file_rel, "$.pagination",
+                        "ClinicalTrials.gov API v2 profile requires pagination to be documented when "
+                        "result_capture.status is 'complete'",
+                    )
+                else:
+                    pages_retrieved = pagination.get("pages_retrieved")
+                    if pagination.get("completion_confirmed") is not True:
+                        report.error(
+                            file_rel, "$.pagination.completion_confirmed",
+                            "must be true for a complete result capture -- otherwise a further page may "
+                            "have been skipped",
+                        )
+                    if not _is_positive_int(pages_retrieved):
+                        report.error(
+                            file_rel, "$.pagination.pages_retrieved",
+                            "must be a positive integer",
+                        )
+                    elif (
+                        _is_positive_int(page_size) and isinstance(result_count, int)
+                        and pages_retrieved * page_size < result_count
+                    ):
+                        report.error(
+                            file_rel, "$.pagination.pages_retrieved",
+                            f"pages_retrieved ({pages_retrieved}) x pageSize ({page_size}) = "
+                            f"{pages_retrieved * page_size} is less than result_count ({result_count}) -- "
+                            "the documented pagination cannot have covered the full result set",
+                        )
 
 
 def check_object_temporal_bounds(report: Report, objects: dict[str, dict[str, ResearchObject]]) -> None:
@@ -1217,6 +1520,8 @@ def check_no_unwanted_binaries(report: Report, root: Path) -> None:
 
 def run_checks(report: Report, objects: dict[str, dict[str, ResearchObject]], source_ids, study_ids, claim_ids) -> None:
     check_research_references(report, objects, source_ids, study_ids)
+    check_search_result_manifests(report, objects)
+    check_search_run_interface_profiles(report, objects)
     check_historical_duplicate_targets(report, objects)
     check_protocol_version_matches_id(report, objects["protocol"])
     check_deduplication(report, objects)

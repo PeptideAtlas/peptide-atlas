@@ -4,16 +4,28 @@ id: search-run-a0000000-0000-4000-8000-000000000001
 protocol_id: research-protocol-placeholder-substance-v1
 database: pubmed
 interface: PubMed web interface (Platzhalter-Beispiel)
+interface_profile:
+  id: ncbi_eutils_esearch_v1
+  rationale: null
 executed_at: "2026-07-24T10:00:00Z"
 executed_by: reviewer-1
 exact_query: '"placeholder substance"[Title/Abstract] AND "placeholder receptor"[Title/Abstract]'
 filters:
   language: english
+request_parameters:
+  db: pubmed
+  retmode: json
+  retmax: 1000
+  retstart: 0
+result_capture:
+  status: complete
+  manifest_id: search-result-manifest-612260ac-757a-4184-ac33-da2b2d075b09
+  rationale: null
 result_count: 2
 date_range:
   from: null
   to: null
-export_reference: null
+export_reference: "research/raw/placeholder-substance/esearch_placeholder_example.json (local, gitignored, Platzhalter-Beispiel)"
 notes: null
 status: executed
 created_at: "2026-07-24"

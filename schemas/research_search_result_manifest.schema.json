@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "research_search_result_manifest.schema.json",
+  "title": "Research Search Result Manifest",
+  "description": "Eine versionierte, maschinenlesbare Momentaufnahme der stabilen Identifikatoren (PMID/NCT-ID/...), die ein research_search_run tatsaechlich zum Ausfuehrungszeitpunkt erhalten hat. Ergaenzt, ersetzt aber nicht research_search_run: der Suchlauf ist das ausgefuehrte Suchereignis (Query, Zeitpunkt, Trefferzahl), das Manifest ist die tatsaechlich erhaltene Identifikatormenge selbst (siehe ADR-0055 im Decision Log). Enthaelt AUSSCHLIESSLICH stabile Identifikatoren -- keine Abstracts, Volltexte, Titel oder sonstigen urheberrechtlich geschuetzten Inhalte, und ist damit versionierbar, obwohl der vollstaendige API-Export selbst unter research/raw/ (gitignored) bleibt. Vollstaendig unveraenderlich nach dem Merge (siehe tools/check_research_immutability.py) -- eine Korrektur erhaelt ein neues Manifest mit neuer id, kein Feld dieses Objekts wird nachtraeglich editiert.",
+  "type": "object",
+  "properties": {
+    "schema_version": { "$ref": "common.schema.json#/$defs/schema_version" },
+    "id": {
+      "type": "string",
+      "pattern": "^search-result-manifest-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$"
+    },
+    "search_run_id": {
+      "type": "string",
+      "pattern": "^search-run-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$",
+      "description": "Der research_search_run, dessen tatsaechlich erhaltenes Result Set dieses Manifest festhaelt. Muss referenziell existieren und selbst per result_capture.manifest_id auf GENAU dieses Manifest zurueckverweisen (siehe tools/validate_research.py::check_search_result_manifests)."
+    },
+    "identifier_type": { "$ref": "common.schema.json#/$defs/search_result_identifier_type" },
+    "identifiers": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Bereits kanonisch sortierte, eindeutige Identifikatoren (numerisch fuer pmid, lexikografisch fuer nct_id -- vom Validator geprueft, JSON Schema allein kann Sortierreihenfolge nicht ausdruecken). Darf leer sein (count: 0 ist ein gueltiges, vollstaendiges Ergebnis eines Suchlaufs ohne Treffer)."
+    },
+    "count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Muss sowohl len(identifiers) als auch dem result_count des referenzierten Suchlaufs entsprechen (siehe Validator)."
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "SHA-256 ueber (\"\\n\".join(identifiers) + \"\\n\").encode(\"utf-8\") -- identifiers MUSS bereits in der im Manifest gespeicherten (kanonisch sortierten) Reihenfolge vorliegen, wenn dieser Hash gebildet wird. Verbindliche Hash-Regel, siehe ADR-0055 und research/search_results/README.md; ein leeres Result Set (identifiers: []) hasht ueber b'\\n' (join ueber eine leere Liste ergibt '', plus den einen abschliessenden Zeilenumbruch), NICHT ueber den leeren String."
+    },
+    "source_export_reference": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Verweis/Beschreibung des lokalen, NICHT versionierten API-Exports unter research/raw/, aus dem dieses Manifest erzeugt wurde (Pfadhinweis, NICHT die Datei selbst -- siehe research_search_run.schema.json#/properties/export_reference fuer dieselbe Konvention)."
+    },
+    "created_at": { "$ref": "common.schema.json#/$defs/date" },
+    "updated_at": { "$ref": "common.schema.json#/$defs/date" },
+    "notes": { "type": ["string", "null"] }
+  },
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "search_run_id",
+    "identifier_type",
+    "identifiers",
+    "count",
+    "sha256",
+    "source_export_reference",
+    "created_at",
+    "updated_at",
+    "notes"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": { "identifier_type": { "const": "pmid" } },
+        "required": ["identifier_type"]
+      },
+      "then": {
+        "properties": {
+          "identifiers": {
+            "items": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$",
+              "description": "PMID: rein numerisch, keine fuehrenden Nullen."
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "identifier_type": { "const": "nct_id" } },
+        "required": ["identifier_type"]
+      },
+      "then": {
+        "properties": {
+          "identifiers": {
+            "items": {
+              "type": "string",
+              "pattern": "^NCT[0-9]{8}$",
+              "description": "ClinicalTrials.gov NCT-ID: 'NCT' + genau 8 Ziffern."
+            }
+          }
+        }
+      }
+    }
+  ]
+}

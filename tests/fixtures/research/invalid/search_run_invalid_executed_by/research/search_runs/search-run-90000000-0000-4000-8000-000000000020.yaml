@@ -1,0 +1,29 @@
+schema_version: "1.0.0"
+id: search-run-90000000-0000-4000-8000-000000000020
+protocol_id: research-protocol-test-substance-v1
+database: pubmed
+interface: PubMed web interface
+executed_at: "2026-01-01T10:00:00Z"
+executed_by: Reviewer 1
+exact_query: '"test substance"[Title/Abstract]'
+filters: {}
+interface_profile:
+  id: unprofiled
+  rationale: >
+    Generic test fixture predating machine-readable interface profiles (ADR-0055 R3); not intended to exercise a specific API parameter profile.
+request_parameters: {}
+result_capture:
+  status: unavailable
+  manifest_id: null
+  rationale: >
+    No stable total count was available from the interface for this test scenario.
+date_range: { from: null, to: null }
+result_count: 2
+export_reference: null
+notes: null
+status: executed
+created_at: "2026-01-01"
+updated_at: "2026-01-01"
+review:
+  last_reviewed_at: null
+  reviewers: []

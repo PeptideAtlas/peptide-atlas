@@ -1,0 +1,29 @@
+schema_version: "1.0.0"
+id: search-run-91000000-0000-4000-8000-000000000104
+protocol_id: research-protocol-test-substance-v1
+database: pubmed
+interface: PubMed web interface
+executed_at: "2026-01-01T10:00:00Z"
+executed_by: reviewer-1
+exact_query: '"test substance"[Title/Abstract]'
+filters: {}
+interface_profile:
+  id: unprofiled
+  rationale: >
+    Manual web interface search, not the NCBI E-utilities ESearch API or ClinicalTrials.gov API v2 -- no machine-readable profile implemented for this interface yet.
+request_parameters: {}
+result_capture:
+  status: unavailable
+  manifest_id: null
+  rationale: >
+    Manual web interface search, not the NCBI E-utilities ESearch API -- profile rules for that API do not apply here.
+date_range: { from: null, to: null }
+result_count: 7
+export_reference: null
+notes: null
+status: executed
+created_at: "2026-01-01"
+updated_at: "2026-01-01"
+review:
+  last_reviewed_at: null
+  reviewers: []

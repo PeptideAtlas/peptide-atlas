@@ -1,0 +1,31 @@
+schema_version: "1.0.0"
+id: search-run-91000000-0000-4000-8000-000000000006
+protocol_id: research-protocol-test-substance-v1
+database: pubmed
+interface: NCBI E-utilities ESearch (eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi)
+executed_at: "2026-01-01T10:00:00Z"
+executed_by: reviewer-1
+exact_query: '"test substance"[Title/Abstract]'
+filters: {}
+interface_profile:
+  id: ncbi_eutils_esearch_v1
+  rationale: null
+request_parameters:
+  db: 'pubmed'
+  retmode: 'json'
+  retmax: 5
+  retstart: 0
+result_capture:
+  status: complete
+  manifest_id: search-result-manifest-91000000-0000-4000-8000-000000000006
+  rationale: null
+date_range: { from: null, to: null }
+result_count: 50
+export_reference: "research/raw/test-fixture/placeholder.json"
+notes: null
+status: executed
+created_at: "2026-01-01"
+updated_at: "2026-01-01"
+review:
+  last_reviewed_at: null
+  reviewers: []

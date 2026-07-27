@@ -1059,6 +1059,181 @@ Kurze, strukturierte Architecture Decision Records (ADRs): Kontext, Entscheidung
   Search-Run-, Screening-, Extraction- oder Promotion-Datensätze angelegt und keine realen
   Quellen, Studien oder Claims ergänzt.
 
+### ADR-0055: Versionierte Identifier-Manifeste für reproduzierbare Search Runs
+
+- **Status:** Entschieden
+- **Datum:** 2026-07-27
+- **Kontext:** Phase 4B-1A legte vier `research_search_run`-Datensätze für Retatrutid-Basissuchen an
+  (PubMed via NCBI E-utilities ESearch, ClinicalTrials.gov API v2), die jeweils nur Query, Zeitpunkt
+  und Trefferzahl (`result_count`) speicherten. Die vollständigen PMID-/NCT-ID-Listen lagen
+  ausschließlich unter `research/raw/**` — per `.gitignore` nicht versioniert. Datenbanken verändern
+  sich jedoch über Zeit (neue Publikationen, zurückgezogene Einträge, geänderte Indexierung): eine
+  identische Query zu einem späteren Zeitpunkt kann eine andere Treffermenge liefern. Die reine
+  Trefferzahl reicht damit für historische Reproduzierbarkeit nicht aus — ohne die tatsächlich
+  erhaltene Identifikatormenge selbst wäre das ursprüngliche Result Set nach einer erneuten Ausführung
+  nicht mehr rekonstruierbar, und ein späterer Prüfer könnte nicht nachvollziehen, welche konkreten
+  Datensätze ein Suchlauf tatsächlich gefunden hat.
+- **Entscheidung:**
+    - Neue Research-Objektart `research_search_result_manifest` (Schema
+      `schemas/research_search_result_manifest.schema.json`, Ordner `research/search_results/`,
+      Dateiname `search-result-manifest-<uuid4>.yaml`): enthält ausschließlich die kanonisch
+      sortierten, eindeutigen stabilen Identifikatoren (`identifier_type: pmid` numerisch aufsteigend,
+      `nct_id` lexikografisch aufsteigend), `count`, einen verbindlichen SHA-256-Hash über
+      `("\n".join(identifiers) + "\n").encode("utf-8")`, und einen Verweis auf den lokalen,
+      NICHT versionierten Rohexport (`source_export_reference`, Pfadhinweis unter `research/raw/`,
+      nicht die Datei selbst). Enthält bewusst KEINE Abstracts, Titel, Volltexte oder sonstigen
+      urheberrechtlich geschützten Inhalte — stabile Identifikatoren allein dürfen versioniert werden,
+      vollständige API-Antworten/Abstracts/PDFs bleiben weiterhin außerhalb von Git.
+    - `research_search_run` erhält ein Pflichtfeld `result_capture`: `status: complete` (mit
+      `manifest_id`, `rationale: null`) verweist auf ein existierendes Manifest, das seinerseits über
+      `search_run_id` gegenseitig zurückverweist; `status: unavailable` (mit `manifest_id: null`,
+      Pflicht-`rationale`) dokumentiert einen echten Grund, warum kein Manifest erzeugt wurde (z. B.
+      keine stabile Gesamttrefferzahl, gesperrte automatisierte Anfrage). `result_capture` ist für
+      JEDEN ausgeführten Suchlauf Pflicht.
+    - Zusätzliches Pflichtfeld `request_parameters` auf `research_search_run`: rein technische,
+      niemals geheime API-Parameter (z. B. `db`/`retmode`/`retmax`/`retstart` bei NCBI E-utilities,
+      `query_parameter`/`countTotal`/`pageSize`/`format` bei ClinicalTrials.gov API v2) — bewusst
+      getrennt von `filters` (inhaltliche/wissenschaftliche Sucheinschränkungen). Optionales Feld
+      `pagination` (`pages_retrieved`, `completion_confirmed`) dokumentiert bei einem paginierenden
+      Interface, dass tatsächlich alle Seiten abgerufen wurden.
+    - `research_search_run.executed_by` referenziert jetzt `common.schema.json#/$defs/research_actor_id`
+      (statt eines unbeschränkten Strings) — dieselbe restriktive, leerzeichen-/
+      grossschreibungsfreie Kürzel-Syntax wie bei allen anderen Research-Akteursfeldern (ADR-0050).
+      Bekannte Grenze bleibt unverändert bestehen: eine syntaktisch stabile Actor-ID beweist nicht,
+      dass dahinter eine bestimmte menschliche Person steht.
+    - `tools/validate_research.py::check_search_result_manifests` prüft: referenzielle Existenz von
+      `search_run_id`, gegenseitige Verknüpfung über `result_capture.manifest_id`, höchstens ein
+      aktives Manifest je Suchlauf, keine verwaisten Manifeste, `count == len(identifiers)` UND
+      `count == search_run.result_count`, `identifier_type` passend zur Datenbank des Suchlaufs
+      (`pubmed` → `pmid`, `clinicaltrials_gov` → `nct_id`), kanonische Sortierreihenfolge (numerisch/
+      lexikografisch — JSON Schema allein kann Sortierreihenfolge nicht ausdrücken), und den
+      SHA-256-Hash gegen die verbindliche Hash-Regel. Identifikator-Pattern (`^[1-9][0-9]*$` für PMID,
+      `^NCT[0-9]{8}$` für NCT-ID) und Eindeutigkeit (`uniqueItems`) sind bereits schema-seitig
+      erzwungen.
+    - `tools/check_research_immutability.py` erweitert um `research/search_results/**` als zweites,
+      eigenständiges Ziel: dort ist JEDES Feld unveränderlich (kein `status`/`review` wie bei
+      `research_search_run` — ein Manifest ist reine Tatsachenfeststellung, kein Workflow-Dokument).
+      `request_parameters`/`result_capture` auf `research_search_run` sind implizit bereits durch die
+      bestehende "alles außer status/updated_at/review/notes ist unveränderlich"-Logik abgedeckt.
+    - Die vier bereits angelegten Phase-4B-1A-Suchläufe (PubMed retatrutide/LY3437943,
+      ClinicalTrials.gov retatrutide/LY3437943) wurden auf `result_capture.status: complete` mit den
+      vier neuen, aus den ursprünglich gespeicherten lokalen Rohantworten erzeugten Manifesten
+      nachgerüstet — keine erneute Suche, keine neuen/späteren Treffer wurden eingemischt.
+- **Alternativen:**
+    1. *Nur die Trefferzahl dokumentieren (Status quo)* — verworfen: reicht für historische
+       Reproduzierbarkeit nicht aus, siehe Kontext.
+    2. *Vollständige Rohantworten (JSON-Exporte) versionieren* — verworfen: würde ggf. urheberrechtlich
+       geschützte Metadaten/Abstracts mitversionieren und widerspricht der bestehenden
+       `research/raw/`-Politik (Abschnitt 32 im Scientific Research Protocol); stabile Identifikatoren
+       allein sind dagegen unproblematisch.
+    3. *Identifikatorliste direkt als zusätzliches Feld auf `research_search_run` speichern, kein
+       eigenes Objekt* — verworfen: vermischt das ausgeführte Suchereignis (Suchlauf) mit der
+       tatsächlich erhaltenen Ergebnismenge (Manifest); ein eigenes, vollständig unveränderliches
+       Objekt macht die Unterscheidung sowohl inhaltlich als auch technisch (getrennte
+       Immutability-Policy) sauberer.
+    4. *Separates Objekt mit gegenseitiger Referenz Suchlauf↔Manifest, optionalem `unavailable`-Pfad
+       für nicht erfassbare Fälle* — **gewählt**.
+- **Konsequenzen:** Ein historisches Result Set ist jetzt entweder über sein Manifest exakt
+  rekonstruierbar, oder es ist dokumentiert, warum das nicht möglich war — kein stiller Datenverlust.
+  Jeder zukünftige Suchlauf muss `result_capture` setzen; ein vollständiges Manifest ohne begründete
+  Ausnahme ist damit der Normalfall. Test-Fixtures unter `tests/fixtures/research/**` (158 bestehende
+  `search_run`-Dateien) wurden mechanisch um `request_parameters: {}` und
+  `result_capture: {status: unavailable, ...}` ergänzt, da sie keine echten Suchläufe mit lokal
+  vorliegendem Rohexport repräsentieren.
+- **Migrationsstrategie:** Nicht zutreffend für Produktivdaten außerhalb der vier genannten
+  Suchläufe (Phase 4B-1A ist der erste reale Rechercheschritt). Keine bestehenden bestätigten
+  Suchläufe erforderten eine inhaltliche Korrektur — nur die Ergänzung der neuen Pflichtfelder.
+
+**Nachtrag (R2, 2026-07-27) — Härtung, kein neuer ADR:** Die Korrekturrunde R2 identifizierte vier
+weitere Lücken zwischen dem, was `request_parameters`/`result_capture` inhaltlich versprechen, und
+dem, was tatsächlich maschinell geprüft wurde:
+
+1. *Fehlender API-Parameter nachgetragen:* Die tatsächlich ausgeführten ClinicalTrials.gov-Anfragen
+   enthielten `fields=NCTId` (eingrenzt die Antwort auf die NCT-ID), das aber in den ursprünglich in
+   R1 dokumentierten `request_parameters` fehlte. Beide produktiven ClinicalTrials.gov-Suchläufe
+   sowie alle Beispiele/Fixtures mit einem echten ClinicalTrials.gov-API-v2-Profil wurden um
+   `fields: NCTId` ergänzt.
+2. *API-Profil-Mindestvalidierung:* `request_parameters` war zuvor ein vollständig offenes Objekt
+   (`additionalProperties: true`) ohne inhaltliche Prüfung — ein Suchlauf hätte z. B. `retmax: 1`
+   bei `result_count: 157` eintragen können, ohne dass der Validator das bemerkt hätte. Neue Funktion
+   `tools/validate_research.py::check_search_run_interface_profiles` erzwingt fuer die beiden
+   tatsächlich verwendeten Profile (NCBI E-utilities ESearch, ClinicalTrials.gov API v2 —
+   erkannt über `database` UND einen textuellen Hinweis in `interface`, NIE pauschal über
+   `database` allein) vollständige, konsistente `request_parameters` sowie bei
+   `result_capture.status: complete`: `retmax >= result_count` ohne dokumentierte Pagination (NCBI),
+   bzw. verpflichtende `pagination` mit `completion_confirmed: true` und
+   `pages_retrieved × pageSize >= result_count` (ClinicalTrials.gov).
+3. *Zeitliche Provenienz Suchlauf→Manifest:* Bislang unabhängig von seinem Suchlauf. Neue Prüfung:
+   das Datum von `executed_at` muss `<=` `manifest.created_at` sein — ein Manifest kann den
+   Suchlauf, dessen Momentaufnahme es ist, nicht zeitlich vorwegnehmen.
+4. *Exportreferenz-Konsistenz:* `search_run.export_reference` und `manifest.source_export_reference`
+   konnten unabhängig voneinander beliebige Werte tragen (inkl. `export_reference: null` bei einem
+   sonst vollständigen Suchlauf). Neue Prüfung: bei `result_capture.status: complete` müssen beide
+   Felder exakt übereinstimmen.
+
+Alle vier produktiven Suchläufe und Manifeste (Phase 4B-1A) erfüllten Punkt 3 und 4 bereits ohne
+inhaltliche Korrektur (nur `fields: NCTId` war nachzutragen, Punkt 1). 15 Test-Fixtures aus R1 mit
+`result_capture.status: complete`, aber `export_reference: null`, wurden auf die jeweils
+übereinstimmende Exportreferenz ihres Manifests korrigiert (reine Testdaten-Konsistenz, keine
+inhaltliche Regeländerung). Keine der vier Identifikatorlisten, Counts oder SHA-256-Werte wurde
+verändert, keine Datenbanksuche wurde erneut ausgeführt.
+
+**Nachtrag (R3, 2026-07-27) — maschinenlesbare Interface-Profile, kein neuer ADR:** R2 entschied
+die anzuwendenden API-Profilregeln anhand von `database` UND einem Textfragment im frei
+formulierten `interface`-Feld (z. B. „enthält 'E-utilities' und 'ESearch'"). Das ist strukturell
+unsicher: `interface` ist per Definition eine menschenlesbare Beschreibung ohne Formatgarantie —
+eine harmlos wirkende Umformulierung (Tippfehler-Korrektur, interne Umbenennung, Übersetzung)
+hätte die Profilvalidierung unbemerkt stillgelegt, ohne dass sich an der tatsächlich verwendeten
+Schnittstelle etwas geändert hätte.
+
+**Entscheidung:** Neues kontrolliertes Vokabular `research/vocabularies/search_interface_profiles.yaml`
+(`ncbi_eutils_esearch_v1`, `clinicaltrials_gov_api_v2_v1`, `unprofiled`) sowie neues Pflichtfeld
+`interface_profile` auf `research_search_run`:
+
+```yaml
+interface_profile:
+  id: ncbi_eutils_esearch_v1
+  rationale: null
+```
+
+- `interface` bleibt unverändert die freie, menschenlesbare Bezeichnung — weiterhin anzeigbar und
+  dokumentierend, aber ab sofort NICHT mehr die Quelle der Profilsemantik.
+- `interface_profile.id` ist die alleinige, maschinenlesbare Quelle: `check_search_run_interface_profiles`
+  dispatcht ausschließlich darüber. Die vormaligen Text-Dispatcher
+  `_is_ncbi_eutils_esearch_interface`/`_is_clinicaltrials_gov_api_v2_interface` wurden entfernt.
+  Zusätzlich neu: fuer die beiden bekannten Profile wird jetzt auch die passende `database` erzwungen
+  (`ncbi_eutils_esearch_v1` → `pubmed`, `clinicaltrials_gov_api_v2_v1` → `clinicaltrials_gov`) — in R2
+  war das nur implizit ueber die Text-Erkennung der Fall, nicht als eigene Regel geprueft.
+  Die bereits in R2 eingefuehrten Parameter-/Pagination-Regeln je Profil bleiben inhaltlich unveraendert.
+- Fuer bekannte Profile (`ncbi_eutils_esearch_v1`, `clinicaltrials_gov_api_v2_v1`) ist `rationale`
+  schema-seitig auf `null` beschraenkt. Fuer `id: unprofiled` ist `rationale` schema-seitig als
+  nicht-leerer String erzwungen -- ein transparenter, begruendeter Fallback fuer Suchlaeufe gegen
+  Interfaces, fuer die noch keine maschinelle Profilvalidierung implementiert ist, kein stiller
+  Verzicht auf Profilierung.
+- Die Versionsnummer ist bewusst Teil des Profilnamens selbst (`_v1`): eine kuenftige Aenderung an
+  den Profilregeln fuehrt ein NEUES Profil (`_v2` usw.) ein, statt bereits ausgefuehrte historische
+  Search Runs rueckwirkend unter geaenderten Regeln umzudeuten.
+- `interface_profile` ist ein Ausfuehrungsfeld und damit unveraenderlich nach dem Merge (bereits
+  strukturell durch die bestehende `check_research_immutability.py`-Logik abgedeckt, jetzt zusaetzlich
+  durch einen expliziten Test abgesichert): eine nachtraegliche Aenderung wuerde einen bereits
+  ausgefuehrten Suchlauf rueckwirkend einem anderen, ggf. erst spaeter eingefuehrten Profil unterwerfen.
+- Alle vier produktiven Suchläufe erhielten das jeweils zutreffende bekannte Profil
+  (`ncbi_eutils_esearch_v1` für die beiden PubMed-Läufe, `clinicaltrials_gov_api_v2_v1` für die
+  beiden ClinicalTrials.gov-Läufe), `rationale: null` — keine inhaltliche Änderung an Query,
+  Zeitpunkt, Trefferzahl, Identifikatorliste oder Hash. Bestehende generische Test-Fixtures ohne
+  echten Profilbezug erhielten mechanisch `id: unprofiled` mit einer klaren Testbegründung; echte
+  Profil-Fixtures aus R2 erhielten das jeweils passende bekannte Profil.
+- Zwei neue kritische Tests beweisen die eigentliche Motivation dieser Härtung: ein Suchlauf mit
+  bekanntem Profil, absichtlich umformuliertem `interface`-Text UND einem ungültigen Parameter
+  (`retmax` zu klein bzw. fehlendes `fields`) schlägt weiterhin fehl — die Umformulierung von
+  `interface` kann die Profilvalidierung nicht mehr umgehen.
+
+**Konsequenzen:** Die Profilzuordnung ist jetzt ein expliziter, versionierter, unveränderlicher
+Datenpunkt statt einer aus Freitext abgeleiteten Heuristik. `interface` kann frei redigiert werden,
+ohne die Validierung zu beeinflussen. Keine der vier Identifikatorlisten, Counts, SHA-256-Werte,
+Queries, Ausführungszeitpunkte oder Exportreferenzen wurde verändert; keine Datenbanksuche wurde
+erneut ausgeführt.
+
 ## Format für neue Einträge
 
 ```markdown

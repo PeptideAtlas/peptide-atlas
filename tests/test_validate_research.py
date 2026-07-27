@@ -221,6 +221,48 @@ INVALID_SCENARIOS = {
     "effective_duplicate_target_points_to_valid_but_unreviewed_record": (
         "effective duplicate_of must match the duplicate target confirmed"
     ),
+    # Phase 4B-1A Korrekturrunde R1 -- ADR-0055: versionierte Search Result Manifests.
+    "search_run_complete_without_manifest": "references missing search_result_manifest",
+    "manifest_missing_search_run": "references missing search run",
+    "search_run_missing_manifest": "references missing search_result_manifest",
+    "manifest_not_mutual_reference": "does not reference this manifest back",
+    "manifest_count_mismatch_identifiers": "does not match the number of identifiers",
+    "manifest_count_mismatch_search_run": "does not match result_count",
+    "manifest_duplicate_identifiers": "has non-unique elements",
+    "manifest_pmid_unsorted": "PMIDs are not sorted in canonical",
+    "manifest_nct_unsorted": "NCT IDs are not sorted in canonical",
+    "manifest_invalid_pmid": "does not match '^[1-9][0-9]*$'",
+    "manifest_invalid_nct": "does not match '^NCT[0-9]{8}$'",
+    "manifest_wrong_identifier_type": "requires identifier_type",
+    "manifest_wrong_hash": "does not match the mandated hash rule",
+    "manifest_duplicate_for_same_search_run": "more than one search_result_manifest references search run",
+    "manifest_orphaned": "does not reference this manifest back",
+    "search_run_complete_null_manifest_id": "is not of type 'string'",
+    "search_run_unavailable_without_rationale": "is not of type 'string'",
+    "search_run_invalid_executed_by": "does not match",
+    "search_run_executed_by_uppercase": "does not match",
+    "search_run_executed_by_trailing_space": "does not match",
+    # Phase 4B-1A Korrekturrunde R2 -- ADR-0055 Haertung: API-Profilregeln, zeitliche Provenienz,
+    # Exportreferenz-Konsistenz.
+    "ctgov_missing_fields": "requires request_parameters.fields == 'NCTId'",
+    "ctgov_wrong_fields": "requires request_parameters.fields == 'NCTId'",
+    "ctgov_complete_without_pagination": "requires pagination to be documented",
+    "ctgov_completion_not_confirmed": "must be true for a complete result capture",
+    "ctgov_pagination_insufficient": "is less than result_count",
+    "pubmed_retmax_too_small": "is less than result_count",
+    "manifest_before_search_run": "cannot predate the search event",
+    "manifest_export_reference_mismatch": "does not match export_reference",
+    "search_run_complete_null_export_reference": "does not match export_reference",
+    # Phase 4B-1A Korrekturrunde R3 -- ADR-0055 Haertung: maschinenlesbare Interface-Profile
+    # (interface_profile.id), niemals aus dem Freitext von `interface` erraten.
+    "interface_profile_unknown_id": "is not one of",
+    "interface_profile_known_with_rationale": "is not of type 'null'",
+    "interface_profile_unprofiled_null_rationale": "is not of type 'string'",
+    "interface_profile_unprofiled_empty_rationale": "should be non-empty",
+    "interface_profile_pubmed_wrong_database": "requires database == 'pubmed'",
+    "interface_profile_ctgov_wrong_database": "requires database == 'clinicaltrials_gov'",
+    "interface_profile_pubmed_renamed_interface_invalid_retmax": "is less than result_count",
+    "interface_profile_ctgov_renamed_interface_missing_fields": "requires request_parameters.fields",
 }
 
 
@@ -388,6 +430,80 @@ PRECISE_INVALID_SCENARIOS = {
     "effective_duplicate_target_differs_from_confirmed_duplicate_reviews": (
         "research/screening/screening-record-50000000-0000-4000-8000-000000000001.yaml",
         "$.decision_history[0].duplicate_of",
+    ),
+    # Phase 4B-1A Korrekturrunde R1 -- ADR-0055: kritische Search-Result-Manifest-Faelle mit
+    # exakter Datei-/Pfadpruefung.
+    "manifest_not_mutual_reference": (
+        "research/search_results/search-result-manifest-90000000-0000-4000-8000-000000000004.yaml",
+        "$.search_run_id",
+    ),
+    "manifest_count_mismatch_identifiers": (
+        "research/search_results/search-result-manifest-90000000-0000-4000-8000-000000000006.yaml",
+        "$.count",
+    ),
+    "manifest_count_mismatch_search_run": (
+        "research/search_results/search-result-manifest-90000000-0000-4000-8000-000000000007.yaml",
+        "$.count",
+    ),
+    "manifest_wrong_hash": (
+        "research/search_results/search-result-manifest-90000000-0000-4000-8000-000000000014.yaml",
+        "$.sha256",
+    ),
+    "manifest_duplicate_for_same_search_run": (
+        "research/search_results/search-result-manifest-90000000-0000-4000-8000-000000000015.yaml",
+        "$.search_run_id",
+    ),
+    "search_run_complete_null_manifest_id": (
+        "research/search_runs/search-run-90000000-0000-4000-8000-000000000018.yaml",
+        "$.result_capture.manifest_id",
+    ),
+    "search_run_unavailable_without_rationale": (
+        "research/search_runs/search-run-90000000-0000-4000-8000-000000000019.yaml",
+        "$.result_capture.rationale",
+    ),
+    "search_run_invalid_executed_by": (
+        "research/search_runs/search-run-90000000-0000-4000-8000-000000000020.yaml",
+        "$.executed_by",
+    ),
+    # Phase 4B-1A Korrekturrunde R2 -- ADR-0055 Haertung: kritische Faelle mit exakter
+    # Datei-/Pfadpruefung.
+    "ctgov_pagination_insufficient": (
+        "research/search_runs/search-run-91000000-0000-4000-8000-000000000005.yaml",
+        "$.pagination.pages_retrieved",
+    ),
+    "pubmed_retmax_too_small": (
+        "research/search_runs/search-run-91000000-0000-4000-8000-000000000006.yaml",
+        "$.request_parameters.retmax",
+    ),
+    "manifest_before_search_run": (
+        "research/search_results/search-result-manifest-91000000-0000-4000-8000-000000000007.yaml",
+        "$.created_at",
+    ),
+    "manifest_export_reference_mismatch": (
+        "research/search_results/search-result-manifest-91000000-0000-4000-8000-000000000008.yaml",
+        "$.source_export_reference",
+    ),
+    "search_run_complete_null_export_reference": (
+        "research/search_results/search-result-manifest-91000000-0000-4000-8000-000000000009.yaml",
+        "$.source_export_reference",
+    ),
+    # Phase 4B-1A Korrekturrunde R3 -- ADR-0055 Haertung: entscheidender Beweis, dass eine
+    # Umformulierung von `interface` die Profilvalidierung NICHT umgehen kann.
+    "interface_profile_pubmed_wrong_database": (
+        "research/search_runs/search-run-92000000-0000-4000-8000-000000000005.yaml",
+        "$.interface_profile.id",
+    ),
+    "interface_profile_ctgov_wrong_database": (
+        "research/search_runs/search-run-92000000-0000-4000-8000-000000000006.yaml",
+        "$.interface_profile.id",
+    ),
+    "interface_profile_pubmed_renamed_interface_invalid_retmax": (
+        "research/search_runs/search-run-92000000-0000-4000-8000-000000000007.yaml",
+        "$.request_parameters.retmax",
+    ),
+    "interface_profile_ctgov_renamed_interface_missing_fields": (
+        "research/search_runs/search-run-92000000-0000-4000-8000-000000000008.yaml",
+        "$.request_parameters.fields",
     ),
 }
 
