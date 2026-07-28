@@ -1549,6 +1549,91 @@ eine letzte Ergaenzung vor Merge-Freigabe verlangt:
 Weiterhin **keine Implementierung**. Zwei neue offene Fragen (Vollstaendigkeit von `evidence_source`,
 Skala fuer `confidence`) ergaenzen die acht aus Runde 1, siehe Abschnitt 9 des Entwurfsdokuments (v3).
 
+### ADR-0059: Title & Abstract Screening Architektur -- Reviewer-Modell, Wiederaufnahme, Historienschutz (Phase 4B-1B-3)
+- **Status:** Vorgeschlagen (Architektur-Entwurf, keine Implementierung)
+- **Datum:** 2026-07-27
+- **Kontext:** Nach Abschluss von Phase 4B-1B-1 (ADR-0057, reale Screening-Record-Initialisierung) und
+  Phase 4B-1B-2 (ADR-0058, Deduplizierungsarchitektur) ist der naechste inhaltliche Schritt das reale
+  Titel-/Abstract-Screening der 197 Retatrutide-Kandidaten. Der Arbeitsauftrag verlangte einen
+  Architektur-Entwurf fuer zehn Themen, bevor irgendeine echte Screening-Entscheidung getroffen wird.
+  Eine Bestandsaufnahme zeigt: der grosse Teil der angefragten Mechanik (Include-/Exclude-Vokabular,
+  kontrollierte Exclude-Gruende, Erst-/Zweitpruefung, Adjudikation, vollstaendige `decision_history`-
+  Versionierung, protokollskalierte Architektur) ist bereits seit Phase 4A (PR #2, ADR-0037/ADR-0042/
+  ADR-0043/ADR-0046/ADR-0047/ADR-0052/ADR-0053) vollstaendig vorhanden -- echte Luecken bestehen nur bei
+  drei Themen: einem strukturellen Akteurstyp (Mensch/KI/Automatisierung), einer semantischen Schicht
+  fuer die Wiederaufnahme bereits ausgeschlossener Kandidaten, und einem technischen Schreibschutz fuer
+  bereits committete `decision_history`-Eintraege.
+- **Entscheidung (vorgeschlagen, siehe vollstaendigen Entwurf in
+  [Phase_4B_1B_3_Title_Abstract_Screening_Architecture.md](Phase_4B_1B_3_Title_Abstract_Screening_Architecture.md)):**
+  - **Reviewer-Modell:** neue, optionale Objektart `research_reviewer` (`research/reviewers/`,
+    `actor_type: human|automation|ai_assistant|service`) -- greift die in ADR-0041 explizit als
+    "spaeter vorgemerkt" zurueckgestellte Actor-Registry-Idee wieder auf, jetzt mit echtem
+    Anwendungsfall. Bewusst nicht-invasiv: kein bestehendes `research_actor_id`-Feld aendert Typ oder
+    Struktur, Registrierung ist nur fuer `ai_assistant`/`automation`-Akteure verpflichtend, fuer
+    `human` optional (dieselbe organisatorische Grenze wie ADR-0041). Neue Regel: jede Erstentscheidung
+    eines nicht-menschlichen Akteurs erfordert ein Zweitreview, unabhaengig von
+    `screening_policy.dual_reviewer_stages` -- Erweiterung, nicht Ersatz des bestehenden Mechanismus.
+    Adjudikation bleibt ausschliesslich menschlichen Akteuren vorbehalten (hart, nicht
+    protokollkonfigurierbar).
+  - **Wiederaufnahme:** neues optionales Feld `decision_history[].revision_context`
+    (`reason`/`reference`/`triggered_by`, neues Vokabular `screening_revision_reasons.yaml`: 
+    `protocol_amendment`/`new_evidence`/`reviewer_error_correction`/`periodic_reevaluation`/`other`),
+    Pflicht genau dann, wenn ein neuer Eintrag eine vorherige Entscheidung umkehrt statt sie nur um
+    eine neue Stufe zu ergaenzen. Macht die bereits bestehende Verbindung zu Protokolländerungen
+    (Abschnitt 31 im Scientific Research Protocol) erstmals maschinenlesbar.
+  - **Historienschutz:** viertes `ImmutableTarget` in `tools/check_research_immutability.py` fuer
+    `research/screening/**` -- schuetzt ausschliesslich bereits committete `decision_history[]`-
+    Eintraege vor rueckwirkender Aenderung (nur Anhaengen erlaubt); alle uebrigen Felder bleiben nach
+    den bereits in Phase 4B-1B-1/-2 festgelegten Regeln veraenderlich.
+  - **Alle uebrigen sieben angefragten Themen** (Include-/Exclude-Entscheidungen, kontrollierte
+    Exclude-Gruende, Konfliktaufloesung, Dokumentation/Versionierung, Trennung technisch/
+    wissenschaftlich, Mehrsubstanz-Faehigkeit, Skalierung) sind bereits durch bestehende Mechanik
+    abgedeckt und werden im Entwurfsdokument nur explizit auf diese Phase angewendet und dokumentiert,
+    nicht neu gebaut -- Skalierung auf zehntausende Records erhaelt zwei Empfehlungen (flaches
+    Dateilayout beibehalten, Validator-Laufzeit-Beobachtungsschwelle ~5 Minuten) statt einer
+    verfruehten Optimierung.
+- **Konsequenzen (bei Umsetzung):** alle Aenderungen additiv-optional, kein Schema-Versionsbump, keine
+  Migration der 197 bestehenden Records noetig. Keine Aenderung an bestehenden Daten oder Code in
+  diesem ADR selbst -- reine Spezifikation. Neun offene Fragen fuer die naechste CSO-Runde, siehe
+  Abschnitt 13 des Entwurfsdokuments (u. a. Registry-Option A vs. B, Vollstaendigkeit der
+  Wiederaufnahme-Gruende, Notwendigkeit eines protokollweiten KI-Screening-Opt-in-Felds).
+
+**Nachtrag (CSO-Review, 2026-07-28) -- vollstaendige Freigabe der Architektur, Entwurf Version 2,
+weiterhin Status "Vorgeschlagen" (keine Implementierung in diesem Merge):** der CSO hat die Architektur
+vollstaendig freigegeben und alle neun offenen Fragen aus Abschnitt 13 des Entwurfsdokuments (v1)
+entschieden. Version 2 des Entwurfsdokuments setzt sie um:
+
+1. **Actor-Registry: Option A** (leichtgewichtige neue Objektart `research_reviewer`) -- Option B
+   entfaellt.
+2. **`actor_type` langfristig um zwei weitere Werte reserviert, nicht implementiert:**
+   `external_expert` (externe fachliche Gutachter) und `editorial_board` (institutioneller Akteur) --
+   ausdruecklich eine Zukunftsperspektive, nicht Teil des aktuellen Schema-Entwurfs (weiterhin nur
+   `human`/`ai_assistant`/`automation`/`service`).
+3. **Registrierungspflicht erweitert:** verpflichtend fuer `ai_assistant`, `automation`, `service`
+   sowie -- sobald eingefuehrt -- `external_expert`/`editorial_board`; `human` bleibt optional.
+4. **Kein `screening_policy.ai_screening_enabled`-Opt-in-Feld** -- die automatische
+   Zweitreview-Pflicht bei nicht-menschlicher Erstentscheidung bleibt alleinige Absicherung.
+5. **Adjudikation bleibt zwingend menschlich, hart, nicht protokollkonfigurierbar** -- bestaetigt.
+6. **`revision_context.reason` um drei Werte erweitert:** `external_peer_review`, `quality_control`,
+   `data_correction` (jetzt 8 Werte insgesamt im neuen Vokabular
+   `screening_revision_reasons.yaml`).
+7. **`language_not_supported` wird nicht als Exclude-Grund ergaenzt** -- `other` bleibt ausreichend.
+8. **Validator-Beobachtungsschwellenwert (~5 Minuten) beibehalten** -- keine inkrementelle
+   Validierungsstrategie von Anfang an.
+9. **Freigabe zur Implementierung erteilt** -- in einer eigenstaendigen, kuenftigen
+   Phase-4B-1B-3-Implementierungs-PR; dieser Merge selbst enthaelt weiterhin keine Implementierung.
+
+Zusaetzlich, ausserhalb der urspruenglichen neun Fragen, verlangte der CSO eine dokumentierte
+**Zukunftsperspektive**: die Objektart `research_reviewer` ist nicht auf Titel-/Abstract-Screening
+beschraenkt, sondern als universelles wissenschaftliches Reviewer-Modell konzipiert und perspektivisch
+auch fuer Promotion Review, Evidence Review, Editorial Review und Quality Audit vorgesehen (Abschnitt 1.8
+des Entwurfsdokuments) -- ebenfalls ohne Implementierung, ohne zusaetzliche Felder, ohne Schemaaenderung.
+
+**Weiterhin keine Implementierung in diesem Nachtrag oder dem zugehoerigen Merge** -- reine
+Entwurfsrevision und Dokumentation der CSO-Entscheidungen. Eine Frage bleibt fuer die kuenftige
+Implementierungsphase offen (keine CSO-Vorgabe in dieser Runde): ob `revision_context.triggered_by`
+zwingend ein `human`-Akteur sein muss.
+
 ## Format für neue Einträge
 
 ```markdown
