@@ -1,0 +1,14 @@
+schema_version: "1.0.0"
+id: system-screening-initializer
+actor_type: automation
+display_name: null
+description: >
+  Rein technischer Initialisierungsakteur (tools/initialize_screening_records.py, ADR-0057).
+  Erzeugt Screening Records im administrativen Ausgangszustand (decision: pending, Stufe
+  deduplication) und trifft nie eine wissenschaftliche Entscheidung -- strukturell erzwungen
+  durch tools/validate_research.py::check_screening_system_actor_invariants. Registrierung
+  hier macht die bereits seit ADR-0057 bestehende technische Tatsache "dies ist kein
+  menschlicher Reviewer" erstmals strukturell überprüfbar (siehe ADR-0059).
+active: true
+created_at: "2026-07-28"
+updated_at: "2026-07-28"

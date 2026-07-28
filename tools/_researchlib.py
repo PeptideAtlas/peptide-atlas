@@ -36,6 +36,7 @@ RESEARCH_KIND_TO_FOLDER = {
     "screening_record": "screening",
     "extraction_record": "extractions",
     "promotion_record": "promotions",
+    "reviewer": "reviewers",
 }
 
 RESEARCH_KIND_TO_SCHEMA_ID = {
@@ -46,8 +47,12 @@ RESEARCH_KIND_TO_SCHEMA_ID = {
     "screening_record": "research_screening_record.schema.json",
     "extraction_record": "research_extraction_record.schema.json",
     "promotion_record": "research_promotion_record.schema.json",
+    "reviewer": "research_reviewer.schema.json",
 }
 
+# reviewer hat bewusst keinen festen Praefix: die id IST das bereits ueberall verwendete
+# research_actor_id-Kuerzel selbst (siehe research/reviewers/README.md, ADR-0059) -- keine
+# Indirektionsebene wie bei den uuid4-/Praefix-basierten Objektarten unten.
 RESEARCH_KIND_TO_ID_PREFIX = {
     "protocol": "research-protocol-",
     "search_run": "search-run-",
@@ -56,6 +61,7 @@ RESEARCH_KIND_TO_ID_PREFIX = {
     "screening_record": "screening-record-",
     "extraction_record": "extraction-record-",
     "promotion_record": "promotion-record-",
+    "reviewer": "",
 }
 
 RESEARCH_VOCABULARY_NAMES = [
@@ -71,6 +77,7 @@ RESEARCH_VOCABULARY_NAMES = [
     "promotion_statuses",
     "search_interface_profiles",
     "candidate_metadata_statuses",
+    "screening_revision_reasons",
 ]
 
 # Kanonische Reihenfolge der Screening-Stufen, fuer Monotonie-Pruefungen in decision_history
@@ -123,6 +130,19 @@ ALLOWED_DECISIONS_BY_STAGE = {
 # Reviewer -- dokumentiert nur die technische Initialisierung, trifft nie eine Relevanzentscheidung
 # (validate_research.py::check_screening_system_actor_invariants erzwingt das strukturell).
 SYSTEM_SCREENING_INITIALIZER_ACTOR = "system-screening-initializer"
+
+# Kuerzel des KI-basierten Chief Scientific Officer des Projekts (keine menschliche Person, siehe
+# Decision Log, Phase-4B-0-Eintrag) -- traegt bereits reale Freigabeverantwortung (z. B.
+# Retatrutide-Protokollfreigabe). Zusammen mit SYSTEM_SCREENING_INITIALIZER_ACTOR der zweite real
+# bekannte, nicht-menschliche Akteur, dessen Registrierung in research/reviewers/** seit ADR-0059
+# (Phase 4B-1B-3) verpflichtend ist (siehe validate_research.py::check_research_reviewers).
+CSO_CHATGPT_ACTOR = "cso-chatgpt"
+
+# actor_type-Werte, deren Registrierung in research/reviewers/** verpflichtend ist (ADR-0059) --
+# fuer 'human' bleibt sie optional (dieselbe organisatorische Grenze wie ADR-0041). 'external_expert'
+# und 'editorial_board' sind vom CSO langfristig reserviert, aber noch nicht Teil des Enums (siehe
+# common.schema.json#/$defs/research_actor_type) -- deshalb hier ebenfalls noch nicht gelistet.
+MANDATORY_REVIEWER_REGISTRATION_ACTOR_TYPES = frozenset({"ai_assistant", "automation", "service"})
 
 # Datenbank -> passendster neutraler Wert aus common.schema.json#/$defs/source_type fuer einen noch
 # nicht wissenschaftlich geprueften Discovery-Kandidaten (siehe ADR-0057). Bewusst je Datenbank EIN

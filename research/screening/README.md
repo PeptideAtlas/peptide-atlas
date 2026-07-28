@@ -114,16 +114,51 @@ Zwei bewusste Abweichungen vom Vokabular, das man naiv erwarten würde (siehe AD
   selbst ein gültiger, existierender, protokollinterner Screening-Datensatz ist (siehe ADR-0053 im
   [Decision Log](../../docs/project/Decision_Log.md)).
 - `decision_history[]` wird als **gesamtes** Array geprüft (jeder Eintrag, nicht nur der aktuelle Zustand,
-  inkl. Datumsreihenfolge gegen jeden referenzierten Suchlauf) — ist aber ein manuell editierbares Feld
-  innerhalb derselben Datei, **kein** unveränderliches, separates Event-Log (append-only ist redaktionelle
-  Konvention, nicht technisch erzwungen).
+  inkl. Datumsreihenfolge gegen jeden referenzierten Suchlauf). **Seit ADR-0059 (Phase 4B-1B-3) ist Append-only
+  nicht mehr nur redaktionelle Konvention, sondern technisch erzwungen:** `tools/check_research_immutability.py`
+  vergleicht jeden bereits committeten `decision_history[]`-Eintrag byte-identisch gegen den Merge-Base — nur
+  Anhängen neuer Einträge am Ende ist zulässig, ein bereits committeter Eintrag darf weder geändert noch entfernt
+  noch umsortiert werden. Alle übrigen Felder (`candidate_title`, Top-Level-Projektionsfelder, `related_records`)
+  bleiben davon unberührt weiterhin frei kontrolliert veränderlich.
+- **Zweitreview-Pflicht bei nicht-menschlicher Erstentscheidung (ADR-0059, verschärft in
+  CSO-Review Runde 2):** jede **nicht-administrative primäre wissenschaftliche Entscheidung**
+  eines Akteurs, der in [`research/reviewers/**`](../reviewers/README.md) mit
+  `actor_type: ai_assistant` oder `automation` registriert ist, erfordert `second_review` —
+  unabhängig davon, ob `screening_policy.dual_reviewer_stages` diese Stufe sonst verlangt, UND
+  unabhängig von der konkreten Entscheidung (`include`/`exclude`/`awaiting_full_text`/`uncertain`/
+  `duplicate`, jeweils soweit die Stage-/Decision-Matrix diese Entscheidung an der jeweiligen Stufe
+  überhaupt zulässt) — **nicht mehr nur `include`/`exclude`**. Die einzige Ausnahme ist der rein
+  administrative `pending`-Initialisierungseintrag (strukturell nur an Stufe `deduplication`
+  möglich, ausschließlich vom technischen Akteur `system-screening-initializer` erzeugt) — das ist
+  keine „Erstentscheidung" in diesem Sinne. Ein unregistriertes Kürzel löst diese Pflicht nicht aus
+  (dieselbe Grenze wie die für `human` optionale Registrierung).
+- **Adjudikation muss ein registrierter Mensch sein (ADR-0059, verschärft in CSO-Review Runde 2):**
+  `second_review.adjudication.resolved_by` muss auf ein Kürzel verweisen, das in
+  [`research/reviewers/**`](../reviewers/README.md) mit `actor_type: human` registriert ist — hart,
+  nicht protokollkonfigurierbar. Anders als bei normalen Erst-/Zweitprüfern reicht hier ein
+  **unregistriertes** Kürzel NICHT mehr als implizite Mensch-Annahme; ein unregistriertes oder ein
+  registriertes `ai_assistant`/`automation`/`service`-Kürzel ist beides ungültig. Erweitert die
+  bereits bestehende Adjudikator-Unabhängigkeitsregel (Drittperson, ungleich Erst-/Zweitprüfer),
+  ersetzt sie nicht.
+- **`decision_history[].revision_context` (ADR-0059):** echtes optionales Feld (kein required-aber-nullable
+  Key wie `decision_reason`) — Pflicht genau dann, wenn ein Eintrag die effektive Entscheidung des unmittelbar
+  vorangegangenen Eintrags an **derselben Stufe** umkehrt (die bestehende Monotonie-Prüfung verbietet echten
+  Rückwärtslauf bereits strukturell, sodass sich „an derselben oder einer früheren Stufe" aus der ursprünglichen
+  Spezifikation auf genau diesen Fall reduziert). Ein Übergang von `pending`/`uncertain` zu einer konkreten
+  Entscheidung ist **keine** Umkehrung, sondern die erste tatsächliche Entscheidung (z. B. der bereits
+  bestehende Zielkonflikt-Mechanismus aus ADR-0052/ADR-0053). `reason` folgt dem kontrollierten Vokabular
+  `research/vocabularies/screening_revision_reasons.yaml` (8 Werte); `triggered_by` muss (verschärft in
+  CSO-Review Runde 2) genau wie `adjudication.resolved_by` oben ein **registrierter** `human`-Akteur sein —
+  ein unregistriertes Kürzel ist hier ebenfalls ungültig, nicht mehr implizit menschlich.
 - Die zeitliche Provenienzkette wird objektübergreifend geprüft: die terminale Screening-Entscheidung (bzw.
   deren Zweitprüfung/Adjudikation) muss vor der Extraktion liegen, die Extraktion vor ihrer Verifikation
   (siehe `research/extractions/README.md`). Zusätzlich muss `created_at <= Ereignisdatum <= updated_at`
   objektintern für jeden `decision_history[].decided_at`, `second_review.reviewed_at` und
   `second_review.adjudication.resolved_at` gelten.
 - Alle Akteursfelder (`screened_by`, `decided_by`, `second_review.reviewed_by`,
-  `second_review.adjudication.resolved_by`) folgen der `research_actor_id`-Syntax
-  (`^[a-z0-9][a-z0-9._-]*$`, keine Leerzeichen, keine Großschreibung).
+  `second_review.adjudication.resolved_by`, seit ADR-0059 auch `decision_history[].revision_context.
+  triggered_by`) folgen der `research_actor_id`-Syntax (`^[a-z0-9][a-z0-9._-]*$`, keine Leerzeichen, keine
+  Großschreibung) und können optional in [`research/reviewers/**`](../reviewers/README.md) einen
+  strukturellen Akteurstyp tragen.
 - Siehe [Evidence Curation Workflow](../../docs/project/Evidence_Curation_Workflow.md) für den vollständigen
   Zustandsübergang.

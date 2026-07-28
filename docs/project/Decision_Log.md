@@ -1634,6 +1634,100 @@ Entwurfsrevision und Dokumentation der CSO-Entscheidungen. Eine Frage bleibt fue
 Implementierungsphase offen (keine CSO-Vorgabe in dieser Runde): ob `revision_context.triggered_by`
 zwingend ein `human`-Akteur sein muss.
 
+**Nachtrag (Implementierung, Phase 4B-1B-3) -- die in diesem ADR und seinen beiden vorherigen
+Nachtraegen freigegebene Architektur ist jetzt real implementiert (Schema, Validator, echte
+Reviewer-Registrierungen, Tests, Dokumentation). Fuer die tatsaechlich umgesetzten Teile ist dieses
+ADR damit inhaltlich "Entschieden" -- der urspruengliche Status-Text oben bleibt unveraendert
+(append-only-Konvention), diese Einordnung steht bewusst nur hier:**
+
+- **`research_reviewer`** (`schemas/research_reviewer.schema.json`, `research/reviewers/`) wie in
+  Option A entworfen: `id` = das bereits verwendete `research_actor_id`-Kuerzel selbst,
+  `actor_type` mit genau den vier freigegebenen Werten (`human`/`ai_assistant`/`automation`/
+  `service`) -- `external_expert`/`editorial_board` bewusst NICHT im Enum, nur als Kommentar im
+  Schema und in `research/reviewers/README.md` als langfristig reserviert dokumentiert.
+- **Zwei reale Registrierungen angelegt**, nach tatsaechlicher Bestandsaufnahme aller in
+  `research/**` verwendeten Akteurskuerzel (keine erfunden): `system-screening-initializer`
+  (`automation`) und `cso-chatgpt` (`ai_assistant`). Ein dritter, real vorgefundener Kuerzel,
+  `claude-code-operator` (`research_search_run.executed_by`, 4 Suchlaeufe aus Phase 4B-1A), wurde
+  bewusst NICHT registriert -- sein `actor_type` ist nirgends im Projekt dokumentiert, und
+  `executed_by` liegt ohnehin ausserhalb des Geltungsbereichs der neuen Regeln (die sich auf
+  Screening-Entscheidungsakteure beschraenken: `decided_by`/`reviewed_by`/`resolved_by`/
+  `triggered_by`).
+- **`tools/validate_research.py::check_research_reviewers`**: Pflichtregistrierung nur fuer die
+  beiden oben genannten, real bekannten Akteure -- und nur, wenn ein konkreter Datensatz sie
+  tatsaechlich verwendet (datengetrieben, nicht pauschal fuer jedes `research/**`-Verzeichnis,
+  sonst waeren z. B. unabhaengige Testfixtures faelschlich betroffen gewesen).
+- **Zweitreview-/Adjudikations-/`revision_context.triggered_by`-Regeln** wie freigegeben in
+  `_check_decision_snapshot`/`check_decision_history` umgesetzt. Ein **unregistriertes** Kuerzel
+  wird fuer alle drei Regeln wie `human` behandelt (dieselbe Grenze wie die fuer `human` optionale
+  Registrierung) -- damit ist die oben offen gelassene Frage ("muss `triggered_by` zwingend
+  `human` sein?") in der Implementierung so beantwortet: **ja, aber nur wenn registriert**,
+  identisch zur bereits freigegebenen Adjudikator-Regel. Keine gesonderte CSO-Vorgabe hierzu
+  eingeholt -- als Implementierungsdetail dokumentiert, nicht als neue Grundsatzentscheidung.
+- **"Reversal"-Definition praezisiert:** ein `decision_history[]`-Eintrag kehrt eine vorherige
+  Entscheidung nur um, wenn die vorangegangene EFFEKTIVE Entscheidung an derselben Stufe bereits
+  **settled** war (nicht `pending`/`uncertain`) und die neue `primary_decision` davon abweicht. Ein
+  Uebergang von `uncertain` zu einer konkreten Entscheidung (z. B. der bereits bestehende
+  Zielkonflikt-Mechanismus aus ADR-0052/ADR-0053) ist damit ausdruecklich KEINE Umkehrung, sondern
+  die erste tatsaechliche Entscheidung -- ohne diese Praezisierung haette die Regel einen bereits
+  bestehenden, laengst freigegebenen Mechanismus faelschlich mit einer neuen `revision_context`-
+  Pflicht belegt.
+- **`revision_context` als echtes optionales Feld** (nicht required-aber-nullable wie
+  `decision_reason`) im Schema umgesetzt -- dadurch war **keine Migration** der 197 bestehenden
+  Retatrutide-Screening-Records noetig, obwohl das Feld neu eingefuehrt wurde.
+- **Viertes `ImmutableTarget`** (`research/screening`) in `tools/check_research_immutability.py`:
+  ausschliesslich bereits committete `decision_history[]`-Eintraege sind geschuetzt (Anhaengen
+  erlaubt, Aendern/Entfernen/Umsortieren nicht); alle uebrigen Screening-Felder bleiben unveraendert
+  frei kontrolliert veraenderlich, wie im urspruenglichen Entwurf verlangt.
+- 21 neue Tests (positiv und negativ) fuer alle oben genannten Regeln, zusaetzlich zu den
+  bestehenden 410 -- keine Aenderung an den bestehenden 197 realen Retatrutide-Screening-Records,
+  keine Aenderung unter `data/**`, keine Extraction-/Promotion-Records, keine echten
+  Include-/Exclude-Entscheidungen. Dokumentation aktualisiert: `research/README.md`,
+  `research/screening/README.md`, `research/reviewers/README.md` (neu),
+  `docs/project/Scientific_Research_Protocol.md` (neuer Abschnitt 9e, Ergaenzungen 9a/34),
+  `docs/project/Evidence_Curation_Workflow.md`, `docs/project/Data_Model.md`.
+- Das eigentliche Titel-/Abstract-Screening der 197 Retatrutide-Kandidaten (echte
+  Include-/Exclude-Entscheidungen) bleibt weiterhin eine eigene, kuenftige Phase -- nicht
+  Bestandteil dieser Implementierung.
+
+**Nachtrag (CSO-Review Runde 2, Korrektur vor Merge von PR #10) -- zwei Luecken zwischen der
+freigegebenen Architektur und der tatsaechlich implementierten Regelstrenge geschlossen, VOR dem
+Merge in `main` (PR #10 blieb bis zu dieser Korrektur als Draft offen):**
+
+1. **Adjudikation und Wiederaufnahme erfordern jetzt zwingend einen REGISTRIERTEN Mensch-Akteur --
+   nicht mehr "unregistriert = wie Mensch behandelt".** Der obige Implementierungs-Nachtrag hatte
+   `adjudication.resolved_by` und `revision_context.triggered_by` versehentlich derselben milden
+   Kulanzregel unterworfen wie normale Erst-/Zweitpruefer (`decided_by`/`reviewed_by`): ein
+   unregistriertes Kuerzel wurde faktisch wie ein Mensch akzeptiert. Fuer diese beiden
+   hochkritischen, strukturell auf "menschliche Grundsatzentscheidung" angelegten Rollen ist das
+   nicht ausreichend -- der referenzierte Akteur muss jetzt als `research_reviewer` mit
+   `actor_type: human` tatsaechlich registriert sein; ein unregistriertes Kuerzel ODER ein
+   registrierter `ai_assistant`/`automation`/`service`-Akteur ist beides ein Validierungsfehler.
+   Diese Verschaerfung ist hart und nicht protokollkonfigurierbar (unveraendert gegenueber der
+   urspruenglichen Freigabe) und gilt AUSSCHLIESSLICH fuer diese zwei Felder -- normale
+   Erst-/Zweitpruefer (`screened_by`/`decided_by`/`second_review.reviewed_by`) bleiben bei der
+   milden, urspruenglich freigegebenen Kulanzregel (unregistriert = wie Mensch behandelt).
+2. **Die Zweitreview-Pflicht fuer registrierte `ai_assistant`/`automation`-Erstpruefer gilt jetzt
+   fuer JEDE nicht-administrative primaere wissenschaftliche Entscheidung, nicht mehr nur
+   `include`/`exclude`.** Umfasst zusaetzlich `awaiting_full_text`, `uncertain` und `duplicate`
+   (jeweils soweit die Stage-/Decision-Matrix die Entscheidung an der jeweiligen Stufe ueberhaupt
+   zulaesst). Einzige Ausnahme bleibt der rein administrative `pending`-Initialisierungseintrag des
+   technischen Akteurs `system-screening-initializer` (`decision`/`primary_decision: pending`,
+   `stage: deduplication`, `full_text_status: not_yet_obtained`) -- keine protokoll- oder
+   wirkstoffspezifische Sonderregel.
+3. 15 neue Tests (positiv und negativ) fuer beide Punkte, zusaetzlich zu den bestehenden 431 --
+   siehe `tools/validate_research.py`, `tests/test_validate_research.py` und die zugehoerigen
+   Fixtures unter `tests/fixtures/research/{invalid,valid_scenarios}/`. Acht bereits bestehende,
+   vor dieser Korrektur gueltige `valid_scenarios`-Fixtures (Adjudikation ueber das nicht
+   registrierte Kuerzel `reviewer-3`) mussten dafuer um eine explizite `human`-Registrierung von
+   `reviewer-3` ergaenzt werden -- ihre fachliche Aussage (ein menschlicher Drittpruefer loest den
+   Konflikt) bleibt dabei unveraendert, nur die Registrierung wurde nachgetragen, um die jetzt
+   verschaerfte Regel korrekt abzubilden.
+4. Keine Aenderung an den 197 realen Retatrutide-Screening-Records, keine Aenderung unter
+   `data/**`, keine echten Include-/Exclude-Entscheidungen. Dokumentation aktualisiert:
+   `research/reviewers/README.md`, `research/screening/README.md`,
+   `docs/project/Scientific_Research_Protocol.md` (Abschnitt 9a/9e sowie die Regelzusammenfassung).
+
 ## Format für neue Einträge
 
 ```markdown

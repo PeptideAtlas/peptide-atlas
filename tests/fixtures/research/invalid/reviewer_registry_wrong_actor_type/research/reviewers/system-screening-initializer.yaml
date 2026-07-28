@@ -1,0 +1,8 @@
+schema_version: "1.0.0"
+id: system-screening-initializer
+actor_type: human
+display_name: null
+description: Deliberately wrong actor_type for this test fixture.
+active: true
+created_at: "2026-01-01"
+updated_at: "2026-01-01"

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "research_reviewer.schema.json",
+  "title": "Research Reviewer",
+  "description": "Struktureller Akteurstyp fuer ein bereits ueberall verwendetes research_actor_id-Kuerzel (siehe ADR-0059, Phase 4B-1B-3). Rein additiv: kein bestehendes research_actor_id-Feld (screened_by, decided_by, second_review.reviewed_by, adjudication.resolved_by, revision_context.triggered_by, extracted_by, verified_by, promotion.review.reviewers[], protocol.review.reviewers[]) aendert Typ oder Struktur. Die id DIESES Objekts ist direkt das Kuerzel selbst -- keine Indirektionsebene, keine separate technische ID. Registrierung ist verpflichtend fuer Akteure, die als ai_assistant/automation/service auftreten (tools/validate_research.py::check_research_reviewers erzwingt das fuer die bereits bekannten Akteure system-screening-initializer und cso-chatgpt), fuer human-Akteure bleibt sie optional (dieselbe organisatorische Grenze wie ADR-0041). Zukunftsperspektive (PR #8/ADR-0059, Abschnitt 1.8): diese Objektart ist bewusst NICHT auf Titel-/Abstract-Screening beschraenkt konzipiert, sondern als projektweites, protokoll- und stufenunabhaengiges Reviewer-Modell -- perspektivisch auch fuer Promotion Review, Evidence Review, Editorial Review und Quality Audit wiederverwendbar, ohne dass sich diese Objektart selbst aendern muesste.",
+  "type": "object",
+  "properties": {
+    "schema_version": { "$ref": "common.schema.json#/$defs/schema_version" },
+    "id": {
+      "$ref": "common.schema.json#/$defs/research_actor_id",
+      "description": "Identisch mit dem research_actor_id-Kuerzel, das dieser Akteur bereits an jeder anderen Stelle verwendet (z. B. screened_by/decided_by). Muss mit dem Dateinamen uebereinstimmen."
+    },
+    "actor_type": { "$ref": "common.schema.json#/$defs/research_actor_type" },
+    "display_name": {
+      "type": ["string", "null"],
+      "description": "Optionaler menschenlesbarer Anzeigename, kein Klarname bei menschlichen Akteuren (siehe Editorial Policy)."
+    },
+    "description": {
+      "type": ["string", "null"],
+      "description": "Optionale kurze Beschreibung der Rolle/Funktion dieses Akteurs."
+    },
+    "active": {
+      "type": "boolean",
+      "description": "Ob dieser Akteur aktuell aktiv eingesetzt wird. Kein Loeschmechanismus -- ein nicht mehr eingesetzter Akteur wird auf 'false' gesetzt, nicht entfernt, damit bereits von ihm verantwortete Historieneintraege nachvollziehbar referenzierbar bleiben."
+    },
+    "created_at": { "$ref": "common.schema.json#/$defs/date" },
+    "updated_at": { "$ref": "common.schema.json#/$defs/date" }
+  },
+  "additionalProperties": false,
+  "required": ["schema_version", "id", "actor_type", "display_name", "description", "active", "created_at", "updated_at"]
+}

@@ -1,0 +1,34 @@
+# Kontrolliertes Vokabular: decision_history[].revision_context.reason (research_screening_record)
+schema_version: "1.0.0"
+values:
+  - value: protocol_amendment
+    labels: { de: Protokolländerung, en: Protocol Amendment }
+    note_de: >
+      Die Wiederaufnahme geht auf eine neue Protokollversion zurück (reference verweist auf
+      research-protocol-<slug>-v2 o. ä.).
+  - value: new_evidence
+    labels: { de: Neue Evidenz, en: New Evidence }
+    note_de: Neu aufgetauchte Publikationen/Daten, die die frühere Entscheidung infrage stellen.
+  - value: reviewer_error_correction
+    labels: { de: Korrektur eines Reviewer-Fehlers, en: Reviewer Error Correction }
+    note_de: Korrektur eines konkreten, benennbaren Einzelfehlers der früheren Entscheidung.
+  - value: periodic_reevaluation
+    labels: { de: Turnusmäßige Neubewertung, en: Periodic Reevaluation }
+  - value: external_peer_review
+    labels: { de: Externes Peer-Review, en: External Peer Review }
+    note_de: >
+      Wiederaufnahme durch Rückmeldung aus einem externen Peer-Review-Prozess, abgegrenzt von
+      new_evidence (das neue Publikationen/Daten meint, nicht Feedback zum Screening selbst).
+  - value: quality_control
+    labels: { de: Qualitätskontrolle, en: Quality Control }
+    note_de: >
+      Im Rahmen einer gezielten Qualitätsprüfung/eines Audits entdeckt, abgegrenzt von
+      reviewer_error_correction (das einen konkreten Einzelfehler meint, nicht eine
+      stichprobenartige Prüfung).
+  - value: data_correction
+    labels: { de: Datenkorrektur, en: Data Correction }
+    note_de: >
+      Korrektur fehlerhafter technischer/bibliographischer Metadaten am Kandidaten selbst, nicht
+      der wissenschaftlichen Bewertung.
+  - value: other
+    labels: { de: Sonstige, en: Other }
