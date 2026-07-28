@@ -124,7 +124,7 @@
       "required": ["doi", "pmid", "pmcid", "nct_id", "isbn", "url"]
     },
     "candidate_title": { "type": "string", "minLength": 1 },
-    "candidate_source_type": { "$ref": "common.schema.json#/$defs/source_type" },
+    "candidate_source_type": { "$ref": "common.schema.json#/$defs/research_candidate_source_type" },
     "decision": {
       "$ref": "common.schema.json#/$defs/screening_decision",
       "description": "Effektive/aktuelle Entscheidung -- Projektion von decision_history[-1].decision (nach ggf. Adjudikation), NICHT zwingend identisch mit der Erstentscheidung."
@@ -311,6 +311,39 @@
       "type": ["string", "null"],
       "pattern": "^research-candidate-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$",
       "description": "Die konkrete candidates[].candidate_id innerhalb von candidate_manifest_id, aus der dieser Screening Record hervorgegangen ist (vom Validator referenziell geprueft: Manifest existiert, gleiches protocol_id, candidate_id innerhalb des Manifests vorhanden, Identifikator widerspricht nicht candidate_identifiers)."
+    },
+    "related_records": {
+      "type": "array",
+      "default": [],
+      "description": "Optionale, additive Liste eigenstaendiger, aber inhaltlich verwandter Kandidaten (z. B. Letter+Reply) -- strukturell getrennt von duplicate_of, das ausschliesslich fuer bibliographische Dubletten (derselbe Text) reserviert bleibt (ADR-0058, Phase 4B-1B-2). Referenziert Kandidaten (related_candidate_manifest_id/related_candidate_id), nicht Screening Records -- candidate_id ist seit ADR-0056 technisch erzwungen unveraenderlich, waehrend research_screening_record.id keine vergleichbare Garantie hat. Fehlt der zugrunde liegende Kandidat eine aufgeloeste Referenz (candidate_manifest_id/candidate_id beide null), bleibt related_records ungenutzt (leeres Array) -- akzeptierte Migrationsgrenze fuer aeltere Protokolle ohne Candidate Manifest.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "related_candidate_manifest_id": {
+            "type": "string",
+            "pattern": "^candidate-manifest-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$"
+          },
+          "related_candidate_id": {
+            "type": "string",
+            "pattern": "^research-candidate-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$"
+          },
+          "relationship_type": { "$ref": "common.schema.json#/$defs/screening_relationship_type" },
+          "rationale": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Pflicht-Freitextbegruendung -- die kategorialen relationship_type-Werte sind grobkoerniger als jede reale Konstellation, die spezifische Nuance gehoert hierher."
+          },
+          "relationship_metadata": {
+            "$ref": "common.schema.json#/$defs/relationship_metadata",
+            "description": "Evidenz DAFUER, dass diese Beziehung besteht -- niemals die wissenschaftliche Evidenz der beteiligten Studie(n) selbst (siehe common.schema.json#/$defs/relationship_metadata)."
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "related_candidate_manifest_id", "related_candidate_id", "relationship_type",
+          "rationale", "relationship_metadata"
+        ]
+      }
     },
     "created_at": { "$ref": "common.schema.json#/$defs/date" },
     "updated_at": { "$ref": "common.schema.json#/$defs/date" }

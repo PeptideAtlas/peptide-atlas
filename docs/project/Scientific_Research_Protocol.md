@@ -490,6 +490,113 @@ Implementierung): `research_reviewer` ist bewusst nicht auf Titel-/Abstract-Scre
 sondern als projektweites, protokoll- und stufenunabhängiges Reviewer-Modell — perspektivisch auch für
 Promotion Review (Abschnitt 29), Evidence Review, Editorial Review und Quality Audit wiederverwendbar.
 
+## 9f. Vollständige Deduplizierungsarchitektur und Bearbeitungszustand (ADR-0058, Phase 4B-1B-2)
+
+Löst die drei in ADR-0058 identifizierten strukturellen Probleme der ursprünglichen ADR-0057-Lösung für die
+reale DOI-Kollision (drei PubMed-PMIDs mit gemeinsamer DOI `10.1056/NEJMc2310645`): eine
+Akteursidentität (`screened_by`) wurde als Stellvertreter für einen Workflow-Zustand zweckentfremdet,
+`decision: duplicate` kannte nur „identisch, einer redundant", nicht „eigenständig, aber verwandt", und
+`candidate_source_type` konnte Letter/Reply/Editorial/Corrigendum nicht unterscheiden.
+
+**Bearbeitungszustand als reine, nicht gespeicherte Projektion.** `tools/_researchlib.py::
+derive_workflow_state()` berechnet `system_initialized`/`under_human_review`/`finalized` ausschließlich aus
+`decision_history` (sowie den bereits validiert konsistenten Projektionen `decision`/`decision_stage`) —
+**kein neues Schemafeld, kein Cache, keine zweite Wahrheitsquelle.** `system_initialized`: genau ein
+Eintrag, verantwortet vom technischen Akteur `system-screening-initializer`. `finalized`: Stufe `final`,
+`decision` `include`/`exclude`, kein ungelöster Erst-/Zweitprüfungs-Widerspruch. `under_human_review`:
+alles dazwischen. Ersetzt die vormals redundante, an zwei Stellen (`check_screening_system_actor_
+invariants`, `check_deduplication`) duplizierte `screened_by`-Stringvergleichslogik durch einen einzigen
+Aufrufer je Stelle.
+
+**`related_records[]` — eigenständige, aber verwandte Publikationen.** Strukturell getrennt von
+`duplicate_of`, das ausschließlich für bibliographische Dubletten (exakt derselbe Text) reserviert bleibt.
+Referenziert Kandidaten (`related_candidate_manifest_id`/`related_candidate_id`), NICHT Screening
+Records — `candidate_id` ist seit ADR-0056 technisch erzwungen unveränderlich
+(`tools/check_research_immutability.py::CANDIDATE_ENTRY_IMMUTABLE_FIELDS`), `research_screening_record.id`
+hat keine vergleichbare Garantie, und die Beziehung ist eine Aussage über die zugrunde liegenden Dokumente,
+nicht über ihre Screening-Workflow-Hülle. `relationship_type` (`schemas/common.schema.json#/$defs/
+screening_relationship_type`, `research/vocabularies/screening_relationship_types.yaml`) ist ein
+**gerichtetes** 17-wertiges Vokabular — 9 Konzeptpaare (z. B. `replies_to`/`has_reply`, `corrects`/
+`corrected_by`, `retracts`/`retracted_by`, das generische `updates`/`updated_by` für Zwischen-/
+Endergebnis/Subgruppenanalyse/Sicherheits-Update) plus `other_related_to` als einzige bewusst
+**symmetrische** (selbstinverse) Ausnahme. Jeder Eintrag trägt eine Pflicht-Freitext-`rationale` (die
+kategorialen Werte sind grobkörniger als jede reale Konstellation) sowie `relationship_metadata`.
+
+**`relationship_metadata` — Evidenz für die Beziehung, nicht für die Studie.** Bündelt `identified_by`/
+`identified_at` mit `evidence_source[]` (10-wertiges Vokabular `research/vocabularies/
+screening_relationship_evidence_sources.yaml`: `title_similarity`/`doi`/`pmid`/`pmcid`/
+`nct_cross_reference`/`publication_types`/`author_list`/`manual_title_abstract_review`/
+`manual_full_text_review`/`other`). **Beschreibt AUSSCHLIESSLICH, wie sicher/woher bekannt ist, DASS zwei
+Kandidaten in der dokumentierten Beziehung zueinander stehen — niemals die wissenschaftliche Evidenzstufe,
+methodische Qualität oder inhaltliche Verlässlichkeit der beteiligten Studie(n)/Publikation(en) selbst.**
+Dieselbe Trennung wie zwischen `research/**` (Provenienzebene, ADR-0033) und `data/**` (kanonisches
+Wissen), nur eine Ebene tiefer — fließt nie automatisch in `Evidenzstufe`/`evidence_category` ein. Ein
+`confidence`-Konzept ist in ADR-0058 dokumentiert, aber **bewusst nicht implementiert**: keine der drei
+diskutierten Skalen (kategorial-ordinal/numerisch/Freitext) wurde final freigegeben — eine spätere,
+additive Ergänzung bleibt möglich, ohne bestehende `relationship_metadata`-Einträge zu ändern.
+
+`tools/validate_research.py::check_screening_related_records` prüft: Ziel-Kandidat existiert als
+`candidates[]`-Eintrag eines `research_candidate_manifest` mit demselben `protocol_id`, kein Selbstverweis,
+`relationship_metadata.identified_by` ist nie `system-screening-initializer` (eine
+Beziehungsklassifikation ist eine inhaltliche, keine technische Entscheidung). **Gerichtete Symmetrie
+(verschärft in CSO-Review Runde 3):** existiert bereits ein Screening Record für den Ziel-Kandidaten, ist
+dessen eigenes `related_records[]`-Gegenstück mit dem in `RELATIONSHIP_TYPE_INVERSE` hinterlegten INVERSEN
+Typ **Pflicht** — sowohl eine fehlende Gegenrichtung als auch ein Eintrag, der stattdessen wieder denselben
+Typ trägt, sind ein **Fehler**. Eine **Warnung** gilt ausschließlich, solange für den Ziel-Kandidaten noch
+**gar kein** Screening Record existiert (wird erneut geprüft, sobald der Ziel-Datensatz angelegt wird).
+Eine zentrale Helperfunktion (`_validated_inverse_relationship_target`) trifft diese
+Vollständigkeitsentscheidung einmalig — dieselbe Funktion entscheidet auch, welche `related_records`-Kanten
+die Kollisionsgruppen-Konnektivitätsprüfung unten nutzen darf.
+
+**Kollisionsgruppen als Zusammenhangskomponenten, nicht mehr rein paarweise.** `check_deduplication`
+bildet für jede Identifikator-Kollisionsgruppe einen ungerichteten Graphen (Knoten: die Datensätze der
+Gruppe; Kanten: `duplicate_of`- UND **vollständig validierten** `related_records`-Beziehungspaaren
+zwischen zwei Gruppenmitgliedern — eine nur einseitig dokumentierte oder falsch-inverse Beziehung zählt
+NICHT als Kante, verschärft in CSO-Review Runde 3) und
+verlangt genau **eine** Zusammenhangskomponente (Union-Find, `O(n·α(n))`, keine quadratische Explosion bei
+größeren Correspondence-Ketten). Das erkennt transitive Erklärung korrekt: eine Dreiergruppe braucht nur 2
+Kanten (statt aller 3 Paare), um vollständig verbunden zu sein — z. B. wird `37888926` als `duplicate_of
+37888925` markiert, UND `37888927` trägt eine `replies_to`-Beziehung zu `37888925` **oder** `37888926`,
+**deren Ziel-Datensatz umgekehrt eine `has_reply`-Beziehung zu `37888927` zurückträgt** (nur diese
+vollständig validierte, gegenseitige Dokumentation zählt als Kante), ist die gesamte Dreiergruppe bereits
+eine Komponente, ohne dass zusätzlich eine direkte Beziehung zwischen `37888925` und `37888927`
+dokumentiert werden müsste. Eine nicht vollständig verbundene Gruppe bleibt
+Warnung, solange mindestens ein Mitglied `system_initialized` ist, und wird zum Fehler, sobald kein
+Mitglied mehr `system_initialized` ist — unverändert gegenüber der ADR-0057-Grundregel, jetzt aber auf die
+gesamte Zusammenhangskomponente statt auf einen einfachen Mitgliederzähler angewendet.
+
+**Erweitertes Publikationstyp-Vokabular, getrennt vom kanonischen `source_type`.** `candidate_source_type`
+referenziert seit ADR-0058 ein eigenständiges `$defs/research_candidate_source_type`
+(`schemas/common.schema.json`) statt des mit `data/sources/**` geteilten `$defs/source_type` — eine
+Erweiterung des geteilten Vokabulars hätte eine `data/**`-Änderung erzwungen (`data/vocabularies/
+source_types.yaml`, `tests/test_vocabulary_consistency.py`), obwohl kein einziges kanonisches
+Source-Objekt betroffen ist; `research/**` bleibt Provenienz-/Arbeitsebene (ADR-0033). Die 12 Basiswerte
+bleiben identisch mit `source_type`; zusätzlich 18 wissenschaftliche Publikationstyp-Werte: 7 unmittelbar
+freigegebene Basiswerte (`letter_or_comment`/`reply_or_response`/`editorial`/`case_report`/
+`corrigendum_or_erratum`/`retraction_notice`/`expression_of_concern_notice`) plus 11 im CSO-Review
+geprüft-freigegebene weitere Werte (`meta_analysis`/`narrative_review`/`scoping_review`/
+`umbrella_review`/`practice_guideline`/`consensus_statement`/`technical_report`/`white_paper`/`dataset`/
+`software`/`protocol_paper`). `living_systematic_review` ist bewusst **nicht** aufgenommen — die
+zugehörige CSO-Rückfrage („wird dieser Wert überhaupt benötigt?") blieb bis zur Implementierung offen; bis
+zu einer Klärung bleibt `systematic_review` die zu verwendende Klassifikation.
+
+`tools/refresh_candidate_source_types.py` ist ein **separates, explizites** Migrations-/Refresh-Werkzeug
+(Dry-Run als Standard, `--apply` erforderlich für tatsächliche Schreibvorgänge, deterministisch,
+netzwerkfrei) — nicht Teil von `tools/initialize_screening_records.py`, das bestehende Screening Records
+bewusst nie still verändert. Leitet `candidate_source_type` rein technisch aus bereits versionierten
+PubMed-`publication_types`-Metadaten ab (`meta_analysis` vor `systematic_review` bei Doppel-Tag;
+`narrative_review` ausschließlich als Ausschlussregel — `Review`-Tag ohne `Systematic Review`/
+`Meta-Analysis`) und rührt einen Datensatz nur an, solange dessen Bearbeitungszustand noch
+`system_initialized` ist. `reply_or_response` wird NIE automatisiert vergeben (PubMed unterscheidet
+Letter/Reply strukturell nicht) — ausschließlich menschliche `related_records`-Klassifikation. Ein bereits
+vom Default abweichender aktueller Wert wird als Konflikt gemeldet, nie automatisch überschrieben. Kein
+`--apply`-Lauf gegen die 197 realen Retatrutide-Records ist Teil der Implementierungs-PR selbst — das bliebe
+eine separate, ausdrücklich zur Freigabe vorzulegende redaktionelle Entscheidung.
+
+**Nicht-Ziele:** keine rückwirkende Änderung bestehender Screening Records, keine automatische Auflösung
+der drei realen DOI-Kollisions-Records, keine automatisierte `relationship_type`-Ableitung, keine
+Erweiterung der `duplicate_of`-Semantik.
+
 ## 9d. Objektinterne zeitliche Vollständigkeit
 
 Für alle fünf Research-Objektarten (Protokoll, Suchlauf, Screening-Datensatz, Extraktion, Promotion) gilt
@@ -855,7 +962,15 @@ maschinenlesbar sicherstellt:
   Kürzel ist fuer diese beiden Rollen ebenfalls ungültig (verschärft in CSO-Review Runde 2; anders als bei
   normalen Erst-/Zweitprüfern, wo unregistriert weiterhin als Mensch behandelt wird) —, sowie
   `revision_context` genau dann verpflichtend, wenn ein Eintrag die effektive Entscheidung des unmittelbar
-  vorangegangenen Eintrags an derselben Stufe tatsächlich umkehrt.
+  vorangegangenen Eintrags an derselben Stufe tatsächlich umkehrt; seit ADR-0058 (Abschnitt 9f, verschärft
+  in CSO-Review Runde 3) zusätzlich: `related_records[]` referenziell und gerichtet-symmetrisch geprüft
+  (Ziel-Kandidat existiert im selben Protokoll, kein Selbstverweis, kein technischer Systemakteur als
+  `relationship_metadata.identified_by`; sobald der Ziel-Screening-Record existiert, ist dessen
+  Gegenrichtung mit dem korrekten inversen `relationship_type` Pflicht — fehlend oder falsch typisiert ist
+  ein Fehler, Warnung nur solange kein Ziel-Screening-Record existiert), Identifikator-Kollisionsgruppen als
+  Zusammenhangskomponente statt rein paarweise geprüft (Union-Find über `duplicate_of`- und NUR
+  vollständig validierten `related_records`-Kanten — eine einseitige oder falsch-inverse Beziehung
+  verbindet keine Kollisionskomponente).
 - **CI-seitig geprüft, mit dokumentierter Lücke**: `tools/check_research_immutability.py` (ADR-0038/ADR-0042,
   seit ADR-0055 zusätzlich auf `research/search_results/**` erweitert, dort **vollständig** unveränderlich statt
   nur `status`/`updated_at`/`review`/`notes` mutable wie bei `research_search_run`; `interface_profile` zählt

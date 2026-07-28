@@ -1,0 +1,69 @@
+# Kontrolliertes Vokabular: research_screening_record.related_records[].relationship_type
+# (ADR-0058, Phase 4B-1B-2). 9 gerichtete Konzeptpaare (16 Werte) plus 'other_related_to' als
+# einzige bewusst symmetrische (selbstinverse) Ausnahme -- 17 Werte insgesamt. Jeder Eintrag
+# traegt sein eigenes Gegenstueck (`inverse`) -- tools/_researchlib.py::RELATIONSHIP_TYPE_INVERSE
+# ist die vom Validator tatsaechlich genutzte Quelle, dieses Feld ist die redaktionell
+# dokumentierte Entsprechung dazu (siehe tests/test_research_vocabulary_consistency.py).
+schema_version: "1.0.0"
+values:
+  - value: replies_to
+    inverse: has_reply
+    labels: { de: Antwortet auf, en: Replies To }
+    note_de: >
+      A ist eine Autorenantwort (Reply) auf den Letter/Comment B -- z. B. NEJM-Correspondence-Paare.
+  - value: has_reply
+    inverse: replies_to
+    labels: { de: Hat Antwort, en: Has Reply }
+  - value: updates
+    inverse: updated_by
+    labels: { de: Aktualisiert, en: Updates }
+    note_de: >
+      A aktualisiert/erweitert B mit neuen oder anderen Daten zur selben Studie -- generisches Paar
+      fuer Zwischen-/Endergebnis, Subgruppen-/Sekundaeranalyse, Sicherheits-Update u. ae. Die
+      spezifische Art der Aktualisierung gehoert in die Pflicht-rationale des Eintrags.
+  - value: updated_by
+    inverse: updates
+    labels: { de: Aktualisiert durch, en: Updated By }
+  - value: is_preprint_of
+    inverse: has_published_version
+    labels: { de: Ist Preprint von, en: Is Preprint Of }
+  - value: has_published_version
+    inverse: is_preprint_of
+    labels: { de: Hat publizierte Fassung, en: Has Published Version }
+  - value: reports_on_registered_study
+    inverse: has_publication
+    labels: { de: Berichtet über registrierte Studie, en: Reports On Registered Study }
+    note_de: A (Publikation) berichtet über die in B (Registereintrag) registrierte Studie.
+  - value: has_publication
+    inverse: reports_on_registered_study
+    labels: { de: Hat Publikation, en: Has Publication }
+  - value: corrects
+    inverse: corrected_by
+    labels: { de: Korrigiert, en: Corrects }
+  - value: corrected_by
+    inverse: corrects
+    labels: { de: Korrigiert durch, en: Corrected By }
+  - value: retracts
+    inverse: retracted_by
+    labels: { de: Zieht zurück, en: Retracts }
+  - value: retracted_by
+    inverse: retracts
+    labels: { de: Zurückgezogen durch, en: Retracted By }
+  - value: raises_concern_about
+    inverse: has_expression_of_concern
+    labels: { de: Äußert Bedenken zu, en: Raises Concern About }
+  - value: has_expression_of_concern
+    inverse: raises_concern_about
+    labels: { de: Hat Expression of Concern, en: Has Expression Of Concern }
+  - value: comments_on
+    inverse: has_editorial_comment
+    labels: { de: Kommentiert redaktionell, en: Comments On }
+  - value: has_editorial_comment
+    inverse: comments_on
+    labels: { de: Hat redaktionellen Kommentar, en: Has Editorial Comment }
+  - value: other_related_to
+    inverse: other_related_to
+    labels: { de: Sonstige Beziehung zu, en: Other Related To }
+    note_de: >
+      Einzige bewusst symmetrische (selbstinverse) Ausnahme -- jede andere, freitextbegründete
+      Beziehung, deren Art durch keinen der übrigen Werte abgebildet wird.

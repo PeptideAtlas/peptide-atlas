@@ -43,20 +43,84 @@ Zwei bewusste Abweichungen vom Vokabular, das man naiv erwarten würde (siehe AD
   `decided_by: system-screening-initializer` muss `primary_decision: pending`,
   `stage: deduplication`, `full_text_status: not_yet_obtained`, keinen Duplikatverweis und keine
   Zweitprüfung tragen — der technische Akteur kann strukturell NIE `include`/`exclude`/`duplicate`
-  dokumentieren. Solange der aktuelle effektive Bearbeiter (`screened_by`) noch dieser Akteur ist,
-  muss `canonical_source_id` `null` bleiben und `candidate_title` (bei aufgelöster Kandidatenreferenz)
-  exakt der aus den Candidate-Manifest-Metadaten abgeleitete Titel sein.
+  dokumentieren. Solange der Bearbeitungszustand (seit ADR-0058, Phase 4B-1B-2: `tools/_researchlib.py::
+  derive_workflow_state()`, siehe unten) noch `system_initialized` ist, muss `canonical_source_id`
+  `null` bleiben und `candidate_title` (bei aufgelöster Kandidatenreferenz) exakt der aus den
+  Candidate-Manifest-Metadaten abgeleitete Titel sein.
 - `check_screening_candidate_uniqueness`: höchstens ein Screening-Datensatz je
   (`candidate_manifest_id`, `candidate_id`)-Paar.
 - `check_screening_candidate_references` (seit ADR-0057 erweitert): `search_run_ids` muss bei
   aufgelöster Kandidatenreferenz **exakt** (nicht nur teilweise) den
   `discovered_in_search_run_ids` des referenzierten Kandidaten entsprechen.
-- `check_deduplication` (ADR-0057-Anpassung): eine Identifikator-Kollision, an der noch mindestens ein
-  nie menschlich übernommener, system-initialisierter Datensatz beteiligt ist, ist nur eine
-  **Warnung** („potenzielles Duplikat, menschliche Prüfung steht aus") — kein Fehler. Sobald ein
-  Mensch **jeden** beteiligten Datensatz übernommen hat (`screened_by` ≠ `system-screening-initializer`
-  für alle Mitglieder der Kollisionsgruppe), gilt die Deduplizierungsphase für diese Gruppe als
-  abgeschlossen und eine weiterhin ungelöste Kollision wird wieder zum Fehler.
+- `check_deduplication` (seit ADR-0058, Phase 4B-1B-2 — ersetzt die vormals rein paarweise
+  ADR-0057-Logik): eine Identifikator-Kollisionsgruppe gilt erst dann als vollständig erklärt, wenn
+  sie — über Kanten aus `duplicate_of` (bibliographische Dubletten) UND `related_records`
+  (eigenständige, aber inhaltlich verwandte Publikationen, siehe unten) — eine EINZIGE
+  Zusammenhangskomponente bildet (Union-Find über die gesamte Gruppe, nicht nur die aktuell
+  „aktiven" Mitglieder). **Nur vollständig validierte `related_records`-Beziehungspaare zählen als
+  Kante (verschärft in CSO-Review Runde 3):** eine nur einseitig dokumentierte oder falsch-inverse
+  Beziehung verbindet die Kollisionsgruppe NICHT — dieselbe zentrale Helperfunktion
+  (`_validated_inverse_relationship_target`) entscheidet das wie bei `check_screening_related_records`
+  oben, keine zweite, potenziell divergierende Regel. `duplicate_of`-Kanten sind davon unberührt
+  (bereits durch die bestehenden Referenzprüfungen abgesichert). Das erkennt transitive Erklärung
+  korrekt: eine Dreiergruppe braucht nur 2 Kanten (statt aller 3 Paare), um vollständig verbunden zu
+  sein — z. B. A `duplicate_of` B, C `replies_to` B UND B `has_reply` C (beide Richtungen!), ohne
+  dass A↔C zusätzlich direkt dokumentiert werden müsste. Eine nicht
+  vollständig verbundene Gruppe ist nur eine **Warnung** („potenzielles Duplikat, menschliche
+  Prüfung steht aus") — kein Fehler —, solange mindestens ein Mitglied der Gruppe
+  Bearbeitungszustand `system_initialized` hat (siehe unten). Sobald kein Mitglied mehr
+  `system_initialized` ist, wird eine weiterhin ungelöste Kollision zum Fehler.
+- **`related_records[]` (ADR-0058, Phase 4B-1B-2):** optionales, additives Feld — strukturell
+  getrennt von `duplicate_of`, das ausschließlich für bibliographische Dubletten (derselbe Text)
+  reserviert bleibt. Dokumentiert eigenständige, aber inhaltlich verwandte Kandidaten (z. B.
+  Letter+Reply, Preprint+publizierte Fassung, Korrektur+Originalpublikation). Referenziert
+  Kandidaten (`related_candidate_manifest_id`/`related_candidate_id`), NICHT Screening Records —
+  `candidate_id` ist seit ADR-0056 technisch erzwungen unveränderlich, `research_screening_record.id`
+  hat keine vergleichbare Garantie. `relationship_type` folgt einem gerichteten, 17-wertigen
+  kontrollierten Vokabular (`research/vocabularies/screening_relationship_types.yaml`: 9
+  Konzeptpaare, z. B. `replies_to`/`has_reply`, `corrects`/`corrected_by`, plus `other_related_to`
+  als einzige bewusst symmetrische Ausnahme). Jeder Eintrag trägt eine Pflicht-Freitext-`rationale`
+  sowie `relationship_metadata` (`identified_by`/`identified_at`/`evidence_source[]` — 10-wertiges
+  Vokabular `research/vocabularies/screening_relationship_evidence_sources.yaml`). `confidence`
+  (Konzept dokumentiert in ADR-0058) ist bewusst **nicht** implementiert, solange keine Skala final
+  freigegeben ist. **`relationship_metadata` beschreibt ausschließlich die Evidenz DAFÜR, dass die
+  Beziehung besteht — niemals die wissenschaftliche Evidenz der beteiligten Studie(n) selbst; fließt
+  nie in Evidenzstufe/`evidence_category` ein.**
+  `check_screening_related_records` prüft: Ziel-Kandidat existiert als `candidates[]`-Eintrag im
+  selben Protokoll, kein Selbstverweis, `relationship_metadata.identified_by` ist nie
+  `system-screening-initializer` (eine Beziehungsklassifikation ist eine inhaltliche, keine
+  technische Entscheidung). **Gerichtete Symmetrie (verschärft in CSO-Review Runde 3):** existiert
+  bereits ein Screening Record für den Ziel-Kandidaten, ist dessen eigenes `related_records[]`-
+  Gegenstück PFLICHT — eine fehlende Gegenrichtung ist in diesem Fall ein **Fehler**, ein falscher,
+  nicht-inverser Typ bleibt ebenfalls ein Fehler. Eine **Warnung** ist ausschließlich dem Fall
+  vorbehalten, dass für den Ziel-Kandidaten noch **gar kein** Screening Record existiert (wird erneut
+  geprüft, sobald der Ziel-Datensatz angelegt wird). Eine zentrale Helperfunktion
+  (`_validated_inverse_relationship_target`) trifft diese Vollständigkeitsentscheidung — dieselbe
+  Funktion entscheidet auch, welche `related_records`-Kanten die Kollisionsgruppen-
+  Konnektivitätsprüfung unten nutzen darf, um eine divergierende Zweitimplementierung strukturell
+  auszuschließen.
+- **Bearbeitungszustand als reine Projektion (ADR-0058, Phase 4B-1B-2):**
+  `tools/_researchlib.py::derive_workflow_state()` berechnet `system_initialized`/
+  `under_human_review`/`finalized` AUSSCHLIESSLICH aus `decision_history` — **kein Schemafeld, kein
+  Cache, keine zweite Wahrheitsquelle.** Ersetzt die vormals redundante, an zwei Stellen
+  duplizierte `screened_by`-Stringvergleichslogik. `system_initialized`: genau ein Eintrag,
+  verantwortet von `system-screening-initializer`. `finalized`: Stufe `final`, `decision`
+  `include`/`exclude`, kein ungelöster Erst-/Zweitprüfungs-Widerspruch. `under_human_review`: alles
+  dazwischen.
+- **Erweitertes `candidate_source_type`-Vokabular (ADR-0058, Phase 4B-1B-2):** eigenständiges
+  `research_candidate_source_type` (`schemas/common.schema.json`, `research/vocabularies/
+  research_candidate_source_types.yaml`) statt einer Erweiterung des mit `data/**` geteilten
+  `source_type` — 12 Basiswerte identisch mit `data/vocabularies/source_types.yaml`, plus 18
+  zusätzliche wissenschaftliche Publikationstyp-Werte (Letter/Reply/Editorial/Case Report/
+  Corrigendum/Retraction/Expression of Concern/Meta-Analysis/Narrative Review/Scoping Review/
+  Umbrella Review/Practice Guideline/Consensus Statement/Technical Report/White Paper/Dataset/
+  Software/Protocol Paper). `tools/refresh_candidate_source_types.py` (separates, explizites
+  Dry-Run-Werkzeug, siehe dessen Docstring) verfeinert den bei der Initialisierung gesetzten
+  generischen Wert anhand bereits versionierter PubMed-`publication_types`-Metadaten — rein
+  technisch, nie eine wissenschaftliche Entscheidung, rührt einen Datensatz nur an, solange dessen
+  Bearbeitungszustand noch `system_initialized` ist. `reply_or_response` wird NIE automatisiert
+  vergeben (PubMed unterscheidet Letter/Reply strukturell nicht) — ausschließlich menschliche
+  `related_records`-Klassifikation.
 - `check_screening_initialization_completeness`: „jeder Candidate eines Protokolls braucht einen
   Screening-Datensatz" greift **ausschließlich** für Protokolle, die im rein technischen
   Kontrollartefakt `research/screening_status/initialization_manifest.yaml` ausdrücklich als

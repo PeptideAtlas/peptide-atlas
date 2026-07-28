@@ -514,7 +514,7 @@ def test_shared_identifier_becomes_error_once_dedup_phase_is_complete_for_all(tm
 
     report = _run_validation(tmp_path)
     errors = [i.message for i in report.issues if i.level == "ERROR"]
-    assert any("duplicate doi" in m and "mark all but one as decision: duplicate" in m for m in errors), errors
+    assert any("duplicate doi" in m and "mark the redundant record(s) as decision: duplicate" in m for m in errors), errors
 
 
 def test_screening_record_for_protocol_without_candidate_manifest_is_still_migration_compatible(tmp_path: Path, isr_dirs: Path):

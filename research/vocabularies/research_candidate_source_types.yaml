@@ -1,0 +1,105 @@
+# Kontrolliertes Vokabular: research_screening_record.candidate_source_type
+# (schemas/common.schema.json#/$defs/research_candidate_source_type). Eigenstaendig von
+# data/vocabularies/source_types.yaml (siehe dessen Kommentar bzw. den common.schema.json-
+# $defs-Kommentar) -- diese Datei beschreibt ausschliesslich noch nicht wissenschaftlich gepruefte
+# Discovery-Kandidaten auf der Recherche-Ebene (research/**, ADR-0033), nie ein kanonisches
+# data/sources/**-Objekt. Die ersten 12 Werte sind identisch mit data/vocabularies/source_types.yaml
+# (jeder bestehende Kandidat bleibt gueltig); die uebrigen 18 sind ADR-0058 (Phase 4B-1B-2).
+schema_version: "1.0.0"
+values:
+  - value: peer_reviewed_publication
+    labels: { de: Peer-reviewte Publikation, en: Peer-Reviewed Publication }
+  - value: preprint
+    labels: { de: Preprint, en: Preprint }
+  - value: conference_abstract
+    labels: { de: Konferenzabstract, en: Conference Abstract }
+  - value: trial_registry
+    labels: { de: Studienregister, en: Trial Registry }
+  - value: regulatory_document
+    labels: { de: Regulatorisches Dokument, en: Regulatory Document }
+  - value: guideline
+    labels: { de: Leitlinie, en: Guideline }
+  - value: systematic_review
+    labels: { de: Systematischer Review, en: Systematic Review }
+  - value: reference_database
+    labels: { de: Referenzdatenbank, en: Reference Database }
+  - value: manufacturer_document
+    labels: { de: Herstellerdokument, en: Manufacturer Document }
+  - value: merchant_page
+    labels: { de: Händlerseite, en: Merchant Page }
+  - value: personal_report
+    labels: { de: Persönlicher Erfahrungsbericht, en: Personal Report }
+  - value: other
+    labels: { de: Sonstige, en: Other }
+  - value: letter_or_comment
+    labels: { de: Leserbrief/Kommentar, en: Letter Or Comment }
+    note_de: Redaktioneller Leserbrief/Kommentar. Automatisierbar aus PubMed Comment/Letter.
+  - value: reply_or_response
+    labels: { de: Autorenantwort, en: Reply Or Response }
+    note_de: >
+      Autorenantwort auf einen Letter/Comment. NICHT automatisierbar -- PubMed unterscheidet
+      Letter und Reply strukturell nicht, ausschließlich menschliche related_records-Klassifikation.
+  - value: editorial
+    labels: { de: Editorial, en: Editorial }
+    note_de: Redaktioneller Meinungsbeitrag. Automatisierbar aus PubMed Editorial.
+  - value: case_report
+    labels: { de: Fallbericht, en: Case Report }
+    note_de: Klinischer Einzelfallbericht. Automatisierbar aus PubMed Case Reports.
+  - value: corrigendum_or_erratum
+    labels: { de: Korrekturmitteilung, en: Corrigendum Or Erratum }
+    note_de: Formale Korrekturmitteilung. Automatisierbar aus PubMed Published Erratum.
+  - value: retraction_notice
+    labels: { de: Rückzugsmitteilung, en: Retraction Notice }
+    note_de: Formale Rückzugsmitteilung. Automatisierbar aus PubMed Retraction of Publication.
+  - value: expression_of_concern_notice
+    labels: { de: Expression-of-Concern-Mitteilung, en: Expression Of Concern Notice }
+    note_de: Formale EoC-Mitteilung. Automatisierbar aus PubMed Expression of Concern.
+  - value: meta_analysis
+    labels: { de: Metaanalyse, en: Meta-Analysis }
+    note_de: >
+      Quantitative statistische Zusammenführung mehrerer Einzelstudien. Automatisierbar aus PubMed
+      Meta-Analysis (Priorität vor Systematic Review bei Doppel-Tag -- CSO-Bestätigung dieser
+      Priorisierung noch ausstehend, siehe Decision Log ADR-0058-Implementierungsnachtrag).
+  - value: narrative_review
+    labels: { de: Narrativer Review, en: Narrative Review }
+    note_de: >
+      Nicht-systematische Literaturübersicht. Nur eingeschränkt automatisierbar (Ausschlussregel:
+      Review-Tag ohne Systematic-Review-/Meta-Analysis-Tag) -- vor breitem Einsatz stichprobenartig
+      zu verifizieren.
+  - value: scoping_review
+    labels: { de: Scoping Review, en: Scoping Review }
+    note_de: Kein eigenes PubMed-Tag -- ausschließlich menschlich vergeben.
+  - value: umbrella_review
+    labels: { de: Umbrella Review, en: Umbrella Review }
+    note_de: Kein eigenes PubMed-Tag -- ausschließlich menschlich vergeben.
+  - value: practice_guideline
+    labels: { de: Praxisleitlinie, en: Practice Guideline }
+    note_de: >
+      Formale klinische Praxisleitlinie. Automatisierbar aus PubMed Practice Guideline. Verhältnis
+      zum bereits bestehenden Wert 'guideline' bleibt eine offene CSO-Rückfrage (siehe Decision
+      Log ADR-0058-Implementierungsnachtrag) -- bis zur Klärung beide Werte parallel gültig.
+  - value: consensus_statement
+    labels: { de: Konsenserklärung, en: Consensus Statement }
+    note_de: >
+      Unsicherer, vor breiter Automatisierung technisch zu verifizierender Status gegen den
+      aktuellen NLM-Publication-Type-Katalog -- bis dahin ausschließlich menschlich vergeben.
+  - value: technical_report
+    labels: { de: Technischer Bericht, en: Technical Report }
+    note_de: >
+      Unsicherer, vor breiter Automatisierung technisch zu verifizierender Status -- bis dahin
+      ausschließlich menschlich vergeben.
+  - value: white_paper
+    labels: { de: White Paper, en: White Paper }
+    note_de: Kein PubMed-Publication-Type, i. d. R. Grauliteratur -- ausschließlich menschlich vergeben.
+  - value: dataset
+    labels: { de: Forschungsdatensatz, en: Dataset }
+    note_de: >
+      Unsicherer, vor breiter Automatisierung technisch zu verifizierender Status -- bis dahin
+      ausschließlich menschlich vergeben.
+  - value: software
+    labels: { de: Forschungssoftware, en: Software }
+    note_de: Kein PubMed-Publication-Type -- ausschließlich menschlich vergeben.
+  - value: protocol_paper
+    labels: { de: Protokollpublikation, en: Protocol Paper }
+    note_de: >
+      Kein zuverlässig nutzbares PubMed-Tag -- ausschließlich menschlich vergeben.

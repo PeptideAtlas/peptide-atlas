@@ -176,7 +176,44 @@
         "merchant_page",
         "personal_report",
         "other"
-      ]
+      ],
+      "description": "Kanonisches Vokabular fuer data/sources/**.source_type -- 1:1 gespiegelt in data/vocabularies/source_types.yaml (tests/test_vocabulary_consistency.py haelt beide synchron). NICHT identisch mit research_candidate_source_type (siehe unten): research/** ist Provenienz-/Arbeitsebene, kein kanonisches Wissen (ADR-0033), und darf dieses data/**-gebundene Vokabular deshalb nicht einseitig erweitern -- eine Erweiterung hier wuerde eine data/vocabularies/-Aenderung erzwingen, obwohl kein einziges kanonisches Source-Objekt betroffen ist."
+    },
+    "research_candidate_source_type": {
+      "type": "string",
+      "enum": [
+        "peer_reviewed_publication",
+        "preprint",
+        "conference_abstract",
+        "trial_registry",
+        "regulatory_document",
+        "guideline",
+        "systematic_review",
+        "reference_database",
+        "manufacturer_document",
+        "merchant_page",
+        "personal_report",
+        "other",
+        "letter_or_comment",
+        "reply_or_response",
+        "editorial",
+        "case_report",
+        "corrigendum_or_erratum",
+        "retraction_notice",
+        "expression_of_concern_notice",
+        "meta_analysis",
+        "narrative_review",
+        "scoping_review",
+        "umbrella_review",
+        "practice_guideline",
+        "consensus_statement",
+        "technical_report",
+        "white_paper",
+        "dataset",
+        "software",
+        "protocol_paper"
+      ],
+      "description": "Kontrolliertes Vokabular fuer research_screening_record.candidate_source_type (ADR-0056/ADR-0058). Bewusst ein EIGENSTAENDIGES $defs-Element statt einer Erweiterung von #/$defs/source_type: dieses Feld beschreibt einen noch nicht wissenschaftlich geprueften Discovery-Kandidaten auf der Recherche-Ebene (research/**, ADR-0033), waehrend #/$defs/source_type ausschliesslich fuer kanonische data/sources/**-Objekte gilt und 1:1 mit data/vocabularies/source_types.yaml synchron gehalten wird (siehe dessen Beschreibung). Die 12 Basiswerte sind identisch mit #/$defs/source_type (jeder existierende Kandidat bleibt gueltig); zusaetzlich 18 wissenschaftliche Publikationstyp-Werte aus ADR-0058 (Phase 4B-1B-2): 7 Basiswerte (letter_or_comment/reply_or_response/editorial/case_report/corrigendum_or_erratum/retraction_notice/expression_of_concern_notice) + 11 im CSO-Review geprueft-freigegebene Kandidaten. 'reply_or_response' wird NIE automatisiert vergeben (PubMed unterscheidet Letter/Reply strukturell nicht) -- ausschliesslich menschliche related_records-Klassifikation. 'living_systematic_review' bewusst NICHT aufgenommen: die zugehoerige CSO-Rueckfrage ('wird dieser Wert ueberhaupt benoetigt?') blieb bis zur Implementierung offen; bis zu einer Klaerung bleibt 'systematic_review' die zu verwendende Klassifikation (siehe Decision Log, ADR-0058-Implementierungsnachtrag). Eine kuenftige Promotion eines solchen Kandidaten zu einem kanonischen data/sources/**-Objekt (ausserhalb des Scopes dieser Phase) muss zum Zeitpunkt der Promotion auf einen Wert aus #/$defs/source_type abgebildet werden -- diese Abbildung ist bewusst nicht Teil dieser Phase."
     },
     "locator": {
       "type": "object",
@@ -277,6 +314,46 @@
       "type": "string",
       "enum": ["title_abstract", "full_text", "final"],
       "description": "Teilmenge von screening_stage, die ein verpflichtendes Zweitreview mit Adjudikation unterstuetzt (siehe screening_policy.dual_reviewer_stages in research_protocol.schema.json). 'deduplication' ist bewusst ausgeschlossen: adjudication.final_decision ist auf include/exclude beschraenkt, 'exclude' ist an der Stufe 'deduplication' fachlich nie zulaessig (siehe screening_decision-Matrix) und 'duplicate' ist als Adjudikationsergebnis nicht abbildbar -- ein Dedup-Konflikt waere damit strukturell nur halb unterstuetzt. Ein Dedup-Widerspruch bleibt daher immer 'uncertain' und wird durch einen NEUEN Screening-Eintrag (nicht durch Adjudikation) aufgeloest (siehe ADR-0046)."
+    },
+    "screening_relationship_type": {
+      "type": "string",
+      "enum": [
+        "replies_to", "has_reply",
+        "updates", "updated_by",
+        "is_preprint_of", "has_published_version",
+        "reports_on_registered_study", "has_publication",
+        "corrects", "corrected_by",
+        "retracts", "retracted_by",
+        "raises_concern_about", "has_expression_of_concern",
+        "comments_on", "has_editorial_comment",
+        "other_related_to"
+      ],
+      "description": "Kontrolliertes Vokabular fuer research_screening_record.related_records[].relationship_type (ADR-0058, Phase 4B-1B-2, research/vocabularies/screening_relationship_types.yaml). 9 gerichtete Konzeptpaare (16 Werte) plus 'other_related_to' als einzige bewusst SYMMETRISCHE (selbstinverse) Ausnahme -- 17 Werte insgesamt. Beschreibt ausschliesslich eine Beziehung zwischen zwei EIGENSTAENDIGEN, unterschiedlichen Dokumenten/Kandidaten (z. B. Letter+Reply) -- fuer bibliographische Dubletten (derselbe Text) bleibt weiterhin ausschliesslich decision: duplicate/duplicate_of zustaendig (siehe research_screening_record.schema.json)."
+    },
+    "relationship_metadata": {
+      "type": "object",
+      "description": "Beschreibt AUSSCHLIESSLICH die Evidenz dafuer, DASS zwei Kandidaten in der dokumentierten related_records-Beziehung zueinander stehen (ein bibliographisch-struktureller Sachverhalt ueber zwei Dokumente) -- NIEMALS die wissenschaftliche Evidenzstufe, methodische Qualitaet oder inhaltliche Verlaesslichkeit der beteiligten Studie(n)/Publikation(en) selbst. Fliesst nie automatisch in Evidenzstufe/evidence_category oder ein anderes Feld des kanonischen Evidenzmodells ein (siehe ADR-0058, Phase_4B_1B_2_Deduplication_and_Workflow_Architecture.md, Abschnitt 2.6.1). ABSICHTLICH OHNE 'confidence'-Feld: ADR-0058 dokumentiert das Konzept (Abschnitt 2.6.4), legt sich aber ausdruecklich auf KEINE Skala fest ('noch keine Skala implementieren') -- ein Feld ohne abschliessend freigegebene Skala wird hier bewusst nicht implementiert, um keine faktische Skala vorwegzunehmen; die drei zur Wahl stehenden Optionen (kategorial-ordinal/numerisch/Freitext) bleiben eine offene CSO-Entscheidung fuer eine kuenftige, separate Ergaenzung (additiv nachruestbar, kein Breaking Change).",
+      "properties": {
+        "identified_by": { "$ref": "#/$defs/research_actor_id" },
+        "identified_at": { "$ref": "#/$defs/date" },
+        "evidence_source": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/screening_relationship_evidence_source" }
+        }
+      },
+      "additionalProperties": false,
+      "required": ["identified_by", "identified_at", "evidence_source"]
+    },
+    "screening_relationship_evidence_source": {
+      "type": "string",
+      "enum": [
+        "title_similarity", "doi", "pmid", "pmcid", "nct_cross_reference",
+        "publication_types", "author_list", "manual_title_abstract_review",
+        "manual_full_text_review", "other"
+      ],
+      "description": "Kontrolliertes Vokabular fuer relationship_metadata.evidence_source[] (ADR-0058, Phase 4B-1B-2, research/vocabularies/screening_relationship_evidence_sources.yaml). Beschreibt WORAUS die Existenz einer related_records-Beziehung erkannt wurde -- kein Aussagewert ueber die wissenschaftliche Qualitaet der beteiligten Publikationen (siehe relationship_metadata)."
     },
     "short_paraphrase": {
       "type": "object",

@@ -113,12 +113,15 @@ from _researchlib import (  # noqa: E402
     DEDUPLICATION_IDENTIFIER_FIELDS,
     MANDATORY_REVIEWER_REGISTRATION_ACTOR_TYPES,
     NORMALIZERS,
+    RELATIONSHIP_TYPE_INVERSE,
     RESEARCH_DIR,
     RESEARCH_KIND_TO_SCHEMA_ID,
     SCREENING_STAGE_ORDER,
     SYSTEM_SCREENING_INITIALIZER_ACTOR,
+    WORKFLOW_STATE_SYSTEM_INITIALIZED,
     compute_manifest_sha256,
     derive_candidate_title,
+    derive_workflow_state,
     iter_research_files,
     load_all_research_vocabularies,
     normalize_url,
@@ -532,25 +535,120 @@ def check_protocol_version_matches_id(report: Report, protocols: dict[str, Resea
             )
 
 
+def _candidate_to_screening_record_index(records: list[ResearchObject]) -> dict[tuple[str, str], str]:
+    """Baut einen Index (candidate_manifest_id, candidate_id) -> screening_record.id fuer alle
+    Records mit aufgeloester Kandidatenreferenz. Grundlage sowohl fuer check_screening_related_records
+    (Zielaufloesung) als auch fuer die Kollisionsgruppen-Konnektivitaetspruefung in check_deduplication
+    (ADR-0058, Phase 4B-1B-2)."""
+    index: dict[tuple[str, str], str] = {}
+    for obj in records:
+        candidate_manifest_id = obj.data.get("candidate_manifest_id")
+        candidate_id = obj.data.get("candidate_id")
+        if candidate_manifest_id and candidate_id:
+            index[(candidate_manifest_id, candidate_id)] = obj.id
+    return index
+
+
+def _validated_inverse_relationship_target(
+    obj: ResearchObject,
+    rel: dict,
+    candidate_index: dict[tuple[str, str], str],
+    screening_by_id: dict[str, ResearchObject],
+) -> str | None:
+    """Liefert die screening_record.id des Ziel-Kandidaten NUR, wenn die gerichtete
+    related_records-Beziehung VOLLSTAENDIG validiert ist: Ziel-Kandidat aufgeloest, Ziel-Screening-
+    Record existiert bereits, UND dessen eigenes related_records[] traegt einen Gegeneintrag auf
+    `obj` mit dem korrekten inversen relationship_type (RELATIONSHIP_TYPE_INVERSE). Liefert sonst
+    None -- eine einseitige oder falsch-inverse Beziehung zaehlt NICHT als validiert (CSO-Review
+    Runde 3, ADR-0058): weder als Kollisionskante nutzbar (siehe _collision_group_components) noch
+    als 'bereits dokumentierte Gegenrichtung' (siehe check_screening_related_records). Zentrale,
+    einmalige Implementierung dieser Regel -- beide Aufrufer teilen sich dieselbe Logik, um
+    divergierendes Verhalten strukturell auszuschliessen."""
+    target_key = (rel.get("related_candidate_manifest_id"), rel.get("related_candidate_id"))
+    target_id = candidate_index.get(target_key)
+    if target_id is None:
+        return None
+    target_obj = screening_by_id.get(target_id)
+    if target_obj is None:
+        return None
+    expected_inverse = RELATIONSHIP_TYPE_INVERSE.get(rel.get("relationship_type"))
+    back_reference = next(
+        (
+            r for r in (target_obj.data.get("related_records") or [])
+            if r.get("related_candidate_manifest_id") == obj.data.get("candidate_manifest_id")
+            and r.get("related_candidate_id") == obj.data.get("candidate_id")
+        ),
+        None,
+    )
+    if back_reference is None or back_reference.get("relationship_type") != expected_inverse:
+        return None
+    return target_id
+
+
+def _collision_group_components(
+    group: list[ResearchObject],
+    candidate_index: dict[tuple[str, str], str],
+    screening_by_id: dict[str, ResearchObject],
+) -> list[set[str]]:
+    """Union-Find ueber eine Identifikator-Kollisionsgruppe (ADR-0058, Phase 4B-1B-2, Abschnitt 2.5,
+    verschaerft in CSO-Review Runde 3): Kanten aus duplicate_of UND VOLLSTAENDIG VALIDIERTEN
+    related_records-Beziehungen (siehe _validated_inverse_relationship_target -- eine einseitige oder
+    falsch-inverse Beziehung verbindet die Kollisionsgruppe NICHT) zwischen zwei Mitgliedern DERSELBEN
+    Gruppe. Liefert die Zusammenhangskomponenten als Liste von ID-Mengen -- die Gruppe gilt als
+    vollstaendig erklaert, wenn genau eine Komponente alle Mitglieder umfasst."""
+    ids_in_group = {o.id for o in group}
+    parent = {o.id: o.id for o in group}
+
+    def find(x: str) -> str:
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    def union(a: str, b: str) -> None:
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            parent[ra] = rb
+
+    for obj in group:
+        duplicate_of = obj.data.get("duplicate_of")
+        if duplicate_of in ids_in_group:
+            union(obj.id, duplicate_of)
+        for rel in obj.data.get("related_records") or []:
+            target_id = _validated_inverse_relationship_target(obj, rel, candidate_index, screening_by_id)
+            if target_id in ids_in_group:
+                union(obj.id, target_id)
+
+    components: dict[str, set[str]] = {}
+    for obj in group:
+        components.setdefault(find(obj.id), set()).add(obj.id)
+    return list(components.values())
+
+
 def check_deduplication(report: Report, objects: dict[str, dict[str, ResearchObject]]) -> None:
     """Erkennt Kandidaten mit identischem normalisiertem stabilem Identifikator innerhalb
-    desselben Protokolls, die nicht als decision: duplicate markiert sind. Kollisionen ueber
-    verschiedene Protokolle hinweg sind erlaubt (dieselbe Publikation kann in mehreren Reviews
-    vorkommen). URL-Kollisionen sind nur eine Warnung (Redirects/Mirrors, siehe
+    desselben Protokolls, die nicht vollstaendig als zusammengehoerig erklaert sind. Kollisionen
+    ueber verschiedene Protokolle hinweg sind erlaubt (dieselbe Publikation kann in mehreren
+    Reviews vorkommen). URL-Kollisionen sind nur eine Warnung (Redirects/Mirrors, siehe
     tools/_datalib.py::normalize_url).
 
-    ADR-0057 (Phase 4B-1B-1, explizite Nutzerentscheidung): eine Kollision, an der mindestens ein
-    noch NIE menschlich uebernommener, rein system-initialisierter Screening Record beteiligt ist
-    (screened_by == system-screening-initializer), ist VOR Abschluss der Deduplizierungsphase fuer
-    diesen Datensatz nur eine WARNUNG ('potential duplicate', menschliche Dedup-Pruefung steht
-    noch aus) -- kein ERROR. Sobald ein Mensch jeden beteiligten Datensatz uebernommen hat
-    (screened_by != system-screening-initializer fuer ALLE Mitglieder der Kollisionsgruppe), gilt
-    die Deduplizierungsphase fuer diese Gruppe als abgeschlossen und eine weiterhin ungeloeste
-    Kollision wird wieder zum ERROR wie zuvor. Reine PMID-Kollisionen bleiben davon unberuehrt
-    IN DEM SINNE, dass PMID unveraendert die massgebliche Identitaet des Screening Records ist --
-    diese Herabstufung gilt gleichermassen fuer jedes Feld aus DEDUPLICATION_IDENTIFIER_FIELDS,
-    nicht nur DOI, da die zugrunde liegende Unsicherheit (echtes Duplikat vs. z. B. ein
-    Correspondence-Letter+Reply-Paar mit gemeinsamer DOI) identisch ist."""
+    ADR-0058 (Phase 4B-1B-2, Abschnitt 2.5, ersetzt die vormals rein paarweise ADR-0057-Logik):
+    eine Identifikator-Kollisionsgruppe (alle Mitglieder, nicht nur die aktuell 'aktiven') gilt erst
+    dann als vollstaendig erklaert, wenn sie -- ueber Kanten aus duplicate_of (bibliographische
+    Dubletten) UND related_records (eigenstaendige, aber verwandte Publikationen, ADR-0058) -- eine
+    EINZIGE Zusammenhangskomponente bildet (Union-Find, siehe _collision_group_components). Das
+    erkennt transitive Erklaerung korrekt: braucht eine Dreiergruppe nur 2 Kanten (statt aller 3
+    Paare), um vollstaendig verbunden zu sein. Ausgeloest wird die Pruefung weiterhin nur, wenn
+    mindestens zwei ACTIVE_SCREENING_DECISIONS-Mitglieder vorhanden sind (ein bereits terminal
+    ausgeschiedener/dubletten-markierter Kandidat allein loest keine neue Pruefung aus) -- die
+    Konnektivitaetspruefung selbst laeuft dann aber ueber die GESAMTE Gruppe, da duplicate_of-Kanten
+    naturgemaess auf ein bereits als duplicate markiertes (also nicht mehr 'aktives') Mitglied zeigen.
+    Eine nicht vollstaendig verbundene Gruppe bleibt WARNUNG, solange mindestens ein Mitglied der
+    GESAMTEN Gruppe workflow_state 'system_initialized' hat (_researchlib.derive_workflow_state,
+    ADR-0058 Abschnitt 1) -- menschliche Dedup-Pruefung steht noch aus -- und wird ERROR, sobald kein
+    Mitglied mehr system_initialized ist. Diese Herabstufung gilt gleichermassen fuer jedes Feld aus
+    DEDUPLICATION_IDENTIFIER_FIELDS, nicht nur DOI, da die zugrunde liegende Unsicherheit (echtes
+    Duplikat vs. z. B. ein Correspondence-Letter+Reply-Paar mit gemeinsamer DOI) identisch ist."""
     screening = objects["screening_record"]
     by_protocol: dict[str, list[ResearchObject]] = {}
     for obj in screening.values():
@@ -571,30 +669,44 @@ def check_deduplication(report: Report, objects: dict[str, dict[str, ResearchObj
             if url:
                 url_map.setdefault(normalize_url(url), []).append(obj)
 
+        candidate_index = _candidate_to_screening_record_index(records)
+        screening_by_id = {o.id: o for o in records}
+
         for (field, normalized), group in identifier_map.items():
             active = [o for o in group if o.data.get("decision") in ACTIVE_SCREENING_DECISIONS]
-            if len(active) >= 2:
-                ids = ", ".join(sorted(o.id for o in active))
-                dedup_phase_pending = any(
-                    o.data.get("screened_by") == SYSTEM_SCREENING_INITIALIZER_ACTOR for o in active
+            if len(active) < 2:
+                continue
+
+            components = _collision_group_components(group, candidate_index, screening_by_id)
+            if len(components) <= 1:
+                continue  # fully explained as one connected component -- no error, no warning
+
+            dedup_phase_pending = any(
+                derive_workflow_state(o.data) == WORKFLOW_STATE_SYSTEM_INITIALIZED for o in group
+            )
+            component_summaries = ", ".join(
+                "{" + ", ".join(sorted(component)) + "}" for component in sorted(components, key=lambda c: sorted(c))
+            )
+            if dedup_phase_pending:
+                message = (
+                    f"potential duplicate {field} '{normalized}' shared across screening record(s) under the "
+                    f"same protocol, but not fully connected via duplicate_of/related_records: "
+                    f"{component_summaries} -- flagged for human deduplication review, not yet an error while "
+                    "at least one involved record is still in its pristine system-initialized state "
+                    "(see ADR-0057/ADR-0058)"
                 )
-                if dedup_phase_pending:
-                    message = (
-                        f"potential duplicate {field} '{normalized}' shared with other active screening "
-                        f"record(s) under the same protocol: {ids} -- flagged for human deduplication "
-                        "review, not yet an error while at least one involved record is still in its "
-                        "pristine system-initialized state (see ADR-0057)"
-                    )
-                    emit = report.warning
-                else:
-                    message = (
-                        f"duplicate {field} '{normalized}' shared with other active (non-duplicate-marked) "
-                        f"screening record(s) under the same protocol: {ids} -- mark all but one as "
-                        "decision: duplicate with duplicate_of pointing to the primary record"
-                    )
-                    emit = report.error
-                for o in active:
-                    emit(relative(o.path), f"$.candidate_identifiers.{field}", message)
+                emit = report.warning
+            else:
+                message = (
+                    f"duplicate {field} '{normalized}' shared across screening record(s) under the same "
+                    f"protocol, and not fully connected via duplicate_of/related_records: "
+                    f"{component_summaries} -- either mark the redundant record(s) as decision: duplicate "
+                    "with duplicate_of pointing to the primary record, or document the relationship via "
+                    "related_records if they are eigenstaendige, but related publications (see ADR-0058)"
+                )
+                emit = report.error
+            for o in group:
+                emit(relative(o.path), f"$.candidate_identifiers.{field}", message)
 
         for normalized, group in url_map.items():
             active = [o for o in group if o.data.get("decision") in ACTIVE_SCREENING_DECISIONS]
@@ -2061,6 +2173,141 @@ def check_screening_candidate_references(report: Report, objects: dict[str, dict
                 )
 
 
+def check_screening_related_records(report: Report, objects: dict[str, dict[str, ResearchObject]]) -> None:
+    """ADR-0058 (Phase 4B-1B-2): referenzielle und gerichtet-symmetrische Pruefung von
+    research_screening_record.related_records[] -- strukturell getrennt von duplicate_of, das
+    ausschliesslich fuer bibliographische Dubletten (derselbe Text) reserviert bleibt. related_records
+    dokumentiert eigenstaendige, aber inhaltlich verwandte Kandidaten (z. B. Letter+Reply).
+
+    Referenziert Kandidaten (related_candidate_manifest_id/related_candidate_id), NICHT Screening
+    Records: das Ziel muss als candidates[]-Eintrag innerhalb eines research_candidate_manifest mit
+    DEMSELBEN protocol_id wie der referenzierende Screening Record existieren, darf nicht der eigene
+    Kandidat sein (kein Selbstverweis), und relationship_metadata.identified_by darf nicht der
+    technische Initialisierungsakteur sein -- eine Beziehungsklassifikation ist eine inhaltliche,
+    keine technische Entscheidung.
+
+    Gerichtete Symmetrie (Abschnitt 2.4/6 des Architektur-Entwurfs, verschaerft in CSO-Review Runde 3):
+    existiert bereits ein Screening Record fuer den Ziel-Kandidaten, muss dessen eigenes
+    related_records[] einen Eintrag tragen, der auf den referenzierenden Kandidaten mit dem in
+    RELATIONSHIP_TYPE_INVERSE hinterlegten INVERSEN Typ verweist -- eine FEHLENDE Gegenrichtung ist in
+    diesem Fall ein FEHLER (nicht mehr nur eine Warnung), ein Eintrag, der stattdessen wieder denselben
+    Typ traegt, bleibt ebenfalls ein Fehler. NUR wenn fuer den Ziel-Kandidaten noch KEIN Screening
+    Record existiert, ist die fehlende Gegenrichtung (noch) kein Fehler, sondern eine Warnung (wird
+    erneut geprueft, sobald der Ziel-Datensatz angelegt wird) -- die Warnung ist damit ausschliesslich
+    diesem einen Fall vorbehalten. Dieselbe Vollstaendigkeitsregel (_validated_inverse_relationship_
+    target) entscheidet auch, welche related_records-Kanten die Kollisionsgruppen-Konnektivitaetspruefung
+    in check_deduplication nutzen darf -- eine einseitige oder falsch-inverse Beziehung verbindet dort
+    KEINE Kollisionskomponente."""
+    candidate_manifests = objects["candidate_manifest"]
+    screening = objects["screening_record"]
+
+    by_protocol: dict[str, list[ResearchObject]] = {}
+    for obj in screening.values():
+        by_protocol.setdefault(obj.data.get("protocol_id"), []).append(obj)
+
+    for protocol_id, records in by_protocol.items():
+        candidate_index = _candidate_to_screening_record_index(records)
+
+        for obj in records:
+            file_rel = relative(obj.path)
+            data = obj.data
+            own_key = (data.get("candidate_manifest_id"), data.get("candidate_id"))
+
+            for idx, rel in enumerate(data.get("related_records") or []):
+                path_prefix = f"$.related_records[{idx}]"
+                target_manifest_id = rel.get("related_candidate_manifest_id")
+                target_candidate_id = rel.get("related_candidate_id")
+                relationship_type = rel.get("relationship_type")
+                relationship_metadata = rel.get("relationship_metadata") or {}
+                target_key = (target_manifest_id, target_candidate_id)
+
+                if target_key == own_key:
+                    report.error(
+                        file_rel, f"{path_prefix}.related_candidate_id",
+                        "cannot reference the record's own candidate (self-reference)",
+                    )
+                    continue
+
+                manifest = candidate_manifests.get(target_manifest_id)
+                if manifest is None:
+                    report.error(
+                        file_rel, f"{path_prefix}.related_candidate_manifest_id",
+                        f"references missing candidate manifest: {target_manifest_id}",
+                    )
+                    continue
+                if manifest.data.get("protocol_id") != protocol_id:
+                    report.error(
+                        file_rel, f"{path_prefix}.related_candidate_manifest_id",
+                        f"candidate manifest '{target_manifest_id}' belongs to a different protocol "
+                        f"('{manifest.data.get('protocol_id')}') than this screening record ('{protocol_id}')",
+                    )
+                    continue
+                target_candidate = next(
+                    (c for c in manifest.data.get("candidates") or [] if c.get("candidate_id") == target_candidate_id),
+                    None,
+                )
+                if target_candidate is None:
+                    report.error(
+                        file_rel, f"{path_prefix}.related_candidate_id",
+                        f"references missing candidate '{target_candidate_id}' in candidate manifest "
+                        f"'{target_manifest_id}'",
+                    )
+                    continue
+
+                identified_by = relationship_metadata.get("identified_by")
+                if identified_by == SYSTEM_SCREENING_INITIALIZER_ACTOR:
+                    report.error(
+                        file_rel, f"{path_prefix}.relationship_metadata.identified_by",
+                        f"'{SYSTEM_SCREENING_INITIALIZER_ACTOR}' is a purely technical actor and must never "
+                        "identify a related_records relationship -- classifying two candidates as related is "
+                        "an editorial, scientific judgment, not a technical initialization step (see ADR-0058)",
+                    )
+
+                expected_inverse = RELATIONSHIP_TYPE_INVERSE.get(relationship_type)
+                target_screening_id = candidate_index.get(target_key)
+                if target_screening_id is None:
+                    report.warning(
+                        file_rel, f"{path_prefix}.relationship_type",
+                        f"target candidate '{target_candidate_id}' does not have a screening record yet -- "
+                        "the inverse relationship cannot be documented until one exists (will be re-checked "
+                        "once the target screening record is created, see ADR-0058)",
+                    )
+                    continue
+
+                # CSO-Review Runde 3: sobald der Ziel-Screening-Record existiert, ist die Gegenrichtung
+                # PFLICHT (ERROR), nicht mehr nur eine Warnung -- Warnung bleibt ausschliesslich dem Fall
+                # "Ziel-Kandidat hat noch keinen Screening Record" oben vorbehalten. Die Entscheidung
+                # "vollstaendig validiert?" laeuft ueber denselben Helper wie die Kollisionsgruppenbildung
+                # (_validated_inverse_relationship_target), um eine divergierende Zweitimplementierung
+                # auszuschliessen; die konkrete Fehlermeldung unterscheidet weiterhin fehlend vs. falscher Typ.
+                if _validated_inverse_relationship_target(obj, rel, candidate_index, screening) is not None:
+                    continue
+
+                target_obj = screening[target_screening_id]
+                back_reference = next(
+                    (
+                        r for r in (target_obj.data.get("related_records") or [])
+                        if r.get("related_candidate_manifest_id") == data.get("candidate_manifest_id")
+                        and r.get("related_candidate_id") == data.get("candidate_id")
+                    ),
+                    None,
+                )
+                if back_reference is None:
+                    report.error(
+                        relative(target_obj.path), "$.related_records",
+                        f"screening record '{obj.id}' documents a '{relationship_type}' relationship to this "
+                        f"candidate, and a screening record already exists for this target -- this record must "
+                        f"document the inverse relationship ('{expected_inverse}') back (see ADR-0058)",
+                    )
+                elif back_reference.get("relationship_type") != expected_inverse:
+                    report.error(
+                        relative(target_obj.path), "$.related_records",
+                        f"screening record '{obj.id}' documents a '{relationship_type}' relationship to this "
+                        f"candidate; the inverse entry here must use relationship_type "
+                        f"'{expected_inverse}', got '{back_reference.get('relationship_type')}' (see ADR-0058)",
+                    )
+
+
 def check_screening_system_actor_invariants(
     report: Report, objects: dict[str, dict[str, ResearchObject]]
 ) -> None:
@@ -2073,7 +2320,9 @@ def check_screening_system_actor_invariants(
        full_text_status 'not_yet_obtained', kein Duplikatverweis, keine Zweitpruefung -- unabhaengig
        davon, an welcher Position im Verlauf der Eintrag steht (verhindert nachtraegliche
        Umdeklarierung eines echten Screening-Ergebnisses als System-Eintrag).
-    2. Solange der AKTUELLE effektive Bearbeiter (screened_by) noch dieser Akteur ist (der
+    2. Solange der Bearbeitungszustand (seit ADR-0058, Phase 4B-1B-2: _researchlib.
+       derive_workflow_state(), NICHT mehr direkt gegen screened_by verglichen -- reine Projektion
+       aus decision_history, keine zweite Wahrheitsquelle) noch 'system_initialized' ist (der
        Datensatz also noch nie von einem Menschen bearbeitet wurde), muss canonical_source_id null
        bleiben und -- bei aufgeloester Kandidatenreferenz -- candidate_title exakt der aus den
        Candidate-Manifest-Metadaten abgeleitete technische Titel sein (siehe
@@ -2123,7 +2372,7 @@ def check_screening_system_actor_invariants(
                     "(see ADR-0057)",
                 )
 
-        if data.get("screened_by") != SYSTEM_SCREENING_INITIALIZER_ACTOR:
+        if derive_workflow_state(data) != WORKFLOW_STATE_SYSTEM_INITIALIZED:
             continue
 
         if data.get("canonical_source_id") is not None:
@@ -2380,6 +2629,7 @@ def run_checks(report: Report, objects: dict[str, dict[str, ResearchObject]], so
     check_search_run_interface_profiles(report, objects)
     check_candidate_manifests(report, objects)
     check_screening_candidate_references(report, objects)
+    check_screening_related_records(report, objects)
     check_screening_system_actor_invariants(report, objects)
     check_screening_candidate_uniqueness(report, objects)
     check_historical_duplicate_targets(report, objects)

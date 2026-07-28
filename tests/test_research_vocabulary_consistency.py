@@ -58,6 +58,21 @@ DUPLICATED_ENUMS = [
         set(_COMMON["$defs"]["screening_revision_reason"]["enum"]),
         "screening_revision_reasons",
     ),
+    (
+        "research_candidate_source_type",
+        set(_COMMON["$defs"]["research_candidate_source_type"]["enum"]),
+        "research_candidate_source_types",
+    ),
+    (
+        "screening_relationship_type",
+        set(_COMMON["$defs"]["screening_relationship_type"]["enum"]),
+        "screening_relationship_types",
+    ),
+    (
+        "screening_relationship_evidence_source",
+        set(_COMMON["$defs"]["screening_relationship_evidence_source"]["enum"]),
+        "screening_relationship_evidence_sources",
+    ),
 ]
 
 # research_protocol_statuses.yaml dupliziert das status-Enum, das direkt (nicht ueber
