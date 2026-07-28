@@ -124,6 +124,41 @@ Slide-in-Drawer; der Candidate-Detail-Panel wird auf Mobile zum Vollbild-Overlay
 - Mobile-Viewport (375×812) verifiziert: kein horizontales Scrollen, Sidebar korrekt zu
   Hamburger-Menü reduziert
 
+## CI
+
+Eigenständiger GitHub-Actions-Job `web-validate-and-build` (`.github/workflows/ci.yml`, getrennt
+vom bestehenden Python-Job `validate-and-test`), läuft bei jedem Pull Request und bei jedem Push
+auf `main`: Node.js 22 (`actions/setup-node`, npm-Cache über `web/package-lock.json`), `npm ci`,
+`npm run lint`, `npx tsc --noEmit`, `npm run build` — alle Schritte über
+`defaults.run.working-directory: web`. Keine Deployment-Logik. Kein `.env`, kein Secret, keine
+global installierten Pakete nötig — `web/package-lock.json` ist versioniert, CI installiert
+ausschließlich darüber (`npm ci`, nie `npm install`).
+
+## npm audit — transparent geprüft
+
+```
+npm audit             -> 12 High-Severity-Funde
+npm audit --omit=dev  ->  3 High-Severity-Funde
+```
+
+Alle 3 produktionsrelevanten Funde (`postcss`, `sharp`) liegen **ausschließlich in von `next`
+selbst gebündelten, verschachtelten Kopien**, nicht in unserem tatsächlichen Build-/Laufzeitpfad:
+
+- **`postcss`** (verschachtelt unter `next/node_modules/postcss@8.4.31`, next-intern) — der
+  tatsächliche CSS-Build läuft über `@tailwindcss/postcss@8.5.24` (oberhalb der als verwundbar
+  gemeldeten Version `<=8.5.17`), aufgelöst über die oberste `node_modules/postcss`-Ebene.
+- **`sharp`** (`node_modules/sharp@0.34.5`, direkte Abhängigkeit von `next` für dessen
+  Bild-Optimierungs-Feature) — `next/image` wird im gesamten `app/`/`components/`/`lib/`-Code
+  nicht ein einziges Mal importiert (`grep -rn "next/image"` liefert keinen Treffer), der Pfad ist
+  in dieser App also inaktiv.
+
+Die restlichen 9 Funde (`brace-expansion`/`minimatch`/`@eslint/*`) sind reine
+Dev-Tooling-Abhängigkeiten von `eslint`/`eslint-config-next`, laufen nie im Produktionscode oder
+im Build-Output. `npm audit fix --force` würde `next` auf 9.x und `eslint` auf eine deutlich
+ältere Major-Version zurückstufen — bewusst nicht ohne Rücksprache gemacht, da das die App aktiv
+beschädigen würde. Kein Blocker für diese Vorschau; wird bei künftigen `next`/`eslint`-Minor-
+Updates automatisch mit aufgelöst, sobald die Upstream-Pakete selbst aktualisieren.
+
 ## Offene Punkte
 
 - **Screenshots konnten in dieser Session nicht automatisiert erzeugt werden** — das Browser-Pane-
