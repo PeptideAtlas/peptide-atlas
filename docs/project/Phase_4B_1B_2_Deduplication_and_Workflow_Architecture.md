@@ -1,13 +1,13 @@
 ---
-title: "Phase 4B-1B-2 – Deduplication & Workflow Architecture (Proposed, v2)"
-description: Architektur-Entwurf (Revision 2 nach CSO-Review Runde 1) für ein berechnetes Workflow-State-Modell, eine vollständige Deduplizierungsarchitektur mit gerichteten, candidate-basierten Beziehungen und ein erweitertes Publikationstyp-Datenmodell. Reine Spezifikation, keine Implementierung.
+title: "Phase 4B-1B-2 – Deduplication & Workflow Architecture (Proposed, v3)"
+description: Architektur-Entwurf (Revision 3 nach CSO-Review Runden 1-2) für ein berechnetes Workflow-State-Modell, eine vollständige Deduplizierungsarchitektur mit gerichteten, candidate-basierten Beziehungen samt eigenständiger Beziehungs-Evidenz, und ein erweitertes Publikationstyp-Datenmodell. Reine Spezifikation, keine Implementierung.
 tags:
   - Architektur
   - Projekt
   - Datenmodell
 ---
 
-# Phase 4B-1B-2 – Deduplication & Workflow Architecture (Proposed, v2)
+# Phase 4B-1B-2 – Deduplication & Workflow Architecture (Proposed, v3)
 
 !!! warning "Status: Vorgeschlagen, nicht entschieden"
     Dieses Dokument ist ein **Architektur-Entwurf** (siehe ADR-0058 im [Decision Log](Decision_Log.md),
@@ -19,7 +19,7 @@ tags:
 ## Änderungsprotokoll gegenüber Version 1
 
 Die CSO-Review-Runde 1 (2026-07-27) hat die Grundarchitektur freigegeben und sechs konkrete Änderungen
-vor einem Merge verlangt. Diese Fassung (v2) setzt alle sechs um:
+vor einem Merge verlangt. Version 2 setzte alle sechs um:
 
 | # | Forderung | Umgesetzt in |
 |---|---|---|
@@ -29,6 +29,15 @@ vor einem Merge verlangt. Diese Fassung (v2) setzt alle sechs um:
 | 4 | `relationship_type` auf gerichtete Beziehungen umstellen | Abschnitt 2.4/6 (neu) |
 | 5 | Identifier-Grundsatz verschärfen, explizit auf DOI/PMID/PMCID/NCT/ISBN | Abschnitt 5.1 (erweitert) |
 | 6 | Vollständige Kollisionsgruppen statt nur paarweiser Symmetrie | Abschnitt 2.5 (neu) |
+
+## Änderungsprotokoll gegenüber Version 2
+
+Die CSO-Review-Runde 2 (2026-07-27) verlangte eine letzte Ergänzung vor Merge-Freigabe. Diese Fassung
+(v3) setzt sie um:
+
+| # | Forderung | Umgesetzt in |
+|---|---|---|
+| 7 | Eigenständiges Konzept für die Herkunft/Evidenz einer `related_records`-Beziehung (`relationship_metadata` mit mindestens `identified_by`/`identified_at`/`evidence_source`/`confidence`), ausdrücklich getrennt von der wissenschaftlichen Evidenz der Studie selbst | Abschnitt 2.6 (neu), Abschnitt 2.2/2.3 angepasst |
 
 ## 0. Anlass und Ausgangslage
 
@@ -186,7 +195,9 @@ Dubletten reserviert.
    candidate-basierte Beziehungen unberührt lassen, `screening_record_id`-basierte Beziehungen dagegen
    nicht.
 
-**Revidiertes Feld:**
+**Revidiertes Feld** (Referenzstruktur unverändert aus v2; die Herkunfts-/Evidenzfelder
+`identified_by`/`identified_at` sind seit v3 in `relationship_metadata` gebündelt, siehe Abschnitt 2.6
+für die vollständige Begründung dieser Umgruppierung):
 
 ```yaml
 related_records:
@@ -196,11 +207,14 @@ related_records:
     rationale: >
       Antwort (Reply) auf diesen Letter -- teilt DOI 10.1056/NEJMc2310645, aber eigener
       Titel und eigene PMID, kein redundanter Text.
-    identified_by: reviewer-1
-    identified_at: '2026-08-03'
+    relationship_metadata:         # neu in v3, siehe Abschnitt 2.6
+      identified_by: reviewer-1
+      identified_at: '2026-08-03'
+      evidence_source: [doi, title_similarity]
+      confidence: null             # Konzept, Skala noch nicht festgelegt -- siehe Abschnitt 2.6
 ```
 
-Schema-Entwurf:
+Schema-Entwurf (Referenzfelder; `relationship_metadata` selbst in Abschnitt 2.6):
 
 ```json
 "related_records": {
@@ -219,13 +233,12 @@ Schema-Entwurf:
       },
       "relationship_type": { "$ref": "common.schema.json#/$defs/screening_relationship_type" },
       "rationale": { "type": "string", "minLength": 1 },
-      "identified_by": { "$ref": "common.schema.json#/$defs/research_actor_id" },
-      "identified_at": { "$ref": "common.schema.json#/$defs/date" }
+      "relationship_metadata": { "$ref": "#/$defs/relationship_metadata" }
     },
     "additionalProperties": false,
     "required": [
       "related_candidate_manifest_id", "related_candidate_id", "relationship_type",
-      "rationale", "identified_by", "identified_at"
+      "rationale", "relationship_metadata"
     ]
   }
 }
@@ -252,7 +265,8 @@ Screening Records:
 - Ziel existiert als `candidate` innerhalb eines `research_candidate_manifest` mit
   `related_candidate_manifest_id`, gleiches `protocol_id` wie der referenzierende Screening Record.
 - Kein Selbstverweis (Ziel-Kandidat ≠ eigener `candidate_id`/`candidate_manifest_id`).
-- `identified_by` darf nicht `system-screening-initializer` sein.
+- `relationship_metadata.identified_by` darf nicht `system-screening-initializer` sein (seit v3 unter
+  `relationship_metadata` statt direkt am Eintrag, siehe Abschnitt 2.6).
 - **Vorteil der candidate-basierten Referenz:** die Zielprüfung ist unabhängig davon möglich, ob für den
   Ziel-Kandidaten bereits ein Screening Record existiert — eine Beziehung kann dokumentiert werden, sobald
   beide Kandidaten im Candidate Manifest bekannt sind, unabhängig von der Reihenfolge, in der ihre
@@ -363,6 +377,111 @@ Reviewer sofort sieht, welche Verbindung fehlt.
 Klassifikation aller `n·(n-1)/2` Paare — höhere Sicherheit gegen implizite/versehentliche
 Transitivitätsannahmen, aber quadratischer Dokumentationsaufwand ohne zusätzlichen Erkenntnisgewinn in den
 bisher beobachteten Fällen. Empfehlung bleibt die Zusammenhangskomponenten-Prüfung.
+
+### 2.6 Neu (v3): `relationship_metadata` — Evidenz für die Beziehung, nicht für die Studie
+
+**CSO-Vorgabe:** `related_records` beschreibt künftig wissenschaftliche Beziehungen zwischen Kandidaten —
+dafür braucht es ein eigenständiges Konzept für die Herkunft/Evidenz **dieser Beziehung selbst**, nicht
+nur den kategorialen `relationship_type`. Mindestens: `identified_by`, `identified_at`,
+`evidence_source`, `confidence`.
+
+#### 2.6.1 Die zentrale Trennung — ausdrücklich dokumentiert
+
+!!! danger "Zwei vollständig getrennte Evidenzbegriffe — niemals verwechseln"
+    **`relationship_metadata` (dieser Abschnitt) beschreibt AUSSCHLIESSLICH, wie sicher/woher bekannt
+    ist, DASS zwei Kandidaten in der dokumentierten Beziehung zueinander stehen** (ein bibliographisch-
+    struktureller Sachverhalt über zwei Dokumente — z. B. „wie sicher sind wir, dass PMID 37888927
+    tatsächlich die Reply zu PMID 37888925 ist"). Es beschreibt **NICHT**, und darf **NIEMALS** vermischt
+    werden mit:
+
+    - der wissenschaftlichen **Evidenzstufe** einer Studie oder eines Claims (siehe
+      [Evidenzsystem](../00_grundlagen/evidenzsystem.md)),
+    - der methodischen Qualität, Aussagekraft oder Verlässlichkeit der zugrunde liegenden Studie selbst,
+    - irgendeiner Aussage darüber, ob der **Inhalt** einer der beiden Publikationen wissenschaftlich
+      korrekt, relevant oder vertrauenswürdig ist.
+
+    Diese Trennung ist dieselbe, die bereits in Abschnitt 5.4 zwischen `research/**` (Provenienzebene,
+    ADR-0033) und `data/**` (kanonisches Wissen) gezogen wird, nur eine Ebene tiefer: `relationship_metadata`
+    ist Evidenz **über eine bibliographische Beziehung auf der Recherche-Ebene** — ein rein technisch-
+    struktureller Sachverhalt, keine wissenschaftliche Bewertung, und fließt **nie** automatisch in
+    `Evidenzstufe`, `evidence_category` oder irgendein anderes Feld des kanonischen Evidenzmodells ein.
+    Eine hohe `confidence`, dass zwei Publikationen zusammengehören, sagt nichts darüber aus, ob die
+    Studie(n) dahinter gut gemacht sind — und eine niedrige `confidence` in der Beziehung ist kein
+    Werturteil über die Publikationen selbst, nur über die Sicherheit der Verknüpfung.
+
+#### 2.6.2 Revidiertes Feld
+
+`identified_by`/`identified_at` (bisher direkt am `related_records`-Eintrag, siehe Abschnitt 2.2) werden
+in v3 zusammen mit den beiden neuen Feldern in ein eigenes verschachteltes Objekt gebündelt — dasselbe
+Strukturmuster, das bereits `candidates[].metadata_provenance` in `research_candidate_manifest`
+(ADR-0056) für die Herkunft technischer Metadaten verwendet:
+
+```json
+"$defs": {
+  "relationship_metadata": {
+    "type": "object",
+    "description": "Beschreibt AUSSCHLIESSLICH die Evidenz fuer die Existenz dieser Beziehung -- NICHT die wissenschaftliche Evidenz der beteiligten Studie(n)/Publikation(en), siehe Abschnitt 2.6.1.",
+    "properties": {
+      "identified_by": { "$ref": "common.schema.json#/$defs/research_actor_id" },
+      "identified_at": { "$ref": "common.schema.json#/$defs/date" },
+      "evidence_source": {
+        "type": "array",
+        "minItems": 1,
+        "uniqueItems": true,
+        "items": { "$ref": "common.schema.json#/$defs/screening_relationship_evidence_source" }
+      },
+      "confidence": {
+        "description": "PLATZHALTER -- Konzept dokumentiert, Typ/Skala bewusst noch nicht festgelegt (CSO-Vorgabe Runde 2: 'noch keine Skala implementieren'). Siehe Abschnitt 2.6.4 fuer die offenen Optionen."
+      }
+    },
+    "additionalProperties": false,
+    "required": ["identified_by", "identified_at", "evidence_source", "confidence"]
+  }
+}
+```
+
+**`confidence` ist absichtlich ohne konkreten JSON-Schema-`type` dargestellt** — dieser Entwurf legt sich
+nicht auf eine Skala fest (siehe 2.6.4). Bis zur Implementierung ist der Platzhalter `null` zulässig.
+
+#### 2.6.3 `evidence_source` — kontrolliertes Vokabular (neu, `research/vocabularies/screening_relationship_evidence_sources.yaml`)
+
+| Wert | Bedeutung |
+|---|---|
+| `title_similarity` | Übereinstimmung/erkennbare Ähnlichkeit der Titel (z. B. gemeinsamer Titel plus „... Reply."-Suffix). |
+| `doi` | Gemeinsame oder erkennbar verwandte DOI. |
+| `pmid` | Gemeinsamer oder auffällig benachbarter PMID (z. B. sequenzielle Vergabe). |
+| `pmcid` | Gemeinsame PMCID. |
+| `nct_cross_reference` | Gemeinsamer Bezug zu derselben NCT-ID (Registereintrag ↔ Publikation). |
+| `publication_types` | Strukturelle `publication_types`-Metadaten (z. B. `Comment`-Tag bei einem erkennbar zugehörigen Letter). |
+| `author_list` | Übereinstimmende oder stark überlappende Autorenliste. |
+| `manual_title_abstract_review` | Manuelle Prüfung von Titel/Abstract durch einen Menschen, ohne dass ein strukturelles Signal (s. o.) allein ausgereicht hätte. |
+| `manual_full_text_review` | Manuelle Prüfung des Volltexts durch einen Menschen. |
+| `other` | Sonstige Evidenz, ausschließlich im Freitext `rationale` (Abschnitt 2.2) dokumentiert. |
+
+**Array, nicht Skalar:** eine reale Klassifikation stützt sich häufig auf mehrere Signale gleichzeitig
+(z. B. `[doi, title_similarity]` für den realen Letter/Reply-Fall) — `evidence_source` bildet das als
+Liste ab, mindestens ein Eintrag Pflicht. Rein strukturelle Werte (`title_similarity` bis
+`publication_types`) und die beiden manuellen Prüfstufen sind bewusst im selben Vokabular gehalten, damit
+sichtbar bleibt, ob eine Beziehung ausschließlich aus automatisch beobachtbaren Signalen oder (auch) aus
+menschlicher Lektüre stammt.
+
+#### 2.6.4 `confidence` — Architekturkonzept, keine Skala
+
+**CSO-Vorgabe:** `confidence` zunächst nur als Konzept dokumentieren, keine Skala implementieren. Diesem
+Entwurf entsprechend wird hier **bewusst keine Entscheidung getroffen** — drei mögliche Richtungen werden
+zur späteren CSO-Entscheidung festgehalten, keine davon ist bereits gewählt:
+
+| Option | Beschreibung | Vor-/Nachteil (knapp) |
+|---|---|---|
+| Kategorial-ordinal | Kleines kontrolliertes Vokabular, z. B. `certain`/`probable`/`uncertain`. | Einfach zu validieren und auszuwerten; grobkörnig. |
+| Numerisch | Gleitkommazahl, z. B. `0.0`–`1.0`. | Feinkörniger, ermöglicht Schwellenwert-Logik; suggeriert eine Praezision, die eine menschliche Einschätzung oft nicht hat. |
+| Freitext-Qualifikation | Kurzer, unstrukturierter Text (z. B. „hoch, da DOI und Titel beide übereinstimmen"). | Verliert Auswertbarkeit; überschneidet sich inhaltlich mit `rationale` (Abschnitt 2.2) — vermutlich redundant. |
+
+**Vorläufige Tendenz (keine Festlegung):** eine kategorial-ordinale Skala erscheint am ehesten vereinbar
+mit dem bereits etablierten Muster kontrollierter Vokabulare in diesem Projekt (`decision_reason`,
+`full_text_status`, `screening_relationship_type` usw.) und vermeidet die Schein-Präzision einer
+Kommazahl für eine im Kern menschliche Einschätzung — wird aber ausdrücklich **nicht** in diesem PR
+festgelegt, sondern der nächsten CSO-Runde zur Entscheidung vorgelegt (siehe Abschnitt 9).
 
 ## 3. Trennung zwischen bibliographischer und wissenschaftlicher Dublette — Entscheidungsleitfaden
 
@@ -520,22 +639,26 @@ verpflichtende Freitextfeld `rationale` aufgefangen.
 muss exakt den in `RELATIONSHIP_TYPE_INVERSE` hinterlegten inversen Typ tragen, nicht denselben Typ
 (außer bei `other_related_to`).
 
-## 7. Zusammenfassung der Schema-Änderungen (Entwurf, nicht angewendet, Revision v2)
+## 7. Zusammenfassung der Schema-Änderungen (Entwurf, nicht angewendet, Revision v3)
 
 | Datei | Änderung | Additiv? |
 |---|---|---|
-| `schemas/research_screening_record.schema.json` | Neu: `related_records[]` (optional, `default: []`, referenziert Kandidaten). **Kein** `workflow_state`-Feld (v2-Änderung — entfällt gegenüber v1). | Ja |
-| `schemas/common.schema.json` | Neu: `$defs/screening_relationship_type` (17 gerichtete/symmetrische Werte, Abschnitt 6); erweitert: `$defs/source_type` um bis zu 19 neue Werte (7 aus v1 + bis zu 12 aus Abschnitt 4.3, abhängig von CSO-Entscheidung zu den unsicheren/offenen Werten). **Kein** `$defs/screening_workflow_state` (v2-Änderung — entfällt). | Ja |
+| `schemas/research_screening_record.schema.json` | Neu: `related_records[]` (optional, `default: []`, referenziert Kandidaten, jeder Eintrag trägt `relationship_metadata`, Abschnitt 2.6). **Kein** `workflow_state`-Feld (v2-Änderung — entfällt gegenüber v1). | Ja |
+| `schemas/common.schema.json` | Neu: `$defs/screening_relationship_type` (17 gerichtete/symmetrische Werte, Abschnitt 6), `$defs/relationship_metadata` (Abschnitt 2.6, `confidence` ohne festgelegten Typ), `$defs/screening_relationship_evidence_source` (10 Werte, Abschnitt 2.6.3); erweitert: `$defs/source_type` um bis zu 19 neue Werte (7 aus v1 + bis zu 12 aus Abschnitt 4.3). **Kein** `$defs/screening_workflow_state` (v2-Änderung — entfällt). | Ja |
 | `research/vocabularies/screening_relationship_types.yaml` | Neu, inkl. hinterlegter inverser Typ je Eintrag. | — |
+| `research/vocabularies/screening_relationship_evidence_sources.yaml` | Neu (v3), 10 Werte, Abschnitt 2.6.3. | — |
 | `research/vocabularies/screening_workflow_states.yaml` | **Entfällt ersatzlos** (v2-Änderung). | — |
 | `tools/_researchlib.py` | Neu: `derive_workflow_state()` (reine Funktion, kein Speicherort), `RELATIONSHIP_TYPE_INVERSE`, `collision_group_is_resolved()` (Union-Find). | — |
-| `tools/validate_research.py` | Neu: `check_screening_related_records` (candidate-basiert, gerichtete Symmetrie), `check_screening_collision_group_connectivity` (ersetzt die reine Paarprüfung aus v1). Angepasst: `check_screening_system_actor_invariants`/`check_deduplication` rufen `derive_workflow_state()` statt einen gespeicherten Wert zu vergleichen. **Entfällt:** `check_screening_workflow_state_projection` (v2-Änderung, nicht mehr nötig). | — |
+| `tools/validate_research.py` | Neu: `check_screening_related_records` (candidate-basiert, gerichtete Symmetrie, prüft `relationship_metadata.identified_by != system-screening-initializer`), `check_screening_collision_group_connectivity`. Angepasst: `check_screening_system_actor_invariants`/`check_deduplication` rufen `derive_workflow_state()` statt einen gespeicherten Wert zu vergleichen. **Entfällt:** `check_screening_workflow_state_projection` (v2-Änderung, nicht mehr nötig). | — |
 | `tools/initialize_screening_records.py` | Optional, separater Folge-Vorschlag: feinere `candidate_source_type`-Ableitung aus `publication_types` inkl. der in Abschnitt 4.5 gelisteten neuen Werte. | — |
 
 **Kein Schema-Versionsbump nötig** — alle Änderungen additiv-optional, keine Migration der 197
 bestehenden Records (für `related_records` gilt zusätzlich: nichts nachzutragen, leeres Array ist der
 gültige Ausgangszustand; für den entfallenen `workflow_state` gilt es ohnehin nicht mehr, da kein Feld
-existiert).
+existiert). `relationship_metadata.confidence` bleibt bis zur CSO-Entscheidung über die Skala
+(Abschnitt 2.6.4) ohne festgelegten JSON-Schema-`type` — die Implementierungs-PR kann diesen Teil erst
+umsetzen, sobald diese Entscheidung getroffen ist; alle übrigen Felder sind bereits vollständig
+spezifiziert.
 
 ## 8. Nicht-Ziele dieses Entwurfs (unverändert aus v1)
 
@@ -544,14 +667,15 @@ existiert).
 - Keine Ableitung von `relationship_type` durch Automatisierung.
 - Keine Erweiterung von `duplicate_of`-Semantik.
 
-## 9. Offene Fragen für den CSO (Revision v2 — bereinigt um die in Runde 1 beantworteten Fragen)
+## 9. Offene Fragen für den CSO (Revision v3 — bereinigt um die in Runden 1-2 beantworteten Fragen)
 
 Aus v1 **beantwortet und entfallen:** Richtungsabhängigkeit (jetzt gerichtet, Abschnitt 6),
 Vollständigkeit der Kollisionsprüfung (jetzt Zusammenhangskomponenten, Abschnitt 2.5), 4-Zustands- vs.
 3-Zustands-Frage bleibt technisch offen, aber die Grundsatzfrage „gespeichert oder berechnet" ist geklärt
-(berechnet, Abschnitt 1).
+(berechnet, Abschnitt 1). Aus v2 **beantwortet und entfallen:** ob überhaupt ein eigenständiges
+Evidenz-Konzept für Beziehungen benötigt wird (ja, `relationship_metadata`, Abschnitt 2.6).
 
-**Weiterhin offen bzw. neu durch Runde 1 hinzugekommen:**
+**Weiterhin offen bzw. neu durch Runde 2 hinzugekommen:**
 
 1. Wird der zusätzliche, weiterhin nicht-persistente Zustand „Teil einer ungelösten Kollisionsgruppe"
    (Abschnitt 1.4) bereits jetzt benötigt, oder erst bei konkretem Tooling-Bedarf?
@@ -568,5 +692,9 @@ Vollständigkeit der Kollisionsprüfung (jetzt Zusammenhangskomponenten, Abschni
    vollständigen `related_records`-Implementierung umgesetzt werden, oder gemeinsam?
 7. Ist die Zusammenhangskomponenten-Prüfung (Abschnitt 2.5) ausreichend streng, oder wird doch die
    strengere, vollständige paarweise Klassifikation gewünscht?
-8. Freigabe, diesen Entwurf (v2) als Grundlage für die konkrete Implementierung in einer eigenständigen
-   Phase-4B-1B-2-PR zu verwenden.
+8. **Neu (Runde 2):** welche Skala soll `confidence` verwenden — kategorial-ordinal, numerisch, oder
+   Freitext (Abschnitt 2.6.4)? Vorläufige, nicht festgelegte Tendenz: kategorial-ordinal.
+9. **Neu (Runde 2):** ist die vorgeschlagene Werteliste für `evidence_source` (Abschnitt 2.6.3, 10
+   Werte) vollständig, oder fehlen weitere Evidenzquellen?
+10. Freigabe, diesen Entwurf (v3) als Grundlage für die konkrete Implementierung in einer
+    eigenständigen Phase-4B-1B-2-PR zu verwenden.

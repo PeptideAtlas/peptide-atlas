@@ -1523,6 +1523,32 @@ Entwurfsdokuments (u. a. Prioritaet bei gleichzeitigem `Meta-Analysis`+`Systemat
 Verhaeltnis `practice_guideline` zu bestehendem `guideline`, Notwendigkeit von
 `living_systematic_review`, technische Verifikation der drei unsicheren Source-Type-Werte).
 
+**Nachtrag (CSO-Review Runde 2, 2026-07-27) -- eigenstaendiges Evidenz-Konzept fuer Beziehungen, Entwurf
+Version 3, weiterhin Status "Vorgeschlagen":** die Architektur wurde als nahezu vollstaendig bestaetigt;
+eine letzte Ergaenzung vor Merge-Freigabe verlangt:
+
+- **Neues verschachteltes Feld `relationship_metadata`** auf jedem `related_records[]`-Eintrag, buendelt
+  `identified_by`/`identified_at` (zuvor direkt am Eintrag, siehe Runde-1-Nachtrag) zusammen mit zwei
+  neuen Pflichtfeldern: `evidence_source` (Array aus dem neuen kontrollierten Vokabular
+  `research/vocabularies/screening_relationship_evidence_sources.yaml`: `title_similarity`, `doi`,
+  `pmid`, `pmcid`, `nct_cross_reference`, `publication_types`, `author_list`,
+  `manual_title_abstract_review`, `manual_full_text_review`, `other`) und `confidence` (Konzept
+  dokumentiert, bewusst OHNE festgelegten Typ/Skala -- CSO-Vorgabe: "noch keine Skala implementieren";
+  drei Optionen -- kategorial-ordinal, numerisch, Freitext -- als offene Frage festgehalten, vorlaeufige
+  unverbindliche Tendenz zu kategorial-ordinal).
+- **Ausdruecklich dokumentierte Trennung (siehe Entwurfsdokument Abschnitt 2.6.1):**
+  `relationship_metadata` beschreibt AUSSCHLIESSLICH die Evidenz dafuer, DASS zwei Kandidaten in der
+  dokumentierten Beziehung zueinander stehen (ein bibliographisch-struktureller Sachverhalt) -- NIEMALS
+  die wissenschaftliche Evidenzstufe, methodische Qualitaet oder inhaltliche Verlaesslichkeit der
+  beteiligten Studie(n)/Publikation(en) selbst. Fliesst nie automatisch in `Evidenzstufe`,
+  `evidence_category` oder ein anderes Feld des kanonischen Evidenzmodells ein -- dieselbe
+  Ebenentrennung wie zwischen `research/**` und `data/**` (ADR-0033), nur eine Ebene tiefer.
+- `check_screening_related_records` prueft `relationship_metadata.identified_by != 
+  system-screening-initializer` (Feldpfad angepasst, Regel unveraendert aus Runde 1).
+
+Weiterhin **keine Implementierung**. Zwei neue offene Fragen (Vollstaendigkeit von `evidence_source`,
+Skala fuer `confidence`) ergaenzen die acht aus Runde 1, siehe Abschnitt 9 des Entwurfsdokuments (v3).
+
 ## Format für neue Einträge
 
 ```markdown
