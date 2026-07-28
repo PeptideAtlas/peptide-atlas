@@ -1474,6 +1474,55 @@ realen Screening Records (Phase 4B-1B-1 bleibt ein separater Folge-PR).
   `source_type`-Erweiterung, Reihenfolge der Umsetzung) bleiben bis zur CSO-Freigabe unentschieden, siehe
   Abschnitt 9 des Entwurfsdokuments.
 
+**Nachtrag (CSO-Review Runde 1, 2026-07-27) -- sechs verbindliche Aenderungen vor Umsetzung, Entwurf
+Version 2, weiterhin Status "Vorgeschlagen":** die Grundarchitektur wurde freigegeben; sechs konkrete
+Aenderungen wurden vor einem Merge verlangt und im Entwurfsdokument (jetzt v2) umgesetzt:
+
+1. **`workflow_state` nicht als persistentes Schemafeld.** Ersetzt durch eine reine, nicht gespeicherte
+   Helferfunktion `tools/_researchlib.py::derive_workflow_state()`, berechnet ausschliesslich aus
+   `decision_history` sowie den bereits validierten Top-Level-Projektionen `decision`/`decision_stage`.
+   Kein neues Vokabular, keine Migration, kein `check_screening_workflow_state_projection` mehr noetig
+   (entfaellt ersatzlos gegenueber der ursprruenglichen v1-Fassung dieses ADRs).
+2. **`related_records[]` referenziert Kandidaten statt Screening Records.** Statt
+   `screening_record_id` tragen Eintraege `related_candidate_manifest_id`/`related_candidate_id` --
+   candidate_id ist seit ADR-0056 technisch erzwungen unveraenderlich
+   (`tools/check_research_immutability.py::CANDIDATE_ENTRY_IMMUTABLE_FIELDS`), waehrend fuer
+   `research_screening_record.id` keine vergleichbare technische Garantie existiert. Zusaetzlich
+   semantisch korrekter: die Beziehung ist eine Aussage ueber die zugrunde liegenden Dokumente, nicht
+   ueber ihre Screening-Workflow-Huelle.
+3. **Source-Type-Vokabular um zwoelf gepruefte Kandidaten erweitert:** `meta_analysis`,
+   `practice_guideline` sicher automatisierbar (eigene PubMed-Publication-Type-Werte);
+   `narrative_review` eingeschraenkt automatisierbar (Ausschlussregel); `consensus_statement`,
+   `technical_report`, `dataset` mit unsicherem, vor Umsetzung technisch zu verifizierendem
+   Automatisierungsstatus; `scoping_review`, `umbrella_review`, `living_systematic_review`,
+   `white_paper`, `software`, `protocol_paper` ausschliesslich menschlich vergeben (kein
+   entsprechendes PubMed-Publication-Type-Tag bzw. nur ueber vom Projekt bewusst vermiedene
+   Freitexterkennung feststellbar).
+4. **`relationship_type` auf gerichtete Beziehungspaare umgestellt** (z. B. `replies_to`/`has_reply`,
+   `corrects`/`corrected_by`, `retracts`/`retracted_by`, `updates`/`updated_by` als generisches Paar
+   fuer verwandte v1-Konzepte wie Zwischen-/Endergebnis und Sicherheits-Update, um die in v1 unter
+   "Option B" befuerchtete Vokabular-Verdopplung zu vermeiden) -- 9 Konzeptpaare, 17 Werte insgesamt
+   (16 gerichtete + `other_related_to` als einzige bewusst symmetrische Ausnahme). Neue
+   Symmetriepruefung: Gegenrichtung muss den hinterlegten inversen Typ tragen, nicht denselben Typ.
+5. **Identifier-Grundsatz verschaerft und um ISBN erweitert:** "Kein bibliographischer Identifier
+   beweist allein eine wissenschaftliche Beziehung" gilt ausdruecklich fuer DOI, PMID, PMCID, NCT-ID
+   UND ISBN (ISBN zuvor nicht Teil der Kardinalitaetstabelle) -- ISBN ist strukturell derselbe
+   Unzuverlaessigkeitstyp wie DOI (mehrere ISBNs pro inhaltlich identischem Werk durch
+   Auflagen-/Formatvarianten).
+6. **Kollisionsgruppen werden als Zusammenhangskomponente statt paarweise geprueft.** Statt
+   vollstaendiger paarweiser Klassifikation (quadratischer Aufwand bei groesseren Gruppen) bildet der
+   Validator einen Graphen je Kollisionsgruppe (Kanten: `duplicate_of` und `related_records` zwischen
+   Gruppenmitgliedern) und verlangt genau eine Zusammenhangskomponente -- Union-Find, nahezu lineare
+   Laufzeit. Transitive Erklaerung wird dadurch korrekt anerkannt (Beispiel: PMID 37888925↔37888926
+   per `duplicate_of`, 37888926↔37888927 per `replies_to`/`has_reply` -> alle drei bereits eine
+   Komponente, ohne dass 37888925↔37888927 zusaetzlich direkt dokumentiert werden muesste).
+
+Weiterhin unveraendert **keine Implementierung** in diesem Nachtrag -- reine Entwurfsrevision. Acht
+neue bzw. fortbestehende offene Fragen fuer die naechste CSO-Runde, siehe Abschnitt 9 des
+Entwurfsdokuments (u. a. Prioritaet bei gleichzeitigem `Meta-Analysis`+`Systematic Review`-Tag,
+Verhaeltnis `practice_guideline` zu bestehendem `guideline`, Notwendigkeit von
+`living_systematic_review`, technische Verifikation der drei unsicheren Source-Type-Werte).
+
 ## Format für neue Einträge
 
 ```markdown
