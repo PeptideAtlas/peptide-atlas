@@ -1418,6 +1418,137 @@ realen Screening Records (Phase 4B-1B-1 bleibt ein separater Folge-PR).
   eine automatische Deduplizierungs-Entscheidung durch den Initialisierer (haette eine
   bibliographische Einschaetzung ohne ausreichende Grundlage erfordert).
 
+### ADR-0058: Workflow-State-Modell, vollstaendige Deduplizierungsarchitektur und erweitertes Source-Type-Modell (Phase 4B-1B-2)
+- **Status:** Vorgeschlagen (Architektur-Entwurf, keine Implementierung)
+- **Datum:** 2026-07-27
+- **Kontext:** Der CSO-Review von PR #6 (Phase 4B-1B-1) hat die ADR-0057-Loesung fuer die DOI-Kollision
+  (drei PubMed-PMIDs mit gemeinsamer DOI `10.1056/NEJMc2310645`) explizit als provisorisch eingestuft und
+  einen eigenstaendigen Architektur-Entwurf angefordert, bevor eine Implementierung erfolgt. Drei
+  strukturelle Probleme der ADR-0057-Loesung: (1) `check_screening_system_actor_invariants` und
+  `check_deduplication` leiten den Bearbeitungszustand eines Screening Records redundant aus
+  `screened_by == system-screening-initializer` her -- eine Akteursidentitaet wird als Workflow-Zustand
+  zweckentfremdet; (2) `decision: duplicate` kennt nur eine einzige Beziehungsart zwischen Kandidaten
+  ("identisch, einer redundant"), obwohl der reale Kollisionsfall zeigt, dass geteilte Identifikatoren
+  (insbesondere DOI bei Correspondence-Paaren) auch eigenstaendige, aber inhaltlich verwandte
+  Publikationen verbinden koennen (Letter + Reply); (3) `candidate_source_type` (ein Wert je Datenbank)
+  kann Letter/Reply/Editorial/Corrigendum/Retraction Notice nicht unterscheiden, obwohl PubMed dafuer
+  bereits strukturierte Metadaten (`publication_types`) liefert.
+- **Entscheidung (vorgeschlagen, siehe vollstaendigen Entwurf in
+  [Phase_4B_1B_2_Deduplication_and_Workflow_Architecture.md](Phase_4B_1B_2_Deduplication_and_Workflow_Architecture.md)):**
+  - Neues, additiv-optionales Feld `workflow_state` auf `research_screening_record`
+    (`system_initialized`/`under_human_review`/`finalized`, kontrolliertes Vokabular
+    `research/vocabularies/screening_workflow_states.yaml`) -- wie `decision`/`decision_stage` eine vom
+    Validator geprueft Projektion von `decision_history[]`, keine zweite Wahrheitsquelle. Ersetzt die
+    `screened_by`-basierte Herleitung in `check_screening_system_actor_invariants` und
+    `check_deduplication`.
+  - Neues, additiv-optionales Feld `related_records[]` auf `research_screening_record`
+    (`screening_record_id`, `relationship_type`, Pflicht-Freitext `rationale`, `identified_by`,
+    `identified_at`) fuer eigenstaendige, aber inhaltlich verwandte Publikationen -- strukturell getrennt
+    von `duplicate_of`, das ausschliesslich fuer bibliographische Dubletten reserviert bleibt. Neues
+    kontrolliertes Vokabular `research/vocabularies/screening_relationship_types.yaml`:
+    `letter_and_reply`, `interim_and_final_results`, `subgroup_or_secondary_analysis`, `safety_update`,
+    `preprint_and_published_version`, `registry_entry_and_publication`, `correction_or_erratum`,
+    `expression_of_concern`, `retraction_notice`, `editorial_comment`, `other`. Referenziell und
+    symmetrisch geprueft (neu: `check_screening_related_records`); `identified_by` darf nicht der
+    technische Systemakteur sein. Eine Identifikator-Kollision, die vollstaendig durch `duplicate_of`
+    und/oder eine symmetrische `related_records`-Beziehung erklaert ist, loest weder Fehler noch Warnung
+    in `check_deduplication` aus.
+  - `common.schema.json#/$defs/source_type` additiv um sieben Werte erweitert: `letter_or_comment`,
+    `reply_or_response`, `editorial`, `case_report`, `corrigendum_or_erratum`, `retraction_notice`,
+    `expression_of_concern_notice`. Fuer PubMed-Kandidaten technische (nicht wissenschaftliche)
+    Ableitung aus dem bereits vorhandenen `metadata.publication_types` (von der NLM selbst vergeben,
+    keine eigene Einordnung) moeglich -- explizit NICHT fuer `reply_or_response` (PubMed unterscheidet
+    Letter und Reply strukturell nicht, das bleibt menschlicher `related_records`-Klassifikation
+    vorbehalten).
+  - Begriffliche Grundlage: Identifikator-Uebereinstimmung (insbesondere DOI) ist ein Signal fuer eine
+    moegliche Beziehung, nie ein Beweis fuer eine bestimmte Beziehungsart -- PMID/PMCID sind praktisch
+    1:1 mit einem Dokument, DOI ist es bei Correspondence-Paaren nachweislich nicht, NCT-ID ist 1:n mit
+    Publikationen (eine Studie, mehrere Berichte). `related_records[]` ist die Recherche-Ebenen-Vorstufe
+    der bereits bestehenden kanonischen Trennung `study.source_ids[]` (Abschnitt 13-16 im Scientific
+    Research Protocol) -- keine kanonische Aussage, analog zu Candidate Manifest (ADR-0056) und
+    Screening Record selbst.
+- **Konsequenzen (bei Umsetzung):** alle Aenderungen additiv-optional, kein Schema-Versionsbump, keine
+  Migration der 197 bestehenden Retatrutide-Records noetig. Keine Aenderung an bestehenden Daten oder
+  Code in diesem ADR selbst -- reine Spezifikation. Offene Fragen (Richtungsabhaengigkeit von
+  `related_records`, Notwendigkeit eines vierten Workflow-Zustands, Vollstaendigkeit der
+  `source_type`-Erweiterung, Reihenfolge der Umsetzung) bleiben bis zur CSO-Freigabe unentschieden, siehe
+  Abschnitt 9 des Entwurfsdokuments.
+
+**Nachtrag (CSO-Review Runde 1, 2026-07-27) -- sechs verbindliche Aenderungen vor Umsetzung, Entwurf
+Version 2, weiterhin Status "Vorgeschlagen":** die Grundarchitektur wurde freigegeben; sechs konkrete
+Aenderungen wurden vor einem Merge verlangt und im Entwurfsdokument (jetzt v2) umgesetzt:
+
+1. **`workflow_state` nicht als persistentes Schemafeld.** Ersetzt durch eine reine, nicht gespeicherte
+   Helferfunktion `tools/_researchlib.py::derive_workflow_state()`, berechnet ausschliesslich aus
+   `decision_history` sowie den bereits validierten Top-Level-Projektionen `decision`/`decision_stage`.
+   Kein neues Vokabular, keine Migration, kein `check_screening_workflow_state_projection` mehr noetig
+   (entfaellt ersatzlos gegenueber der ursprruenglichen v1-Fassung dieses ADRs).
+2. **`related_records[]` referenziert Kandidaten statt Screening Records.** Statt
+   `screening_record_id` tragen Eintraege `related_candidate_manifest_id`/`related_candidate_id` --
+   candidate_id ist seit ADR-0056 technisch erzwungen unveraenderlich
+   (`tools/check_research_immutability.py::CANDIDATE_ENTRY_IMMUTABLE_FIELDS`), waehrend fuer
+   `research_screening_record.id` keine vergleichbare technische Garantie existiert. Zusaetzlich
+   semantisch korrekter: die Beziehung ist eine Aussage ueber die zugrunde liegenden Dokumente, nicht
+   ueber ihre Screening-Workflow-Huelle.
+3. **Source-Type-Vokabular um zwoelf gepruefte Kandidaten erweitert:** `meta_analysis`,
+   `practice_guideline` sicher automatisierbar (eigene PubMed-Publication-Type-Werte);
+   `narrative_review` eingeschraenkt automatisierbar (Ausschlussregel); `consensus_statement`,
+   `technical_report`, `dataset` mit unsicherem, vor Umsetzung technisch zu verifizierendem
+   Automatisierungsstatus; `scoping_review`, `umbrella_review`, `living_systematic_review`,
+   `white_paper`, `software`, `protocol_paper` ausschliesslich menschlich vergeben (kein
+   entsprechendes PubMed-Publication-Type-Tag bzw. nur ueber vom Projekt bewusst vermiedene
+   Freitexterkennung feststellbar).
+4. **`relationship_type` auf gerichtete Beziehungspaare umgestellt** (z. B. `replies_to`/`has_reply`,
+   `corrects`/`corrected_by`, `retracts`/`retracted_by`, `updates`/`updated_by` als generisches Paar
+   fuer verwandte v1-Konzepte wie Zwischen-/Endergebnis und Sicherheits-Update, um die in v1 unter
+   "Option B" befuerchtete Vokabular-Verdopplung zu vermeiden) -- 9 Konzeptpaare, 17 Werte insgesamt
+   (16 gerichtete + `other_related_to` als einzige bewusst symmetrische Ausnahme). Neue
+   Symmetriepruefung: Gegenrichtung muss den hinterlegten inversen Typ tragen, nicht denselben Typ.
+5. **Identifier-Grundsatz verschaerft und um ISBN erweitert:** "Kein bibliographischer Identifier
+   beweist allein eine wissenschaftliche Beziehung" gilt ausdruecklich fuer DOI, PMID, PMCID, NCT-ID
+   UND ISBN (ISBN zuvor nicht Teil der Kardinalitaetstabelle) -- ISBN ist strukturell derselbe
+   Unzuverlaessigkeitstyp wie DOI (mehrere ISBNs pro inhaltlich identischem Werk durch
+   Auflagen-/Formatvarianten).
+6. **Kollisionsgruppen werden als Zusammenhangskomponente statt paarweise geprueft.** Statt
+   vollstaendiger paarweiser Klassifikation (quadratischer Aufwand bei groesseren Gruppen) bildet der
+   Validator einen Graphen je Kollisionsgruppe (Kanten: `duplicate_of` und `related_records` zwischen
+   Gruppenmitgliedern) und verlangt genau eine Zusammenhangskomponente -- Union-Find, nahezu lineare
+   Laufzeit. Transitive Erklaerung wird dadurch korrekt anerkannt (Beispiel: PMID 37888925↔37888926
+   per `duplicate_of`, 37888926↔37888927 per `replies_to`/`has_reply` -> alle drei bereits eine
+   Komponente, ohne dass 37888925↔37888927 zusaetzlich direkt dokumentiert werden muesste).
+
+Weiterhin unveraendert **keine Implementierung** in diesem Nachtrag -- reine Entwurfsrevision. Acht
+neue bzw. fortbestehende offene Fragen fuer die naechste CSO-Runde, siehe Abschnitt 9 des
+Entwurfsdokuments (u. a. Prioritaet bei gleichzeitigem `Meta-Analysis`+`Systematic Review`-Tag,
+Verhaeltnis `practice_guideline` zu bestehendem `guideline`, Notwendigkeit von
+`living_systematic_review`, technische Verifikation der drei unsicheren Source-Type-Werte).
+
+**Nachtrag (CSO-Review Runde 2, 2026-07-27) -- eigenstaendiges Evidenz-Konzept fuer Beziehungen, Entwurf
+Version 3, weiterhin Status "Vorgeschlagen":** die Architektur wurde als nahezu vollstaendig bestaetigt;
+eine letzte Ergaenzung vor Merge-Freigabe verlangt:
+
+- **Neues verschachteltes Feld `relationship_metadata`** auf jedem `related_records[]`-Eintrag, buendelt
+  `identified_by`/`identified_at` (zuvor direkt am Eintrag, siehe Runde-1-Nachtrag) zusammen mit zwei
+  neuen Pflichtfeldern: `evidence_source` (Array aus dem neuen kontrollierten Vokabular
+  `research/vocabularies/screening_relationship_evidence_sources.yaml`: `title_similarity`, `doi`,
+  `pmid`, `pmcid`, `nct_cross_reference`, `publication_types`, `author_list`,
+  `manual_title_abstract_review`, `manual_full_text_review`, `other`) und `confidence` (Konzept
+  dokumentiert, bewusst OHNE festgelegten Typ/Skala -- CSO-Vorgabe: "noch keine Skala implementieren";
+  drei Optionen -- kategorial-ordinal, numerisch, Freitext -- als offene Frage festgehalten, vorlaeufige
+  unverbindliche Tendenz zu kategorial-ordinal).
+- **Ausdruecklich dokumentierte Trennung (siehe Entwurfsdokument Abschnitt 2.6.1):**
+  `relationship_metadata` beschreibt AUSSCHLIESSLICH die Evidenz dafuer, DASS zwei Kandidaten in der
+  dokumentierten Beziehung zueinander stehen (ein bibliographisch-struktureller Sachverhalt) -- NIEMALS
+  die wissenschaftliche Evidenzstufe, methodische Qualitaet oder inhaltliche Verlaesslichkeit der
+  beteiligten Studie(n)/Publikation(en) selbst. Fliesst nie automatisch in `Evidenzstufe`,
+  `evidence_category` oder ein anderes Feld des kanonischen Evidenzmodells ein -- dieselbe
+  Ebenentrennung wie zwischen `research/**` und `data/**` (ADR-0033), nur eine Ebene tiefer.
+- `check_screening_related_records` prueft `relationship_metadata.identified_by != 
+  system-screening-initializer` (Feldpfad angepasst, Regel unveraendert aus Runde 1).
+
+Weiterhin **keine Implementierung**. Zwei neue offene Fragen (Vollstaendigkeit von `evidence_source`,
+Skala fuer `confidence`) ergaenzen die acht aus Runde 1, siehe Abschnitt 9 des Entwurfsdokuments (v3).
+
 ## Format für neue Einträge
 
 ```markdown
