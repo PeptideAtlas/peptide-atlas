@@ -34,6 +34,7 @@ research/
 ├── screening_status/ Rein technisches Kontrollartefakt: Initialisierungsfortschritt je Protokoll (ADR-0057)
 ├── extractions/     Beobachtungen und vorläufige Kandidatenclaims (extraction-record-<uuid4>.yaml)
 ├── promotions/      Verknüpfung Kandidatenclaim → kanonischer Claim (promotion-record-<uuid4>.yaml)
+├── reviewers/       Struktureller Akteurstyp fuer research_actor_id-Kuerzel (<research-actor-id>.yaml, ADR-0059)
 ├── vocabularies/    kontrollierte Vokabulare (Datenbanken, Statuswerte, Ausschlussgründe, ...)
 ├── examples/        ausschließlich fiktive Platzhalterdaten, eigener Namensraum (wie data/examples/)
 └── raw/             lokaler, NICHT versionierter Arbeitsbereich fuer Exporte/Volltexte (siehe raw/README.md)
@@ -50,8 +51,11 @@ research/
 | Screening-Datensatz | `research/screening/` | `screening-record-<uuid4>` | `schemas/research_screening_record.schema.json` |
 | Extraktionsdatensatz | `research/extractions/` | `extraction-record-<uuid4>` | `schemas/research_extraction_record.schema.json` |
 | Promotion-Datensatz | `research/promotions/` | `promotion-record-<uuid4>` | `schemas/research_promotion_record.schema.json` |
+| Reviewer | `research/reviewers/` | `<research-actor-id>` (kein Praefix — die ID IST das Kürzel selbst) | `schemas/research_reviewer.schema.json` |
 
-Siehe [`research/candidates/README.md`](candidates/README.md) für Details zum Candidate Manifest (ADR-0056):
+Siehe [`research/reviewers/README.md`](reviewers/README.md) für Details zum strukturellen Akteurstyp
+(`human`/`ai_assistant`/`automation`/`service`, ADR-0059, Phase 4B-1B-3) und
+[`research/candidates/README.md`](candidates/README.md) für Details zum Candidate Manifest (ADR-0056):
 die technische, protokoll-/datenbankgebundene Brücke zwischen Search Result Manifest und Screening Record.
 
 `research/screening_status/initialization_manifest.yaml` (ADR-0057) ist **kein** Research-Objekt aus obiger
@@ -97,9 +101,21 @@ sowohl objektübergreifend (Screening → Extraktion → Verifikation → Promot
 einem Objekt selbst dokumentierte Ereignisdatum liegt innerhalb von dessen eigenem
 `[created_at, updated_at]`) und die Claim-Promotion-Kette (inkl. `claim_promotion_policy.
 requires_second_review`, symmetrisch für `approved_for_creation`/`promoted`/`rejected`).
+Seit ADR-0059 (Phase 4B-1B-3) zusätzlich: `research/reviewers/**`-Registry-Konsistenz und
+Pflichtregistrierung der bereits bekannten nicht-menschlichen Akteure (`system-screening-initializer` als
+`automation`, `cso-chatgpt` als `ai_assistant` — nur wenn ein Datensatz sie tatsächlich verwendet), Zweitreview-
+Pflicht für jede primäre `include`/`exclude`-Entscheidung eines registrierten `ai_assistant`/`automation`-
+Akteurs (unabhängig von `dual_reviewer_stages`), Adjudikation und `decision_history[].revision_context.
+triggered_by` ausschließlich durch registrierte `human`-Akteure (ein unregistriertes Kürzel gilt als
+menschlich), sowie `revision_context` genau dann verpflichtend, wenn ein Eintrag die effektive Entscheidung
+des unmittelbar vorangegangenen Eintrags an derselben Stufe umkehrt.
+
 `check_research_immutability.py` prüft zusätzlich, dass bereits committete `search_run`-Dateien nicht
-rückwirkend verändert werden (nur `status`/`updated_at`/`review`/`notes` dürfen sich ändern). Alle drei
-Validatoren laufen in CI (siehe `.github/workflows/ci.yml`).
+rückwirkend verändert werden (nur `status`/`updated_at`/`review`/`notes` dürfen sich ändern), dass
+`candidates`-Discovery-Identität unveränderlich bleibt (ADR-0056), und seit ADR-0059 (Phase 4B-1B-3), dass
+bereits committete `decision_history[]`-Einträge eines Screening Records byte-identisch erhalten bleiben —
+nur Anhängen neuer Einträge ist zulässig, alle übrigen Screening-Felder bleiben frei kontrolliert
+veränderlich. Alle drei Validatoren laufen in CI (siehe `.github/workflows/ci.yml`).
 
 **Was validiert wird, im Klartext:** JSON-Schema-Konformität und die oben genannten Cross-Referenz-/
 Workflow-Regeln sind **Validator-seitig erzwungen** (Pull Requests mit Verstößen werden von der CI blockiert).
@@ -107,9 +123,15 @@ Die Unveränderlichkeit von Suchläufen ist **CI-seitig geprüft**, aber nur sow
 auflösbar ist (siehe `tools/check_research_immutability.py`, keine Branch-Protection-Garantie). Alle
 Research-Akteursfelder folgen einer restriktiven `research_actor_id`-Kürzel-Syntax (schema-seitig erzwungen),
 die stabile, unterscheidbare Kürzel sicherstellt — aber ob ein Reviewer-Kürzel tatsächlich eine andere
-*menschliche* Person bezeichnet, ist **nicht technisch überprüfbar** und bleibt organisatorisch/durch
-Repository-Zugriffskontrolle abgesichert (siehe „Bekannte Grenzen" im
-[Scientific Research Protocol](../docs/project/Scientific_Research_Protocol.md), Abschnitt 34).
+*menschliche* Person bezeichnet, bleibt weiterhin organisatorisch/durch Repository-Zugriffskontrolle
+abgesichert (siehe „Bekannte Grenzen" im
+[Scientific Research Protocol](../docs/project/Scientific_Research_Protocol.md), Abschnitt 34). Seit ADR-0059
+(Phase 4B-1B-3) technisch überprüfbar ist dagegen die schwächere, aber eigenständig nützliche Aussage
+„dieses Kürzel ist als KI-gestützt/automatisiert/technischer Dienst **registriert**" — siehe
+[`research/reviewers/README.md`](reviewers/README.md). Ein **unregistriertes** Kürzel wird für die daran
+anknüpfenden Regeln (verpflichtendes Zweitreview bei KI-/Automatisierungs-Erstentscheidung, Adjudikation und
+`revision_context.triggered_by` ausschließlich menschlich) wie ein menschlicher Akteur behandelt — dieselbe
+Grenze wie die für `human` optionale Registrierung.
 
 ## Kurzfassung des Workflows
 

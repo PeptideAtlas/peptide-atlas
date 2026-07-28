@@ -193,12 +193,30 @@ def write_tree(root: Path, tree: dict[str, dict | None]) -> None:
             yaml.safe_dump(data, handle, sort_keys=False, allow_unicode=True)
 
 
+def _system_screening_initializer_reviewer() -> dict:
+    """Registriert den technischen Initialisierungsakteur als research_reviewer (ADR-0059) --
+    tools/validate_research.py::check_research_reviewers verlangt das ab dem Moment, in dem ein
+    Datensatz screened_by/decided_by: system-screening-initializer tatsaechlich verwendet, was
+    tools/initialize_screening_records.py fuer jeden erzeugten Record tut."""
+    return {
+        "schema_version": "1.0.0",
+        "id": SYSTEM_SCREENING_INITIALIZER_ACTOR,
+        "actor_type": "automation",
+        "display_name": None,
+        "description": "Testregistrierung fuer die Initialisierungs-Testsuite.",
+        "active": True,
+        "created_at": "2026-01-01",
+        "updated_at": "2026-01-01",
+    }
+
+
 def base_tree(*, shared_doi: bool = False, include_ctgov: bool = True) -> dict[str, dict]:
     tree = {
         f"research/protocols/{PROTOCOL_ID}.yaml": _protocol(),
         f"research/search_runs/{SEARCH_RUN_PUBMED}.yaml": _search_run(SEARCH_RUN_PUBMED, "pubmed", MANIFEST_PUBMED, 3),
         f"research/search_results/{MANIFEST_PUBMED}.yaml": _result_manifest(MANIFEST_PUBMED, SEARCH_RUN_PUBMED, "pmid", ["100", "200", "300"]),
         f"research/candidates/{CANDIDATE_MANIFEST_PUBMED}.yaml": base_pubmed_manifest(shared_doi=shared_doi),
+        f"research/reviewers/{SYSTEM_SCREENING_INITIALIZER_ACTOR}.yaml": _system_screening_initializer_reviewer(),
     }
     if include_ctgov:
         tree[f"research/search_runs/{SEARCH_RUN_CTGOV}.yaml"] = _search_run(SEARCH_RUN_CTGOV, "clinicaltrials_gov", MANIFEST_CTGOV, 2)

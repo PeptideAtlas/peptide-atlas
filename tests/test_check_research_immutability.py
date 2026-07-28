@@ -358,3 +358,161 @@ def test_candidate_manifest_deleted_file_is_flagged(candidate_manifest_repo):
     errors = check(repo, base_sha)
     assert len(errors) == 1
     assert "deleted" in errors[0]
+
+
+# --- research/screening/** (ADR-0059, Phase 4B-1B-3): nur decision_history[] geschuetzt, append-only
+
+SCREENING_RECORD_YAML = """schema_version: "1.0.0"
+id: screening-record-40000000-0000-4000-8000-000000000001
+protocol_id: research-protocol-test-substance-v1
+search_run_ids:
+  - search-run-40000000-0000-4000-8000-000000000001
+candidate_identifiers: {{ doi: null, pmid: "{pmid}", pmcid: null, nct_id: null, isbn: null, url: null }}
+candidate_title: "{candidate_title}"
+candidate_source_type: peer_reviewed_publication
+decision: pending
+decision_stage: deduplication
+decision_reason: null
+duplicate_of: null
+full_text_status: not_yet_obtained
+screened_by: system-screening-initializer
+screened_at: "2026-01-01"
+second_review: null
+decision_history:
+{decision_history}
+canonical_source_id: null
+created_at: "2026-01-01"
+updated_at: "{updated_at}"
+"""
+
+FIRST_HISTORY_ENTRY = """  - sequence: 1
+    stage: deduplication
+    primary_decision: pending
+    primary_decision_reason: null
+    decision: pending
+    decision_reason: null
+    duplicate_of: null
+    primary_duplicate_of: null
+    decided_by: system-screening-initializer
+    decided_at: "2026-01-01"
+    full_text_status: not_yet_obtained
+    second_review: null"""
+
+SECOND_HISTORY_ENTRY = """
+  - sequence: 2
+    stage: title_abstract
+    primary_decision: include
+    primary_decision_reason: null
+    decision: include
+    decision_reason: null
+    duplicate_of: null
+    primary_duplicate_of: null
+    decided_by: reviewer-1
+    decided_at: "2026-01-02"
+    full_text_status: not_yet_obtained
+    second_review: null"""
+
+
+@pytest.fixture
+def screening_record_repo(tmp_path: Path) -> tuple[Path, str, Path]:
+    repo = tmp_path / "screening_record_repo"
+    repo.mkdir()
+    _git(repo, "init", "-q")
+    screening_dir = repo / "research" / "screening"
+    screening_dir.mkdir(parents=True)
+    file_path = screening_dir / "screening-record-40000000-0000-4000-8000-000000000001.yaml"
+    file_path.write_text(
+        SCREENING_RECORD_YAML.format(
+            pmid="100", candidate_title="A Test Candidate", updated_at="2026-01-01",
+            decision_history=FIRST_HISTORY_ENTRY,
+        ),
+        encoding="utf-8",
+    )
+    _git(repo, "add", ".")
+    _git(repo, "commit", "-q", "-m", "base: add screening record")
+    base_sha = _git(repo, "rev-parse", "HEAD").strip()
+    return repo, base_sha, file_path
+
+
+def test_screening_no_changes_reports_no_errors(screening_record_repo):
+    repo, base_sha, _ = screening_record_repo
+    assert check(repo, base_sha) == []
+
+
+def test_screening_appending_new_history_entry_is_allowed(screening_record_repo):
+    """Der zentrale positive Fall: ein neuer decision_history-Eintrag wird angehaengt, der
+    bestehende erste Eintrag bleibt unveraendert."""
+    repo, base_sha, file_path = screening_record_repo
+    file_path.write_text(
+        SCREENING_RECORD_YAML.format(
+            pmid="100", candidate_title="A Test Candidate", updated_at="2026-01-02",
+            decision_history=FIRST_HISTORY_ENTRY + SECOND_HISTORY_ENTRY,
+        ),
+        encoding="utf-8",
+    )
+    assert check(repo, base_sha) == []
+
+
+def test_screening_other_fields_change_is_allowed(screening_record_repo):
+    """Nur decision_history[] ist geschuetzt -- candidate_title (und andere kontrolliert
+    veraenderliche Felder) duerfen frei geaendert werden, ohne dass dieses Target sie
+    versehentlich mit einfriert (siehe ADR-0059)."""
+    repo, base_sha, file_path = screening_record_repo
+    file_path.write_text(
+        SCREENING_RECORD_YAML.format(
+            pmid="100", candidate_title="A Corrected Title", updated_at="2026-01-02",
+            decision_history=FIRST_HISTORY_ENTRY,
+        ),
+        encoding="utf-8",
+    )
+    assert check(repo, base_sha) == []
+
+
+def test_screening_existing_history_entry_modified_is_flagged(screening_record_repo):
+    repo, base_sha, file_path = screening_record_repo
+    modified_first_entry = FIRST_HISTORY_ENTRY.replace(
+        "decided_by: system-screening-initializer", "decided_by: reviewer-9"
+    )
+    file_path.write_text(
+        SCREENING_RECORD_YAML.format(
+            pmid="100", candidate_title="A Test Candidate", updated_at="2026-01-01",
+            decision_history=modified_first_entry,
+        ),
+        encoding="utf-8",
+    )
+    errors = check(repo, base_sha)
+    assert len(errors) == 1
+    assert "decision_history[0]" in errors[0]
+
+
+def test_screening_existing_history_entry_removed_is_flagged(screening_record_repo):
+    """Ein Screening Record mit WENIGER Eintraegen als committed ist ein eigener, klarer
+    Fehlerfall (Entfernen statt bloss Aendern eines Eintrags)."""
+    repo, base_sha, file_path = screening_record_repo
+    text = file_path.read_text(encoding="utf-8")
+    text = text.replace("decision_history:\n" + FIRST_HISTORY_ENTRY, "decision_history: []")
+    file_path.write_text(text, encoding="utf-8")
+    errors = check(repo, base_sha)
+    assert len(errors) == 1
+    assert "fewer entries" in errors[0]
+
+
+def test_screening_new_file_is_allowed(screening_record_repo):
+    repo, base_sha, _ = screening_record_repo
+    new_file = repo / "research" / "screening" / "screening-record-40000000-0000-4000-8000-000000000002.yaml"
+    new_file.write_text(
+        SCREENING_RECORD_YAML.format(
+            pmid="200", candidate_title="A New Candidate", updated_at="2026-01-01",
+            decision_history=FIRST_HISTORY_ENTRY,
+        ),
+        encoding="utf-8",
+    )
+    assert check(repo, base_sha) == []
+
+
+def test_screening_deleted_file_is_flagged(screening_record_repo):
+    repo, base_sha, file_path = screening_record_repo
+    file_path.unlink()
+    errors = check(repo, base_sha)
+    assert len(errors) == 1
+    assert "deleted" in errors[0]

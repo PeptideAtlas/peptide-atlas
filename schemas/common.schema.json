@@ -254,6 +254,25 @@
       "pattern": "^[a-z0-9][a-z0-9._-]*$",
       "description": "Stabiles, syntaktisch eindeutiges Kuerzel fuer einen Research-Akteur (Screener, Zweitpruefer, Adjudikator, Extraktor, Verifizierer, Promotion-Reviewer). Kein fuehrendes/nachgestelltes oder alleiniges Leerzeichen, kein Grossbuchstabe -- verhindert, dass 'reviewer-1' und ' reviewer-1 ' oder 'Reviewer-1' faelschlich als unterschiedliche Kuerzel durchgehen oder Gleichheits-/Unabhaengigkeitspruefungen (z. B. Zweitpruefer != Erstpruefer) durch Leerzeichenvarianten umgangen werden. Stellt NUR syntaktisch stabile, unterscheidbare Kuerzel sicher -- beweist NICHT, dass zwei unterschiedliche Kuerzel zwei unterschiedliche MENSCHLICHE Personen repraesentieren (das bleibt organisatorisch kontrolliert, siehe ADR-0041 und ADR-0046)."
     },
+    "research_actor_type": {
+      "type": "string",
+      "enum": ["human", "ai_assistant", "automation", "service"],
+      "description": "Kontrolliertes Vokabular fuer research_reviewer.actor_type (siehe ADR-0059, Phase 4B-1B-3). Struktureller Gegenpol zu research_actor_id: das Kuerzel allein sagt nichts darueber aus, ob ein Akteur menschlich, KI-gestuetzt, vollautomatisiert oder ein technischer Dienst ist -- genau diese Luecke greift ADR-0041 wieder auf ('bleibt fuer eine spaetere Phase vorgemerkt'). Bewusst NUR diese vier Werte: 'external_expert' und 'editorial_board' sind vom CSO langfristig reserviert, aber ausdruecklich noch NICHT Teil dieses Enums (siehe research/reviewers/README.md) -- eine spaetere, eigenstaendige Erweiterung fuegt sie additiv hinzu, ohne bestehende Registrierungen zu aendern."
+    },
+    "screening_revision_reason": {
+      "type": "string",
+      "enum": [
+        "protocol_amendment",
+        "new_evidence",
+        "reviewer_error_correction",
+        "periodic_reevaluation",
+        "external_peer_review",
+        "quality_control",
+        "data_correction",
+        "other"
+      ],
+      "description": "Kontrolliertes Vokabular fuer decision_history[].revision_context.reason (siehe ADR-0059, Phase 4B-1B-3, research/vocabularies/screening_revision_reasons.yaml). Unterscheidet, WARUM eine fruehere Screening-Entscheidung an derselben Stufe umgekehrt wird, von einer normalen Weiterbewegung durch die Stufenfolge."
+    },
     "dual_reviewable_screening_stage": {
       "type": "string",
       "enum": ["title_abstract", "full_text", "final"],

@@ -263,6 +263,17 @@ INVALID_SCENARIOS = {
     "interface_profile_ctgov_wrong_database": "requires database == 'clinicaltrials_gov'",
     "interface_profile_pubmed_renamed_interface_invalid_retmax": "is less than result_count",
     "interface_profile_ctgov_renamed_interface_missing_fields": "requires request_parameters.fields",
+    # ADR-0059 (Phase 4B-1B-3): research_reviewer, mandatory registration for known non-human
+    # actors, dual-review trigger for ai_assistant/automation, human-only adjudication/
+    # revision_context.triggered_by.
+    "reviewer_invalid_actor_type_value": "is not one of",
+    "reviewer_registry_missing_known_actor": "must be registered in research/reviewers/",
+    "reviewer_registry_wrong_actor_type": "must be registered with actor_type",
+    "dual_review_missing_for_automation_actor": "non-human actor requires second_review",
+    "adjudicator_not_human": "adjudication must always be resolved by a human actor",
+    "revision_context_missing_on_reversal": "revision_context (reason/reference/triggered_by) is required",
+    "revision_context_present_without_reversal": "only allowed on an entry that actually reverses",
+    "revision_context_triggered_by_not_human": "must be triggered by a human actor",
 }
 
 

@@ -128,10 +128,25 @@ extraktionsfähig** — `full_text` dokumentiert nur die Volltextbewertung (sieh
 | **Eingabe** | Ein Kandidat mit vorläufiger `decision: include` auf Stufe `full_text`. |
 | **Ausgabe** | `decision_stage: final` — die **einzige extraktionsfähige Stufe** (ADR-0042). |
 | **Rolle** | Zweitprüfer:in (siehe `screening_policy.dual_reviewer_stages`, typischerweise `final`). |
-| **Erforderliche Prüfungen** | Ist `final` in `dual_reviewer_stages` aufgeführt, ist `second_review` mit einer expliziten, eigenständigen `reviewer_decision` Pflicht, `second_review.reviewed_by` ≠ `screened_by` (Reviewer-Unabhängigkeit) — beides von `tools/validate_research.py` erzwungen. `reviewer_decision` selbst muss ebenfalls zur Stage-/Decision-Matrix passen (an `final` z. B. kein `pending`/`duplicate`/`awaiting_full_text`, ADR-0046). `full_text_status: obtained` bleibt Voraussetzung für ein terminales `include`. |
+| **Erforderliche Prüfungen** | Ist `final` in `dual_reviewer_stages` aufgeführt, ist `second_review` mit einer expliziten, eigenständigen `reviewer_decision` Pflicht, `second_review.reviewed_by` ≠ `screened_by` (Reviewer-Unabhängigkeit) — beides von `tools/validate_research.py` erzwungen. Seit ADR-0059 (Phase 4B-1B-3) zusätzlich **unabhängig von `dual_reviewer_stages`**: ist `screened_by`/`decided_by` in `research/reviewers/**` als `ai_assistant`/`automation` registriert, ist `second_review` ebenfalls Pflicht. `reviewer_decision` selbst muss ebenfalls zur Stage-/Decision-Matrix passen (an `final` z. B. kein `pending`/`duplicate`/`awaiting_full_text`, ADR-0046). `full_text_status: obtained` bleibt Voraussetzung für ein terminales `include`. Eine Adjudikation (siehe Abbruchkriterien) darf, sofern registriert, nur einen `human`-Akteur als `resolved_by` tragen. |
 | **Abbruchkriterien** | Widerspricht `second_review.reviewer_decision` der `primary_decision` (Erstentscheidung, siehe [Scientific Research Protocol](Scientific_Research_Protocol.md), Abschnitt 9c) ohne gültige Adjudikation, muss die effektive `decision` `uncertain` bleiben (Abschnitt 10a) — die `primary_decision` selbst bleibt dabei erhalten, ebenso die jeweils eigenständige Begründung (`primary_decision_reason`/`second_review.reviewer_decision_reason`, ADR-0047). Ein solcher Kandidat ist nicht extraktionsfähig. |
 | **Gespeicherte Provenienz** | `second_review.reviewed_by`/`reviewed_at`/`reviewer_decision`/`reviewer_decision_reason`/`decision_confirmed`, ggf. `second_review.adjudication`; neuer Eintrag in `decision_history[]` mit `stage: final`, `primary_decision`/`primary_decision_reason` und effektiver `decision`/`decision_reason`. |
 | **Mögliche Statuswerte** | `include` \| `exclude` \| `uncertain`. |
+
+!!! info "Reviewer-Modell und Wiederaufnahme seit Phase 4B-1B-3 (ADR-0059)"
+    Die optionale Objektart `research_reviewer` (`research/reviewers/`) versieht ein bereits verwendetes
+    `research_actor_id`-Kürzel nachträglich mit einem strukturellen Akteurstyp
+    (`human`/`ai_assistant`/`automation`/`service`) — rein additiv, kein bestehendes Feld ändert Typ oder
+    Struktur. Zwei bereits real bekannte, nicht-menschliche Akteure sind entsprechend registriert:
+    `system-screening-initializer` (`automation`, ADR-0057) und `cso-chatgpt` (`ai_assistant`, der KI-basierte
+    CSO des Projekts). Für registrierte `ai_assistant`/`automation`-Akteure gilt oben die zusätzliche
+    Zweitreview-Pflicht; Adjudikation bleibt in jedem Fall menschlich. Unabhängig davon kann ein neuer
+    `decision_history[]`-Eintrag an derselben Stufe eine frühere, bereits **settled** Entscheidung umkehren
+    (mechanisch bereits möglich, echter Rückwärtslauf über Stufen hinweg bleibt verboten) — `revision_context`
+    (`reason`/`reference`/`triggered_by`, Vokabular `research/vocabularies/screening_revision_reasons.yaml`)
+    macht diese Wiederaufnahme semantisch explizit und ist in diesem Fall Pflicht; `triggered_by` muss, sofern
+    registriert, ein `human`-Akteur sein. Siehe [Scientific Research Protocol](Scientific_Research_Protocol.md),
+    Abschnitte 9a/9e für die vollständige Regel.
 
 ## 5. Terminale Bestätigung → Eingeschlossene Quelle
 
@@ -141,7 +156,7 @@ extraktionsfähig** — `full_text` dokumentiert nur die Volltextbewertung (sieh
 | **Ausgabe** | Derselbe `screening_record`, jetzt als Grundlage für eine Extraktion nutzbar. `canonical_source_id` bleibt weiterhin `null`. |
 | **Erforderliche Prüfungen** | `tools/validate_research.py` erzwingt alle fünf Bedingungen aus [Scientific Research Protocol](Scientific_Research_Protocol.md), Abschnitt 9b, bevor eine Extraktion erstellt werden darf; zusätzlich muss `protocol_id` der Extraktion mit der des Screening-Datensatzes übereinstimmen. |
 | **Abbruchkriterien** | Fehlt eine der fünf Bedingungen (z. B. `decision_stage` ist noch `full_text`, oder ein Zweitprüfungskonflikt ist ungelöst), ist die Extraktion ein Validierungsfehler. |
-| **Gespeicherte Provenienz** | Vollständige Screening-Historie bleibt in `decision_history[]` erhalten (redaktionell append-only, jeder Eintrag wird gegen dieselben Invarianten geprüft) — die Top-Level-Felder sind eine vom Validator geprüfte Projektion des letzten Eintrags ([Scientific Research Protocol](Scientific_Research_Protocol.md), Abschnitt 9a). |
+| **Gespeicherte Provenienz** | Vollständige Screening-Historie bleibt in `decision_history[]` erhalten (seit ADR-0059 technisch append-only geschützt, nicht mehr nur redaktionelle Konvention; jeder Eintrag wird gegen dieselben Invarianten geprüft) — die Top-Level-Felder sind eine vom Validator geprüfte Projektion des letzten Eintrags ([Scientific Research Protocol](Scientific_Research_Protocol.md), Abschnitt 9a). |
 | **Mögliche Statuswerte** | `decision: include` (unverändert; „eingeschlossen" ist kein eigenes Feld, sondern die Voraussetzung für Schritt 6). |
 
 ## 6. Eingeschlossene Quelle → Extraktion

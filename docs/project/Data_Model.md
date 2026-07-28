@@ -36,7 +36,11 @@ Dieses Dokument entwirft ein **universelles, technologieunabhängiges Datenmodel
     Bewertung, nur die technische Bereitstellung des Datensatzes (siehe ADR-0057). Ein begleitendes, rein
     technisches Kontrollartefakt `research/screening_status/initialization_manifest.yaml` ist **kein**
     eigener Objekttyp dieses Datenmodells — es dokumentiert nur den Initialisierungsfortschritt je
-    Protokoll. Details: [Scientific Research Protocol](Scientific_Research_Protocol.md),
+    Protokoll. Seit Phase 4B-1B-3 gehört zusätzlich die optionale Objektart `research_reviewer`
+    (`research/reviewers/**`, ADR-0059) dazu — versieht ein bereits verwendetes `research_actor_id`-Kürzel
+    nachträglich mit einem strukturellen Akteurstyp (`human`/`ai_assistant`/`automation`/`service`); ebenso
+    **kein** kanonisches Wissensobjekt, sondern Teil derselben Provenienzebene wie die übrigen
+    `research/**`-Objektarten. Details: [Scientific Research Protocol](Scientific_Research_Protocol.md),
     [Evidence Curation Workflow](Evidence_Curation_Workflow.md).
 
 ## Leitprinzipien

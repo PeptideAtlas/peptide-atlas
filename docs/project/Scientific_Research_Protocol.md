@@ -411,13 +411,67 @@ Adjudikator-Unabhängigkeit, konsistente Zweitentscheidung, Konfliktlösung, Vol
 plausible Datumsreihenfolge (`decided_at <= second_review.reviewed_at <= adjudication.resolved_at`) und
 nicht rückwärts laufende Stufen/Zeitpunkte über die Historie hinweg (ADR-0042).
 
-**Grenze der Unveränderlichkeit:** `decision_history[]` ist ein **manuell editierbares Array innerhalb derselben
-Datei**, kein separates, dateisystemseitig geschütztes Event-Log. „Append-only" ist eine redaktionelle
-Konvention, die der Validator strukturell prüft (lückenlose Reihenfolge, keine Rückwärtsbewegung, konsistente
-Projektion), aber nicht technisch erzwingen kann, dass ein früherer Eintrag nie nachträglich verändert statt
-ergänzt wurde — anders als `research/search_runs/**`, das zusätzlich durch
-`tools/check_research_immutability.py` in CI abgesichert ist (Abschnitt 7), gibt es für `decision_history[]`
-keinen entsprechenden Git-Diff-Schutz.
+**Wiederaufnahme bereits ausgeschlossener Studien (`revision_context`, seit ADR-0059, Phase 4B-1B-3):** die
+Stufen-/Datumsmonotonie-Prüfung oben verbietet nur echten Rückwärtslauf — ein **neuer** Eintrag an derselben
+Stufe, der eine frühere, bereits **settled** (nicht `pending`/`uncertain`) Entscheidung umkehrt, ist bereits
+strukturell zulässig. `decision_history[].revision_context` (echtes optionales Feld, kein required-aber-
+nullable Key wie `decision_reason`) macht diese Umkehrung semantisch explizit: Pflicht genau dann, wenn ein
+Eintrag die effektive Entscheidung des unmittelbar vorangegangenen Eintrags an derselben Stufe tatsächlich
+umkehrt, sonst muss das Feld fehlen. Ein Übergang von `pending`/`uncertain` zu einer konkreten Entscheidung
+ist **keine** Umkehrung — das ist die erste tatsächliche Entscheidung, z. B. der bereits bestehende
+Zielkonflikt-Mechanismus aus ADR-0052/ADR-0053. `reason` folgt dem kontrollierten Vokabular
+`research/vocabularies/screening_revision_reasons.yaml` (`protocol_amendment`, `new_evidence`,
+`reviewer_error_correction`, `periodic_reevaluation`, `external_peer_review`, `quality_control`,
+`data_correction`, `other`) und verknüpft sich bei `protocol_amendment` mit der bereits bestehenden
+Protokoll-Versionierung (Abschnitt 31): `reference: research-protocol-<slug>-v2` macht diese Verbindung
+erstmals maschinenlesbar. `triggered_by` muss, sofern registriert, ein `human`-Akteur sein (siehe Abschnitt
+9e) — eine Wiederaufnahme ist eine redaktionelle Grundsatzentscheidung, kein Teil des routinemäßigen
+KI-gestützten Ersttriagierens.
+
+**Historienschutz (seit ADR-0059, Phase 4B-1B-3):** `decision_history[]` ist ein manuell editierbares Array
+innerhalb derselben Datei, kein separates, dateisystemseitig geschütztes Event-Log — aber „Append-only" ist
+seit ADR-0059 **nicht mehr nur** eine redaktionelle Konvention. Zusätzlich zur strukturellen Validator-Prüfung
+(lückenlose Reihenfolge, keine Rückwärtsbewegung, konsistente Projektion) vergleicht
+`tools/check_research_immutability.py` — genau wie bereits für `research/search_runs/**` (Abschnitt 7) und
+`research/candidates/**` (Abschnitt 7b) — jeden bereits committeten `decision_history[]`-Eintrag byte-identisch
+gegen den Merge-Base in CI: nur das Anhängen neuer Einträge am Ende ist zulässig, ein bereits committeter
+Eintrag darf weder geändert noch entfernt noch umsortiert werden. Alle übrigen Felder eines Screening Records
+(Top-Level-Projektionsfelder, `candidate_title`, `related_records`) bleiben davon unberührt weiterhin frei
+kontrolliert veränderlich — dieser Schutz gilt ausschließlich für bereits committete `decision_history[]`-
+Einträge selbst. Dieselbe, in Abschnitt 34 dokumentierte Grenze gilt weiterhin: der Vergleich erkennt nur den
+Nettounterschied zum Merge-Base, keine Manipulation vor diesem Vergleichszeitpunkt.
+
+## 9e. Reviewer-Modell: struktureller Akteurstyp (ADR-0059, Phase 4B-1B-3)
+
+Ergänzt die in Abschnitt 34 dokumentierte Grenze „ob ein Kürzel tatsächlich eine andere *menschliche* Person
+bezeichnet, ist nicht technisch überprüfbar" um eine schwächere, aber eigenständig nützliche, jetzt technisch
+überprüfbare Aussage: „dieses Kürzel ist als KI-gestützt/automatisiert/technischer Dienst **registriert**".
+
+Die optionale Objektart `research_reviewer` (`research/reviewers/`, `id` = das bereits verwendete
+`research_actor_id`-Kürzel selbst, keine Indirektionsebene) versieht ein Kürzel nachträglich mit
+`actor_type: human | ai_assistant | automation | service`. Rein additiv: kein bestehendes
+`research_actor_id`-Feld ändert Typ oder Struktur. Registrierung ist **verpflichtend** für Akteure, die als
+`ai_assistant`, `automation` oder `service` auftreten (der Validator erzwingt das für die beiden bereits
+real bekannten nicht-menschlichen Akteure `system-screening-initializer`/`automation` und
+`cso-chatgpt`/`ai_assistant`, sobald ein Datensatz sie tatsächlich verwendet); für `human`-Akteure bleibt sie
+**optional** — dieselbe organisatorische Grenze wie ADR-0041 bereits für menschliche Identität akzeptiert hat.
+Ein unregistriertes Kürzel wird für die folgenden drei Regeln wie ein menschlicher Akteur behandelt:
+
+1. **Zweitreview-Pflicht:** jede primäre `include`/`exclude`-Entscheidung eines registrierten
+   `ai_assistant`/`automation`-Akteurs erfordert `second_review` — unabhängig von
+   `screening_policy.dual_reviewer_stages`. Erweitert den bestehenden Mechanismus um eine zweite, unabhängige
+   Auslösebedingung, statt einen neuen zu erfinden — die zentrale Skalierungsvoraussetzung für KI-gestütztes
+   Ersttriagieren im großen Maßstab, ohne dass eine KI-Entscheidung je unbeaufsichtigt terminal wird.
+2. **Adjudikation bleibt ausschließlich menschlich:** `second_review.adjudication.resolved_by` darf, sofern
+   registriert, keinen Akteur mit `actor_type` ≠ `human` referenzieren — hart, nicht protokollkonfigurierbar.
+3. **`revision_context.triggered_by` bleibt ausschließlich menschlich** (Abschnitt 9a): eine Wiederaufnahme
+   ist eine redaktionelle Grundsatzentscheidung, kein Teil des routinemäßigen KI-gestützten Ersttriagierens.
+
+`actor_type` reserviert zwei weitere Werte langfristig (`external_expert`, `editorial_board`), aber
+ausdrücklich **nur als Dokumentation** — beide sind noch nicht Teil des Enums. Zukunftsperspektive (keine
+Implementierung): `research_reviewer` ist bewusst nicht auf Titel-/Abstract-Screening beschränkt konzipiert,
+sondern als projektweites, protokoll- und stufenunabhängiges Reviewer-Modell — perspektivisch auch für
+Promotion Review (Abschnitt 29), Evidence Review, Editorial Review und Quality Audit wiederverwendbar.
 
 ## 9d. Objektinterne zeitliche Vollständigkeit
 
@@ -748,7 +802,9 @@ maschinenlesbar sicherstellt:
   `promotion_status: rejected` erfordert dieselbe Mindest-Audit-Spur wie `approved_for_creation`/`promoted`
   (ADR-0049), alle Research-Akteursfelder folgen der `research_actor_id`-Kürzel-Syntax (ADR-0050),
   `interface_profile.id` nur aus dem kontrollierten Vokabular, `rationale` konsistent `null` (bekannte Profile)
-  bzw. nicht-leer (`unprofiled`) erzwungen (ADR-0055, R3-Härtung).
+  bzw. nicht-leer (`unprofiled`) erzwungen (ADR-0055, R3-Härtung), `research_reviewer.actor_type` nur aus dem
+  kontrollierten Vier-Werte-Enum, `decision_history[].revision_context` intern konsistent (`reason`/`reference`/
+  `triggered_by` gemeinsam vorhanden oder das Feld fehlt ganz) (ADR-0059).
 - **Validator-seitig erzwungen** (`tools/validate_research.py`, blockiert Pull Requests via CI, aber nicht
   außerhalb eines CI-Laufs, z. B. bei einem direkten Push ohne PR): Protokoll-/Referenzkonsistenz,
   Identifier-Deduplizierung, Screening-Workflow inkl. jedes `decision_history`-Eintrags (Stage-/
@@ -771,33 +827,48 @@ maschinenlesbar sicherstellt:
   Suchlauf→Manifest, und Übereinstimmung von `export_reference`/`source_export_reference` bei
   `result_capture.status: complete` (ADR-0055, R2-Härtung); Profildispatch seit R3 ausschließlich über das
   kontrollierte `interface_profile.id`, nicht mehr über Textfragmente in `interface`, inkl. Profil↔Datenbank-
-  Konsistenz (ADR-0055, R3-Härtung).
+  Konsistenz (ADR-0055, R3-Härtung); seit ADR-0059 (Abschnitt 9e) zusätzlich: Pflichtregistrierung der beiden
+  real bekannten nicht-menschlichen Akteure `system-screening-initializer`/`cso-chatgpt`, sobald ein Datensatz
+  sie tatsächlich verwendet, Zweitreview-Pflicht für jede primäre `include`/`exclude`-Entscheidung eines
+  registrierten `ai_assistant`/`automation`-Akteurs unabhängig von `dual_reviewer_stages`, Adjudikation und
+  `revision_context.triggered_by` ausschließlich durch registrierte `human`-Akteure, sowie `revision_context`
+  genau dann verpflichtend, wenn ein Eintrag die effektive Entscheidung des unmittelbar vorangegangenen
+  Eintrags an derselben Stufe tatsächlich umkehrt.
 - **CI-seitig geprüft, mit dokumentierter Lücke**: `tools/check_research_immutability.py` (ADR-0038/ADR-0042,
   seit ADR-0055 zusätzlich auf `research/search_results/**` erweitert, dort **vollständig** unveränderlich statt
   nur `status`/`updated_at`/`review`/`notes` mutable wie bei `research_search_run`; `interface_profile` zählt
   seit R3 ausdrücklich als Ausführungsfeld -- eine nachträgliche Änderung von `interface_profile.id` würde
   einen bereits ausgeführten Suchlauf rückwirkend einem anderen, ggf. erst später eingeführten API-Profil
-  unterwerfen) vergleicht nur den
+  unterwerfen; seit ADR-0056 zusätzlich auf `research/candidates/**` erweitert, dort schützt eine eigene
+  Discovery-Identitäts-Vergleichslogik statt einer einfachen Mutable-Field-Menge; seit ADR-0059 zusätzlich auf
+  `research/screening/**` erweitert, dort schützt eine eigene Vergleichslogik ausschließlich bereits committete
+  `decision_history[]`-Einträge, alle übrigen Screening-Felder bleiben unberührt) vergleicht nur den
   Nettounterschied zum Merge-Base mit einem einzelnen Basis-Ref und wird übersprungen, wenn dieser nicht
   auflösbar ist (z. B. ein lokaler Push ohne Pull-Request-Kontext) — er erkennt keine Manipulation, die bereits
   vor diesem Vergleichszeitpunkt auf dem Zielbranch selbst stattgefunden hat, und ersetzt keine serverseitige
-  Branch Protection (ADR-0010, weiterhin nicht umgesetzt). Für `decision_history[]` (Abschnitt 9a) gibt es
-  **keinen** entsprechenden Git-Diff-Schutz — nur die strukturelle Konsistenzprüfung bei der Validierung.
-- **Redaktionell vorgeschrieben, nicht technisch erzwungen**: Append-only-Pflege von `decision_history[]`
-  innerhalb derselben Datei (Abschnitt 9a); die Erkennung „derselbe Studie, mehrere Publikationen"
-  (Abschnitte 13–16) mit Unterstützung durch `identifier_priority`, aber ohne automatische
-  Studienzusammenführung; inhaltliche Richtigkeit von Beobachtungen, Paraphrasen und Kandidatenclaims.
-- **Organisatorisch kontrolliert, nicht technisch überprüfbar**: Ob ein Reviewer-, Adjudikator- oder
+  Branch Protection (ADR-0010, weiterhin nicht umgesetzt). `decision_history[]` (Abschnitt 9a) ist seit ADR-0059
+  in diesen Schutz einbezogen — zuvor galt hierfür ausschließlich die strukturelle Konsistenzprüfung bei der
+  Validierung, siehe die jetzt veraltete Formulierung in älteren PR-Beschreibungen vor Phase 4B-1B-3.
+- **Redaktionell vorgeschrieben, nicht technisch erzwungen**: die Erkennung „derselbe Studie, mehrere
+  Publikationen" (Abschnitte 13–16) mit Unterstützung durch `identifier_priority`, aber ohne automatische
+  Studienzusammenführung; inhaltliche Richtigkeit von Beobachtungen, Paraphrasen und Kandidatenclaims. Die
+  Append-only-Pflege von `decision_history[]` selbst ist seit ADR-0059 **nicht mehr** nur redaktionell
+  vorgeschrieben, siehe oben.
+- **Organisatorisch kontrolliert, nicht vollständig technisch überprüfbar**: Ob ein Reviewer-, Adjudikator- oder
   Promotion-Reviewer-**Kürzel** tatsächlich eine andere *menschliche* Person bezeichnet (statt z. B. zweier
-  unterschiedlicher Automatisierungsläufe), lässt sich mit den in Phase 4A verwendeten Kürzelfeldern **nicht**
-  maschinenlesbar verifizieren — Phase 4A führt bewusst **keine** Actor-Registry
-  (human/automation/ai_assistant/service) ein (siehe Abschnitt 29, ADR-0041 „Alternativen"). Die seit ADR-0050
-  restriktive `research_actor_id`-Syntax (`^[a-z0-9][a-z0-9._-]*$`) ändert daran nichts: sie stellt nur sicher,
-  dass zwei unterschiedliche Kürzel syntaktisch stabil unterscheidbar sind (keine Leerzeichen-/
-  Großschreibungsvarianten mehr), beweist aber weiterhin nicht, dass es sich um zwei unterschiedliche
-  menschliche Personen handelt. Diese Garantie bleibt organisatorisch, durch Reviewprozess und
-  Repository-Zugriffskontrolle abgesichert. Jede Dokumentation, die eine stärkere (technisch erzwungene)
-  Garantie behauptet, ist als Fehler zu melden.
+  unterschiedlicher Automatisierungsläufe), lässt sich weiterhin **nicht** maschinenlesbar verifizieren — die
+  seit ADR-0050 restriktive `research_actor_id`-Syntax (`^[a-z0-9][a-z0-9._-]*$`) stellt nur sicher, dass zwei
+  unterschiedliche Kürzel syntaktisch stabil unterscheidbar sind, beweist aber nicht, dass es sich um zwei
+  unterschiedliche menschliche Personen handelt. Phase 4A hatte dafür bewusst **keine** Actor-Registry
+  eingeführt (Abschnitt 29, ADR-0041 „Alternativen") — ADR-0059 (Phase 4B-1B-3, Abschnitt 9e) greift diese
+  vorgemerkte Idee wieder auf, liefert aber eine **schwächere** Garantie als eine vollständige Identitätsprüfung:
+  die optionale Objektart `research_reviewer` macht überprüfbar, ob ein Kürzel als KI-gestützt/automatisiert/
+  technischer Dienst **registriert** ist (verpflichtend für `ai_assistant`/`automation`/`service`, sobald ein
+  Datensatz sie tatsächlich verwendet) — nicht, ob ein `human`-Kürzel (Registrierung dort weiterhin optional)
+  tatsächlich eine bestimmte, von einem anderen `human`-Kürzel verschiedene reale Person bezeichnet. Diese
+  stärkere Garantie bleibt weiterhin organisatorisch, durch Reviewprozess und Repository-Zugriffskontrolle
+  abgesichert. Jede Dokumentation, die eine stärkere (technisch erzwungene) Garantie für die menschliche
+  Identität selbst behauptet, ist als Fehler zu melden.
 - **Derzeit nicht technisch überprüfbar / bewusst nicht implementiert**: keine automatisierte Literaturrecherche,
   keine automatische Quellenabfrage über externe APIs — jeder Suchlauf wird manuell ausgeführt und
   protokolliert; kein PDF-Download oder Volltextarchivierung im Repository; die Identifier-Deduplizierung

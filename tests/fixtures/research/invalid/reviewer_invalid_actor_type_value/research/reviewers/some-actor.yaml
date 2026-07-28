@@ -1,0 +1,10 @@
+schema_version: "1.0.0"
+id: some-actor
+actor_type: external_expert
+display_name: null
+description: >
+  external_expert is deliberately reserved for a future phase (ADR-0059) and not yet part of
+  the actor_type enum -- this fixture proves the schema still rejects it.
+active: true
+created_at: "2026-01-01"
+updated_at: "2026-01-01"

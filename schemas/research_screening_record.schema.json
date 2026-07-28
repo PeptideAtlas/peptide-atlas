@@ -192,7 +192,25 @@
             "$ref": "common.schema.json#/$defs/full_text_status",
             "description": "Zustand des Volltextzugriffs zum Zeitpunkt dieses Historieneintrags -- Teil der Projektion, siehe research_screening_record.schema.json Top-Level-Beschreibung."
           },
-          "second_review": { "$ref": "#/$defs/second_review_block" }
+          "second_review": { "$ref": "#/$defs/second_review_block" },
+          "revision_context": {
+            "type": "object",
+            "description": "Genuine, absent-faehige (NICHT required-aber-nullable) Ergaenzung seit ADR-0059/Phase 4B-1B-3 -- bewusst kein required-Key, damit kein einziger der 197 bereits committeten Screening Records rueckwirkend migriert werden muss (anders als decision_reason/duplicate_of, die als required-aber-null gefuehrt werden). Vom Validator (tools/validate_research.py::check_decision_history) erzwungen PFLICHT, sobald dieser Eintrag eine vorherige Entscheidung an derselben Stufe umkehrt (primary_decision weicht vom decision-Wert des unmittelbar vorangegangenen Eintrags an gleicher stage ab) -- sonst darf der Key fehlen.",
+            "properties": {
+              "reason": { "$ref": "common.schema.json#/$defs/screening_revision_reason" },
+              "reference": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Z. B. neue Protokollversion (research-protocol-<slug>-v2), Zitat/Fundstelle neuer Evidenz, oder Freitext-Begruendung bei 'other'."
+              },
+              "triggered_by": {
+                "$ref": "common.schema.json#/$defs/research_actor_id",
+                "description": "Muss einen human-Akteur referenzieren, sofern dieses Kuerzel in research/reviewers/** registriert ist (vom Validator geprueft) -- eine Wiederaufnahme ist eine redaktionelle Grundsatzentscheidung, nicht Teil des routinemaessigen KI-gestuetzten Ersttriagierens."
+              }
+            },
+            "additionalProperties": false,
+            "required": ["reason", "reference", "triggered_by"]
+          }
         },
         "additionalProperties": false,
         "required": [

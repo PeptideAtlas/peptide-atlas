@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Prueft, dass bereits committete research/search_runs/**.yaml- und
-research/search_results/**.yaml-Dateien nicht rueckwirkend veraendert werden (siehe Scientific
-Research Protocol, Abschnitt 7, und ADR-0055: ein Suchlauf/Manifest wird nie nachtraeglich
-veraendert -- eine Korrektur oder Wiederholung erhaelt eine neue id).
+"""Prueft, dass bereits committete Dateien unter research/search_runs/**, research/search_results/**,
+research/candidates/** und research/screening/** nicht rueckwirkend veraendert werden (siehe
+Scientific Research Protocol, Abschnitt 7, und ADR-0055/ADR-0056/ADR-0059: ein Suchlauf/Manifest/
+Kandidat/Screening-Historieneintrag wird nie nachtraeglich veraendert -- eine Korrektur oder
+Wiederholung erhaelt eine neue id bzw. einen neuen angehaengten Eintrag).
 
 Vergleicht den aktuellen Arbeitsbaum (inkl. noch nicht committeter Aenderungen) gegen den
-Merge-Base mit einem Basis-Ref (typischerweise der Zielbranch eines Pull Requests). Zwei
-getrennte Ziele mit je eigener Mutable-Field-Menge (siehe IMMUTABLE_TARGETS):
+Merge-Base mit einem Basis-Ref (typischerweise der Zielbranch eines Pull Requests). Vier getrennte
+Ziele mit je eigener Mutable-Field-Menge bzw. eigenem custom_compare (siehe IMMUTABLE_TARGETS):
 
 - research/search_runs/**: erlaubt sind ausschliesslich Aenderungen an
   status/updated_at/review/notes. Jede Aenderung an einem Ausfuehrungsfeld (id, schema_version,
@@ -20,8 +21,17 @@ getrennte Ziele mit je eigener Mutable-Field-Menge (siehe IMMUTABLE_TARGETS):
   kein redaktionelles status/review-Feld wie der Suchlauf (es ist die reine Tatsachenfeststellung
   "diese Identifikatoren wurden erhalten", kein Workflow-Dokument), daher ist JEDE Aenderung
   (auch an notes/updated_at) ein Fehler.
+- research/candidates/**: die Discovery-Identitaet (Top-Level-Felder ausser updated_at, sowie
+  candidate_id/primary_identifier/discovered_in_search_run_ids je Kandidat) ist unveraenderlich;
+  metadata/metadata_status/metadata_fetch_note/metadata_provenance je Kandidat sowie updated_at
+  bleiben kontrolliert veraenderlich (Metadaten-Refresh, siehe ADR-0056).
+- research/screening/**: ausschliesslich decision_history[] ist geschuetzt -- jeder bereits
+  committete Eintrag muss byte-identisch erhalten bleiben, nur Anhaengen neuer Eintraege am Ende
+  ist zulaessig (ADR-0059, Phase 4B-1B-3). Alle uebrigen Felder (candidate_title, related_records,
+  Top-Level-Projektionsfelder) bleiben wie in Phase 4B-1B-1/-2 bereits festgelegt frei kontrolliert
+  veraenderlich -- dieses Target schraenkt sie nicht zusaetzlich ein.
 
-Das Loeschen oder Umbenennen einer bereits committeten Datei ist in beiden Faellen ein Fehler.
+Das Loeschen oder Umbenennen einer bereits committeten Datei ist bei allen vier Zielen ein Fehler.
 
 Bekannte Grenze (siehe Scientific Research Protocol, Abschnitt 34): dieser Check vergleicht
 nur gegen einen einzelnen Basis-Ref und erkennt daher keine Manipulation, die bereits vor
@@ -99,6 +109,37 @@ def _check_candidate_manifest_modification(old_data: dict, new_data: dict) -> li
     return errors
 
 
+def _check_screening_record_modification(old_data: dict, new_data: dict) -> list[str]:
+    """ADR-0059 (Phase 4B-1B-3): decision_history[] wird technisch schreibgeschuetzt -- jeder
+    bereits committete Eintrag muss byte-identisch erhalten bleiben, nur Anhaengen neuer Eintraege
+    am Ende ist zulaessig. Bewusst der EINZIGE Vergleich fuer dieses Target: alle uebrigen Felder
+    (candidate_title, related_records, Top-Level-Projektionsfelder wie decision/decision_stage/
+    screened_by/...) bleiben wie in Phase 4B-1B-1/-2 bereits festgelegt frei kontrolliert
+    veraenderlich -- diese Funktion schraenkt sie nicht zusaetzlich ein, anders als bei search_runs/
+    candidate_manifest, wo eine feste mutable_fields-Menge bzw. eine separate Discovery-Identitaet
+    gilt. Vorher war Append-only fuer decision_history[] nur redaktionelle Konvention (siehe
+    research/screening/README.md), nicht technisch erzwungen."""
+    errors: list[str] = []
+    old_history = old_data.get("decision_history") or []
+    new_history = new_data.get("decision_history") or []
+
+    if len(new_history) < len(old_history):
+        errors.append(
+            "decision_history has fewer entries than the already-committed version -- entries may "
+            "only be appended, never removed"
+        )
+        return errors
+
+    for idx, old_entry in enumerate(old_history):
+        if idx >= len(new_history) or new_history[idx] != old_entry:
+            errors.append(
+                f"modifies or removes already-committed decision_history[{idx}] -- only appending new "
+                "entries at the end is allowed, existing entries are immutable"
+            )
+
+    return errors
+
+
 @dataclass(frozen=True)
 class ImmutableTarget:
     pathspec: str
@@ -123,6 +164,12 @@ IMMUTABLE_TARGETS = [
         mutable_fields=frozenset(),  # unused when custom_compare is set; see _check_target
         label="candidate manifest",
         custom_compare=_check_candidate_manifest_modification,
+    ),
+    ImmutableTarget(
+        pathspec="research/screening",
+        mutable_fields=frozenset(),  # unused when custom_compare is set; see _check_target
+        label="screening record",
+        custom_compare=_check_screening_record_modification,
     ),
 ]
 
@@ -255,12 +302,13 @@ def main(argv: list[str] | None = None) -> int:
     for error in errors:
         print(f"ERROR {error}")
 
+    target_list = ", ".join(target.pathspec for target in IMMUTABLE_TARGETS)
     if errors:
         print()
-        print(f"{len(errors)} immutability violation(s) in research/search_runs/** or research/search_results/**")
+        print(f"{len(errors)} immutability violation(s) in {target_list}")
         return 1
 
-    print("No immutability violations in research/search_runs/** or research/search_results/**")
+    print(f"No immutability violations in {target_list}")
     return 0
 
 

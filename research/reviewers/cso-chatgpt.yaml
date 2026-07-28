@@ -1,0 +1,13 @@
+schema_version: "1.0.0"
+id: cso-chatgpt
+actor_type: ai_assistant
+display_name: null
+description: >
+  Der KI-basierte Chief Scientific Officer des Projekts, keine menschliche Person (siehe
+  Decision Log, Phase-4B-0-Eintrag). Trägt bereits reale Freigabeverantwortung, z. B. die
+  Protokollfreigabe des Retatrutide-Rechercheprotokolls (research/protocols/
+  research-protocol-retatrutide-v1.yaml, review.reviewers). Registrierung hier macht diese
+  bereits dokumentierte Tatsache erstmals strukturell überprüfbar (siehe ADR-0059).
+active: true
+created_at: "2026-07-28"
+updated_at: "2026-07-28"

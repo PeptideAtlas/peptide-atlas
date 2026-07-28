@@ -53,6 +53,11 @@ DUPLICATED_ENUMS = [
         set(_COMMON["$defs"]["candidate_metadata_status"]["enum"]),
         "candidate_metadata_statuses",
     ),
+    (
+        "screening_revision_reason",
+        set(_COMMON["$defs"]["screening_revision_reason"]["enum"]),
+        "screening_revision_reasons",
+    ),
 ]
 
 # research_protocol_statuses.yaml dupliziert das status-Enum, das direkt (nicht ueber
