@@ -424,9 +424,10 @@ Zielkonflikt-Mechanismus aus ADR-0052/ADR-0053. `reason` folgt dem kontrollierte
 `reviewer_error_correction`, `periodic_reevaluation`, `external_peer_review`, `quality_control`,
 `data_correction`, `other`) und verknüpft sich bei `protocol_amendment` mit der bereits bestehenden
 Protokoll-Versionierung (Abschnitt 31): `reference: research-protocol-<slug>-v2` macht diese Verbindung
-erstmals maschinenlesbar. `triggered_by` muss, sofern registriert, ein `human`-Akteur sein (siehe Abschnitt
-9e) — eine Wiederaufnahme ist eine redaktionelle Grundsatzentscheidung, kein Teil des routinemäßigen
-KI-gestützten Ersttriagierens.
+erstmals maschinenlesbar. `triggered_by` muss ein **registrierter** `human`-Akteur sein (siehe Abschnitt
+9e) — ein unregistriertes Kürzel ist hier, anders als bei normalen Erst-/Zweitprüfern, ungültig — eine
+Wiederaufnahme ist eine redaktionelle Grundsatzentscheidung, kein Teil des routinemäßigen KI-gestützten
+Ersttriagierens.
 
 **Historienschutz (seit ADR-0059, Phase 4B-1B-3):** `decision_history[]` ist ein manuell editierbares Array
 innerhalb derselben Datei, kein separates, dateisystemseitig geschütztes Event-Log — aber „Append-only" ist
@@ -455,17 +456,33 @@ Die optionale Objektart `research_reviewer` (`research/reviewers/`, `id` = das b
 real bekannten nicht-menschlichen Akteure `system-screening-initializer`/`automation` und
 `cso-chatgpt`/`ai_assistant`, sobald ein Datensatz sie tatsächlich verwendet); für `human`-Akteure bleibt sie
 **optional** — dieselbe organisatorische Grenze wie ADR-0041 bereits für menschliche Identität akzeptiert hat.
-Ein unregistriertes Kürzel wird für die folgenden drei Regeln wie ein menschlicher Akteur behandelt:
 
-1. **Zweitreview-Pflicht:** jede primäre `include`/`exclude`-Entscheidung eines registrierten
-   `ai_assistant`/`automation`-Akteurs erfordert `second_review` — unabhängig von
-   `screening_policy.dual_reviewer_stages`. Erweitert den bestehenden Mechanismus um eine zweite, unabhängige
-   Auslösebedingung, statt einen neuen zu erfinden — die zentrale Skalierungsvoraussetzung für KI-gestütztes
-   Ersttriagieren im großen Maßstab, ohne dass eine KI-Entscheidung je unbeaufsichtigt terminal wird.
-2. **Adjudikation bleibt ausschließlich menschlich:** `second_review.adjudication.resolved_by` darf, sofern
-   registriert, keinen Akteur mit `actor_type` ≠ `human` referenzieren — hart, nicht protokollkonfigurierbar.
-3. **`revision_context.triggered_by` bleibt ausschließlich menschlich** (Abschnitt 9a): eine Wiederaufnahme
-   ist eine redaktionelle Grundsatzentscheidung, kein Teil des routinemäßigen KI-gestützten Ersttriagierens.
+Für **normale** Erst-/Zweitprüfer (`screened_by`, `decided_by`, `second_review.reviewed_by`) gilt die
+Kulanzregel: ein unregistriertes Kürzel wird wie ein menschlicher Akteur behandelt — "unregistriert"
+bedeutet hier ausdrücklich **nicht** automatisch "wissenschaftlich verifizierter Mensch", sondern lediglich,
+dass keine gegenteilige (KI-/Automations-)Behauptung geprüft und bestätigt wurde. Für zwei hochkritische
+Rollen gilt seit der CSO-Review-Runde 2 zu dieser Implementierung eine **härtere** Regel, bei der
+"unregistriert" NICHT mehr ausreicht:
+
+1. **Zweitreview-Pflicht:** jede **nicht-administrative primäre wissenschaftliche Entscheidung** eines
+   registrierten `ai_assistant`/`automation`-Akteurs erfordert `second_review` — unabhängig von
+   `screening_policy.dual_reviewer_stages` UND unabhängig von der konkreten Entscheidung (`include`/
+   `exclude`/`awaiting_full_text`/`uncertain`/`duplicate`, jeweils soweit die Stage-/Decision-Matrix diese
+   Entscheidung an der jeweiligen Stufe überhaupt zulässt) — **nicht mehr nur `include`/`exclude`**. Die
+   einzige Ausnahme ist der rein administrative `pending`-Initialisierungseintrag des technischen Akteurs
+   `system-screening-initializer` (`decision`/`primary_decision: pending`, `stage: deduplication`,
+   `full_text_status: not_yet_obtained`) — das ist keine "Erstentscheidung" in diesem Sinne. Erweitert den
+   bestehenden Mechanismus um eine zweite, unabhängige Auslösebedingung, statt einen neuen zu erfinden — die
+   zentrale Skalierungsvoraussetzung für KI-gestütztes Ersttriagieren im großen Maßstab, ohne dass eine
+   KI-Entscheidung je unbeaufsichtigt terminal wird.
+2. **Adjudikation erfordert einen registrierten Mensch-Akteur:** `second_review.adjudication.resolved_by`
+   muss auf ein Kürzel verweisen, das in `research/reviewers/**` mit `actor_type: human` registriert ist —
+   hart, nicht protokollkonfigurierbar. Ein **unregistriertes** Kürzel ist hier — anders als bei normalen
+   Erst-/Zweitprüfern oben — ebenfalls ungültig, genau wie ein registrierter `ai_assistant`/`automation`/
+   `service`-Akteur.
+3. **`revision_context.triggered_by` erfordert einen registrierten Mensch-Akteur** (Abschnitt 9a): dieselbe
+   Verschärfung wie bei der Adjudikation oben — eine Wiederaufnahme ist eine redaktionelle
+   Grundsatzentscheidung, kein Teil des routinemäßigen KI-gestützten Ersttriagierens.
 
 `actor_type` reserviert zwei weitere Werte langfristig (`external_expert`, `editorial_board`), aber
 ausdrücklich **nur als Dokumentation** — beide sind noch nicht Teil des Enums. Zukunftsperspektive (keine
@@ -829,11 +846,16 @@ maschinenlesbar sicherstellt:
   kontrollierte `interface_profile.id`, nicht mehr über Textfragmente in `interface`, inkl. Profil↔Datenbank-
   Konsistenz (ADR-0055, R3-Härtung); seit ADR-0059 (Abschnitt 9e) zusätzlich: Pflichtregistrierung der beiden
   real bekannten nicht-menschlichen Akteure `system-screening-initializer`/`cso-chatgpt`, sobald ein Datensatz
-  sie tatsächlich verwendet, Zweitreview-Pflicht für jede primäre `include`/`exclude`-Entscheidung eines
-  registrierten `ai_assistant`/`automation`-Akteurs unabhängig von `dual_reviewer_stages`, Adjudikation und
-  `revision_context.triggered_by` ausschließlich durch registrierte `human`-Akteure, sowie `revision_context`
-  genau dann verpflichtend, wenn ein Eintrag die effektive Entscheidung des unmittelbar vorangegangenen
-  Eintrags an derselben Stufe tatsächlich umkehrt.
+  sie tatsächlich verwendet, Zweitreview-Pflicht für jede nicht-administrative primäre wissenschaftliche
+  Entscheidung eines registrierten `ai_assistant`/`automation`-Akteurs unabhängig von `dual_reviewer_stages`
+  und unabhängig von `include`/`exclude`/`awaiting_full_text`/`uncertain`/`duplicate` (verschärft in
+  CSO-Review Runde 2 dieser Implementierung; einzige Ausnahme der administrative
+  `system-screening-initializer`-`pending`-Initialisierungseintrag), Adjudikation und
+  `revision_context.triggered_by` ausschließlich durch registrierte `human`-Akteure — ein unregistriertes
+  Kürzel ist fuer diese beiden Rollen ebenfalls ungültig (verschärft in CSO-Review Runde 2; anders als bei
+  normalen Erst-/Zweitprüfern, wo unregistriert weiterhin als Mensch behandelt wird) —, sowie
+  `revision_context` genau dann verpflichtend, wenn ein Eintrag die effektive Entscheidung des unmittelbar
+  vorangegangenen Eintrags an derselben Stufe tatsächlich umkehrt.
 - **CI-seitig geprüft, mit dokumentierter Lücke**: `tools/check_research_immutability.py` (ADR-0038/ADR-0042,
   seit ADR-0055 zusätzlich auf `research/search_results/**` erweitert, dort **vollständig** unveränderlich statt
   nur `status`/`updated_at`/`review`/`notes` mutable wie bei `research_search_run`; `interface_profile` zählt

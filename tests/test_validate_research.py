@@ -270,10 +270,26 @@ INVALID_SCENARIOS = {
     "reviewer_registry_missing_known_actor": "must be registered in research/reviewers/",
     "reviewer_registry_wrong_actor_type": "must be registered with actor_type",
     "dual_review_missing_for_automation_actor": "non-human actor requires second_review",
-    "adjudicator_not_human": "adjudication must always be resolved by a human actor",
+    "adjudicator_not_human": "adjudication must always be resolved by a registered human actor",
     "revision_context_missing_on_reversal": "revision_context (reason/reference/triggered_by) is required",
     "revision_context_present_without_reversal": "only allowed on an entry that actually reverses",
-    "revision_context_triggered_by_not_human": "must be triggered by a human actor",
+    "revision_context_triggered_by_not_human": "must always be triggered by a registered human actor",
+    # ADR-0059 implementation Nachtrag, CSO-Review Runde 2 -- Punkt 1: Adjudikation und
+    # Wiederaufnahme erfordern zwingend einen REGISTRIERTEN Mensch-Akteur; unregistriert ist fuer
+    # diese beiden hochkritischen Rollen (anders als normale Erst-/Zweitpruefer) nicht mehr gueltig.
+    "adjudicator_unregistered": "is not registered as a research_reviewer",
+    "adjudicator_registered_automation": "adjudication must always be resolved by a registered human actor",
+    "adjudicator_registered_service": "adjudication must always be resolved by a registered human actor",
+    "revision_context_triggered_by_unregistered": "is not registered as a research_reviewer",
+    "revision_context_triggered_by_registered_automation": "must always be triggered by a registered human actor",
+    "revision_context_triggered_by_registered_service": "must always be triggered by a registered human actor",
+    # ADR-0059 implementation Nachtrag, CSO-Review Runde 2 -- Punkt 2: Zweitreview-Pflicht fuer
+    # registrierte ai_assistant/automation-Erstpruefer gilt fuer JEDE nicht-administrative
+    # wissenschaftliche Entscheidung, nicht mehr nur include/exclude.
+    "ai_include_without_second_review": "non-human actor requires second_review",
+    "ai_exclude_without_second_review": "non-human actor requires second_review",
+    "ai_awaiting_full_text_without_second_review": "non-human actor requires second_review",
+    "ai_uncertain_without_second_review": "non-human actor requires second_review",
 }
 
 

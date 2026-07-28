@@ -1,0 +1,8 @@
+schema_version: "1.0.0"
+id: reviewer-3
+actor_type: human
+display_name: null
+description: Test fixture actor.
+active: true
+created_at: "2026-01-01"
+updated_at: "2026-01-01"

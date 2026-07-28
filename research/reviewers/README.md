@@ -52,18 +52,36 @@ beschränken.
 Sobald ein Kürzel mit `actor_type: ai_assistant` oder `automation` registriert ist, erzwingt der
 Validator zusätzlich:
 
-- **Zweitreview-Pflicht:** jede Erstentscheidung (`primary_decision` `include`/`exclude`) dieses
-  Akteurs erfordert `second_review` — unabhängig von `screening_policy.dual_reviewer_stages`
-  (siehe [research/screening/README.md](../screening/README.md)).
-- **Adjudikation bleibt ausschließlich menschlich:** `second_review.adjudication.resolved_by` darf
-  nicht auf einen registrierten Akteur mit `actor_type` ≠ `human` verweisen.
-- **`revision_context.triggered_by` bleibt ausschließlich menschlich:** dieselbe Regel wie bei der
-  Adjudikation.
+- **Zweitreview-Pflicht:** jede **nicht-administrative** primäre wissenschaftliche Entscheidung
+  dieses Akteurs erfordert `second_review` — unabhängig von `screening_policy.dual_reviewer_stages`
+  UND unabhängig von der konkreten Entscheidung (`include`/`exclude`/`awaiting_full_text`/
+  `uncertain`/`duplicate`, jeweils soweit die Stage-/Decision-Matrix diese Entscheidung an der
+  jeweiligen Stufe überhaupt zulässt — siehe [research/screening/README.md](../screening/README.md)).
+  Die einzige Ausnahme ist der rein administrative `pending`-Initialisierungseintrag (strukturell
+  nur an Stufe `deduplication` möglich und nur vom technischen Akteur
+  `system-screening-initializer` erzeugt) — das ist keine "Erstentscheidung" in diesem Sinne.
 
-Ein **unregistriertes** Kürzel wird für diese drei Regeln wie ein menschlicher Akteur behandelt
-(dieselbe Grenze wie die optionale `human`-Registrierung) — die Behauptung "diese Entscheidung war
-KI-gestützt/automatisiert" wird erst durch eine tatsächliche Registrierung überprüfbar, nicht
-automatisch unterstellt.
+Für zwei besonders kritische Rollen gilt eine **härtere, von der obigen Kulanz-Grenze
+abweichende** Regel — hier reicht ein **unregistriertes** Kürzel NICHT als implizite
+Mensch-Annahme:
+
+- **Adjudikation muss ein registrierter Mensch sein:** `second_review.adjudication.resolved_by`
+  muss auf ein Kürzel verweisen, das in `research/reviewers/**` mit `actor_type: human`
+  registriert ist. Ein unregistriertes Kürzel oder ein registrierter `ai_assistant`/`automation`/
+  `service`-Akteur ist hier ungültig.
+- **`revision_context.triggered_by` muss ein registrierter Mensch sein:** dieselbe Regel wie bei
+  der Adjudikation — eine Wiederaufnahme ist eine redaktionelle Grundsatzentscheidung, kein
+  routinemäßiges KI-gestütztes Ersttriagieren.
+
+Diese Verschärfung gilt **nur** für `adjudication.resolved_by` und `revision_context.triggered_by`.
+Für alle anderen `research_actor_id`-Felder (`screened_by`, `decided_by`,
+`second_review.reviewed_by`) bleibt die ursprüngliche, mildere Regel unverändert: ein
+**unregistriertes** Kürzel wird dort weiterhin wie ein menschlicher Akteur behandelt (dieselbe
+Grenze wie die optionale `human`-Registrierung) — "unregistriert" bedeutet für diese normalen
+Erst-/Zweitprüfer-Rollen also ausdrücklich **nicht** automatisch "wissenschaftlich verifizierter
+Mensch", sondern lediglich "keine gegenteilige Behauptung geprüft". Die Behauptung "diese
+Entscheidung war KI-gestützt/automatisiert" wird generell erst durch eine tatsächliche
+Registrierung überprüfbar, nicht automatisch unterstellt.
 
 ## Lebenszyklus
 

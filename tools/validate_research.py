@@ -612,9 +612,14 @@ def check_deduplication(report: Report, objects: dict[str, dict[str, ResearchObj
 def _reviewer_actor_type(reviewers: dict[str, "ResearchObject"], actor_id: str | None) -> str | None:
     """Liefert den registrierten actor_type eines research_actor_id-Kuerzels, oder None, wenn das
     Kuerzel nicht in research/reviewers/** registriert ist (siehe ADR-0059). Ein unregistriertes
-    Kuerzel wird fuer alle drei neuen Regeln unten wie ein menschlicher Akteur behandelt -- dieselbe
-    Grenze wie die fuer 'human' optionale Registrierung; die Behauptung 'KI-gestuetzt/automatisiert'
-    wird erst durch eine tatsaechliche Registrierung ueberprüfbar, nicht automatisch unterstellt."""
+    Kuerzel wird fuer decided_by/reviewed_by (normale Erst-/Zweitpruefer) wie ein menschlicher Akteur
+    behandelt -- dieselbe Grenze wie die fuer 'human' optionale Registrierung; die Behauptung
+    'KI-gestuetzt/automatisiert' wird erst durch eine tatsaechliche Registrierung ueberprüfbar, nicht
+    automatisch unterstellt. WICHTIG (CSO-Review Runde 2): fuer die beiden hochkritischen Rollen
+    adjudication.resolved_by und revision_context.triggered_by gilt diese Kulanz NICHT -- dort wird
+    Registrierung als research_reviewer mit actor_type 'human' zwingend verlangt (siehe die
+    dedizierten, direkten reviewers.get(...)-Pruefungen in _check_decision_snapshot statt dieser
+    Funktion)."""
     if not actor_id:
         return None
     reviewer = reviewers.get(actor_id)
@@ -641,10 +646,13 @@ def _check_decision_snapshot(
     einem ungeloesten Widerspruch als decision: uncertain erhalten) von decision (effektiver,
     ggf. adjudizierter Zustand) -- siehe ADR-0043.
 
-    Seit ADR-0059 (Phase 4B-1B-3) zusaetzlich, ueber `reviewers` (research/reviewers/**) und
-    `is_reversal` (von check_decision_history bestimmt): verpflichtendes Zweitreview bei
-    nicht-menschlicher Erstentscheidung, Adjudikator-muss-Mensch-Regel, revision_context bei
-    Umkehrungen inkl. human-triggered_by-Pflicht -- siehe die jeweiligen Pruefungen unten."""
+    Seit ADR-0059 (Phase 4B-1B-3, verschaerft in CSO-Review Runde 2) zusaetzlich, ueber `reviewers`
+    (research/reviewers/**) und `is_reversal` (von check_decision_history bestimmt): verpflichtendes
+    Zweitreview bei jeder nicht-administrativen primaeren wissenschaftlichen Entscheidung eines
+    registrierten ai_assistant/automation-Akteurs (nicht mehr nur include/exclude), registrierte-
+    Mensch-Pflicht fuer adjudication.resolved_by und revision_context.triggered_by (nicht mehr
+    "unregistriert = Mensch"), revision_context bei Umkehrungen -- siehe die jeweiligen Pruefungen
+    unten."""
     stage = entry.get("stage")
     primary_decision = entry.get("primary_decision")
     primary_duplicate_of = entry.get("primary_duplicate_of")
@@ -684,17 +692,24 @@ def _check_decision_snapshot(
                 f"(allowed: {sorted(allowed_decisions)})",
             )
 
-    # ADR-0059: jede Erstentscheidung eines registrierten ai_assistant/automation-Akteurs erfordert
+    # ADR-0059 (implementation Nachtrag, CSO-Review Runde 2): jede NICHT-administrative primaere
+    # wissenschaftliche Entscheidung eines registrierten ai_assistant/automation-Akteurs erfordert
     # ein Zweitreview -- unabhaengig davon, ob screening_policy.dual_reviewer_stages diese Stufe
-    # sonst verlangt. Erweitert den bestehenden dual_reviewer_stages-Mechanismus um eine zweite,
-    # unabhaengige Ausloesebedingung, statt einen neuen Mechanismus zu erfinden. Wie beim
-    # bestehenden dual_reviewer_stages-Trigger nur fuer echte Include-/Exclude-Entscheidungen
-    # relevant -- ein rein administrativer 'pending'-Initialisierungseintrag (z. B. von
-    # system-screening-initializer) ist keine "Erstentscheidung" in diesem Sinne.
+    # sonst verlangt, UND unabhaengig von der konkreten Entscheidung (include/exclude/
+    # awaiting_full_text/uncertain/duplicate, jeweils soweit die Stage-/Decision-Matrix diese
+    # Entscheidung an der jeweiligen Stufe ueberhaupt zulaesst). Erweitert den bestehenden
+    # dual_reviewer_stages-Mechanismus (der bewusst auf include/exclude beschraenkt bleibt, siehe
+    # unten) um eine zweite, unabhaengige Ausloesebedingung, statt einen neuen Mechanismus zu
+    # erfinden. Die einzige Ausnahme ist der rein administrative 'pending'-Initialisierungseintrag
+    # (strukturell nur an Stufe 'deduplication' zulaessig, siehe ALLOWED_DECISIONS_BY_STAGE, und nur
+    # vom technischen Akteur system-screening-initializer erzeugt, siehe
+    # check_screening_system_actor_invariants) -- das ist keine "Erstentscheidung" in diesem Sinne.
     decided_by_actor_type = _reviewer_actor_type(reviewers, decided_by)
     non_human_primary = decided_by_actor_type in ("ai_assistant", "automation")
-    if primary_decision in ("include", "exclude") and second_review is None:
-        if stage in dual_reviewer_stages and non_human_primary:
+    dual_reviewer_decision = primary_decision in ("include", "exclude")
+    is_administrative_pending = primary_decision == "pending"
+    if second_review is None:
+        if dual_reviewer_decision and stage in dual_reviewer_stages and non_human_primary:
             report.error(
                 file_rel, f"{entry_label}.second_review",
                 f"stage '{stage}' is a dual-reviewer stage for protocol '{protocol_id}', and decided_by "
@@ -702,18 +717,18 @@ def _check_decision_snapshot(
                 f"either reason alone already requires second_review for a primary '{primary_decision}' "
                 "decision",
             )
-        elif stage in dual_reviewer_stages:
+        elif dual_reviewer_decision and stage in dual_reviewer_stages:
             report.error(
                 file_rel, f"{entry_label}.second_review",
                 f"stage '{stage}' is a dual-reviewer stage for protocol '{protocol_id}' -- a primary "
                 f"'{primary_decision}' decision requires second_review",
             )
-        elif non_human_primary:
+        elif non_human_primary and not is_administrative_pending:
             report.error(
                 file_rel, f"{entry_label}.second_review",
                 f"decided_by '{decided_by}' is registered in research/reviewers/** as actor_type "
-                f"'{decided_by_actor_type}' -- every primary 'include'/'exclude' decision by a "
-                "non-human actor requires second_review, regardless of "
+                f"'{decided_by_actor_type}' -- every non-administrative primary scientific decision "
+                f"('{primary_decision}') by a non-human actor requires second_review, regardless of "
                 "screening_policy.dual_reviewer_stages (see ADR-0059)",
             )
 
@@ -803,13 +818,25 @@ def _check_decision_snapshot(
                         "adjudication.resolved_by must be a third person, distinct from the primary reviewer "
                         "and second_review.reviewed_by",
                     )
-                resolved_by_actor_type = _reviewer_actor_type(reviewers, resolved_by)
-                if resolved_by_actor_type is not None and resolved_by_actor_type != "human":
+                # ADR-0059 (CSO-Review Runde 2): anders als decided_by/reviewed_by (siehe
+                # _reviewer_actor_type) reicht fuer diese hochkritische Rolle "unregistriert" NICHT
+                # mehr als implizite Mensch-Annahme -- ein Adjudikator MUSS als research_reviewer mit
+                # actor_type 'human' registriert sein, hart und nicht protokollkonfigurierbar.
+                resolved_by_reviewer = reviewers.get(resolved_by) if resolved_by else None
+                resolved_by_actor_type = (
+                    resolved_by_reviewer.data.get("actor_type") if resolved_by_reviewer is not None else None
+                )
+                if resolved_by_actor_type != "human":
+                    registration_note = (
+                        f"is registered in research/reviewers/** as actor_type '{resolved_by_actor_type}'"
+                        if resolved_by_reviewer is not None
+                        else "is not registered as a research_reviewer in research/reviewers/**"
+                    )
                     report.error(
                         file_rel, f"{entry_label}.second_review.adjudication.resolved_by",
-                        f"adjudication.resolved_by '{resolved_by}' is registered in research/reviewers/** "
-                        f"as actor_type '{resolved_by_actor_type}' -- adjudication must always be resolved "
-                        "by a human actor, hard and not protocol-configurable (see ADR-0059)",
+                        f"adjudication.resolved_by '{resolved_by}' {registration_note} -- adjudication must "
+                        "always be resolved by a registered human actor (research_reviewer with actor_type "
+                        "'human'), hard and not protocol-configurable (see ADR-0059)",
                     )
                 final_decision = adjudication.get("final_decision")
                 if final_decision != decision:
@@ -879,14 +906,26 @@ def _check_decision_snapshot(
             "(see ADR-0059)",
         )
     if revision_context is not None:
+        # ADR-0059 (CSO-Review Runde 2): dieselbe Verschaerfung wie bei adjudication.resolved_by
+        # oben -- "unregistriert" reicht fuer diese hochkritische Rolle nicht mehr als implizite
+        # Mensch-Annahme, triggered_by MUSS als research_reviewer mit actor_type 'human' registriert
+        # sein.
         triggered_by = revision_context.get("triggered_by")
-        triggered_by_actor_type = _reviewer_actor_type(reviewers, triggered_by)
-        if triggered_by_actor_type is not None and triggered_by_actor_type != "human":
+        triggered_by_reviewer = reviewers.get(triggered_by) if triggered_by else None
+        triggered_by_actor_type = (
+            triggered_by_reviewer.data.get("actor_type") if triggered_by_reviewer is not None else None
+        )
+        if triggered_by_actor_type != "human":
+            registration_note = (
+                f"is registered in research/reviewers/** as actor_type '{triggered_by_actor_type}'"
+                if triggered_by_reviewer is not None
+                else "is not registered as a research_reviewer in research/reviewers/**"
+            )
             report.error(
                 file_rel, f"{entry_label}.revision_context.triggered_by",
-                f"triggered_by '{triggered_by}' is registered in research/reviewers/** as actor_type "
-                f"'{triggered_by_actor_type}' -- reopening a prior decision must be triggered by a human "
-                "actor (see ADR-0059)",
+                f"triggered_by '{triggered_by}' {registration_note} -- reopening a prior decision must "
+                "always be triggered by a registered human actor (research_reviewer with actor_type "
+                "'human'), hard and not protocol-configurable (see ADR-0059)",
             )
 
 

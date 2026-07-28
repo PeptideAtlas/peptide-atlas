@@ -1690,6 +1690,44 @@ ADR damit inhaltlich "Entschieden" -- der urspruengliche Status-Text oben bleibt
   Include-/Exclude-Entscheidungen) bleibt weiterhin eine eigene, kuenftige Phase -- nicht
   Bestandteil dieser Implementierung.
 
+**Nachtrag (CSO-Review Runde 2, Korrektur vor Merge von PR #10) -- zwei Luecken zwischen der
+freigegebenen Architektur und der tatsaechlich implementierten Regelstrenge geschlossen, VOR dem
+Merge in `main` (PR #10 blieb bis zu dieser Korrektur als Draft offen):**
+
+1. **Adjudikation und Wiederaufnahme erfordern jetzt zwingend einen REGISTRIERTEN Mensch-Akteur --
+   nicht mehr "unregistriert = wie Mensch behandelt".** Der obige Implementierungs-Nachtrag hatte
+   `adjudication.resolved_by` und `revision_context.triggered_by` versehentlich derselben milden
+   Kulanzregel unterworfen wie normale Erst-/Zweitpruefer (`decided_by`/`reviewed_by`): ein
+   unregistriertes Kuerzel wurde faktisch wie ein Mensch akzeptiert. Fuer diese beiden
+   hochkritischen, strukturell auf "menschliche Grundsatzentscheidung" angelegten Rollen ist das
+   nicht ausreichend -- der referenzierte Akteur muss jetzt als `research_reviewer` mit
+   `actor_type: human` tatsaechlich registriert sein; ein unregistriertes Kuerzel ODER ein
+   registrierter `ai_assistant`/`automation`/`service`-Akteur ist beides ein Validierungsfehler.
+   Diese Verschaerfung ist hart und nicht protokollkonfigurierbar (unveraendert gegenueber der
+   urspruenglichen Freigabe) und gilt AUSSCHLIESSLICH fuer diese zwei Felder -- normale
+   Erst-/Zweitpruefer (`screened_by`/`decided_by`/`second_review.reviewed_by`) bleiben bei der
+   milden, urspruenglich freigegebenen Kulanzregel (unregistriert = wie Mensch behandelt).
+2. **Die Zweitreview-Pflicht fuer registrierte `ai_assistant`/`automation`-Erstpruefer gilt jetzt
+   fuer JEDE nicht-administrative primaere wissenschaftliche Entscheidung, nicht mehr nur
+   `include`/`exclude`.** Umfasst zusaetzlich `awaiting_full_text`, `uncertain` und `duplicate`
+   (jeweils soweit die Stage-/Decision-Matrix die Entscheidung an der jeweiligen Stufe ueberhaupt
+   zulaesst). Einzige Ausnahme bleibt der rein administrative `pending`-Initialisierungseintrag des
+   technischen Akteurs `system-screening-initializer` (`decision`/`primary_decision: pending`,
+   `stage: deduplication`, `full_text_status: not_yet_obtained`) -- keine protokoll- oder
+   wirkstoffspezifische Sonderregel.
+3. 15 neue Tests (positiv und negativ) fuer beide Punkte, zusaetzlich zu den bestehenden 431 --
+   siehe `tools/validate_research.py`, `tests/test_validate_research.py` und die zugehoerigen
+   Fixtures unter `tests/fixtures/research/{invalid,valid_scenarios}/`. Acht bereits bestehende,
+   vor dieser Korrektur gueltige `valid_scenarios`-Fixtures (Adjudikation ueber das nicht
+   registrierte Kuerzel `reviewer-3`) mussten dafuer um eine explizite `human`-Registrierung von
+   `reviewer-3` ergaenzt werden -- ihre fachliche Aussage (ein menschlicher Drittpruefer loest den
+   Konflikt) bleibt dabei unveraendert, nur die Registrierung wurde nachgetragen, um die jetzt
+   verschaerfte Regel korrekt abzubilden.
+4. Keine Aenderung an den 197 realen Retatrutide-Screening-Records, keine Aenderung unter
+   `data/**`, keine echten Include-/Exclude-Entscheidungen. Dokumentation aktualisiert:
+   `research/reviewers/README.md`, `research/screening/README.md`,
+   `docs/project/Scientific_Research_Protocol.md` (Abschnitt 9a/9e sowie die Regelzusammenfassung).
+
 ## Format für neue Einträge
 
 ```markdown
