@@ -1598,6 +1598,42 @@ Skala fuer `confidence`) ergaenzen die acht aus Runde 1, siehe Abschnitt 9 des E
   Abschnitt 13 des Entwurfsdokuments (u. a. Registry-Option A vs. B, Vollstaendigkeit der
   Wiederaufnahme-Gruende, Notwendigkeit eines protokollweiten KI-Screening-Opt-in-Felds).
 
+**Nachtrag (CSO-Review, 2026-07-28) -- vollstaendige Freigabe der Architektur, Entwurf Version 2,
+weiterhin Status "Vorgeschlagen" (keine Implementierung in diesem Merge):** der CSO hat die Architektur
+vollstaendig freigegeben und alle neun offenen Fragen aus Abschnitt 13 des Entwurfsdokuments (v1)
+entschieden. Version 2 des Entwurfsdokuments setzt sie um:
+
+1. **Actor-Registry: Option A** (leichtgewichtige neue Objektart `research_reviewer`) -- Option B
+   entfaellt.
+2. **`actor_type` langfristig um zwei weitere Werte reserviert, nicht implementiert:**
+   `external_expert` (externe fachliche Gutachter) und `editorial_board` (institutioneller Akteur) --
+   ausdruecklich eine Zukunftsperspektive, nicht Teil des aktuellen Schema-Entwurfs (weiterhin nur
+   `human`/`ai_assistant`/`automation`/`service`).
+3. **Registrierungspflicht erweitert:** verpflichtend fuer `ai_assistant`, `automation`, `service`
+   sowie -- sobald eingefuehrt -- `external_expert`/`editorial_board`; `human` bleibt optional.
+4. **Kein `screening_policy.ai_screening_enabled`-Opt-in-Feld** -- die automatische
+   Zweitreview-Pflicht bei nicht-menschlicher Erstentscheidung bleibt alleinige Absicherung.
+5. **Adjudikation bleibt zwingend menschlich, hart, nicht protokollkonfigurierbar** -- bestaetigt.
+6. **`revision_context.reason` um drei Werte erweitert:** `external_peer_review`, `quality_control`,
+   `data_correction` (jetzt 8 Werte insgesamt im neuen Vokabular
+   `screening_revision_reasons.yaml`).
+7. **`language_not_supported` wird nicht als Exclude-Grund ergaenzt** -- `other` bleibt ausreichend.
+8. **Validator-Beobachtungsschwellenwert (~5 Minuten) beibehalten** -- keine inkrementelle
+   Validierungsstrategie von Anfang an.
+9. **Freigabe zur Implementierung erteilt** -- in einer eigenstaendigen, kuenftigen
+   Phase-4B-1B-3-Implementierungs-PR; dieser Merge selbst enthaelt weiterhin keine Implementierung.
+
+Zusaetzlich, ausserhalb der urspruenglichen neun Fragen, verlangte der CSO eine dokumentierte
+**Zukunftsperspektive**: die Objektart `research_reviewer` ist nicht auf Titel-/Abstract-Screening
+beschraenkt, sondern als universelles wissenschaftliches Reviewer-Modell konzipiert und perspektivisch
+auch fuer Promotion Review, Evidence Review, Editorial Review und Quality Audit vorgesehen (Abschnitt 1.8
+des Entwurfsdokuments) -- ebenfalls ohne Implementierung, ohne zusaetzliche Felder, ohne Schemaaenderung.
+
+**Weiterhin keine Implementierung in diesem Nachtrag oder dem zugehoerigen Merge** -- reine
+Entwurfsrevision und Dokumentation der CSO-Entscheidungen. Eine Frage bleibt fuer die kuenftige
+Implementierungsphase offen (keine CSO-Vorgabe in dieser Runde): ob `revision_context.triggered_by`
+zwingend ein `human`-Akteur sein muss.
+
 ## Format für neue Einträge
 
 ```markdown

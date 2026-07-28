@@ -1,13 +1,13 @@
 ---
-title: "Phase 4B-1B-3 – Title & Abstract Screening Architecture (Proposed)"
-description: Architektur-Entwurf für ein vollständiges Reviewer-Modell (Mensch + KI + Zweitreview), Konfliktauflösung, Wiederaufnahme ausgeschlossener Studien und Skalierung auf zehntausende Screening Records. Reine Spezifikation, keine Implementierung.
+title: "Phase 4B-1B-3 – Title & Abstract Screening Architecture (Proposed, v2)"
+description: Architektur-Entwurf (CSO-freigegeben, Revision 2) für ein vollständiges Reviewer-Modell (Mensch + KI + Zweitreview), Konfliktauflösung, Wiederaufnahme ausgeschlossener Studien und Skalierung auf zehntausende Screening Records. Reine Spezifikation, keine Implementierung.
 tags:
   - Architektur
   - Projekt
   - Datenmodell
 ---
 
-# Phase 4B-1B-3 – Title & Abstract Screening Architecture (Proposed)
+# Phase 4B-1B-3 – Title & Abstract Screening Architecture (Proposed, v2)
 
 !!! warning "Status: Vorgeschlagen, nicht entschieden"
     Dieses Dokument ist ein **Architektur-Entwurf** (siehe ADR-0059 im [Decision Log](Decision_Log.md),
@@ -15,6 +15,24 @@ tags:
     Validator-Änderungen, keine veränderten oder neuen Screening Records, keine echten Include-/
     Exclude-Entscheidungen. Alle Codeblöcke in diesem Dokument sind Entwürfe zur Diskussion, keine
     bereits angewendeten Artefakte.
+
+## Änderungsprotokoll gegenüber Version 1
+
+Die CSO-Review (2026-07-28) hat die Grundarchitektur vollständig freigegeben und acht konkrete
+Entscheidungen sowie eine zusätzliche Dokumentationsergänzung verlangt. Version 2 setzt sie um, weiterhin
+**ohne jede Implementierung** — die Umsetzung erfolgt in einer eigenständigen, künftigen Phase:
+
+| # | CSO-Entscheidung | Umgesetzt in |
+|---|---|---|
+| — | Zukunftsperspektive: `research_reviewer` als universelles wissenschaftliches Reviewer-Modell dokumentieren (Promotion/Evidence/Editorial Review, Quality Audit) | Abschnitt 1.8 (neu) |
+| 1 | Actor-Registry: Option A | Abschnitt 1.3 (Status auf „entschieden" aktualisiert) |
+| 2 | `actor_type` langfristig zusätzlich um `external_expert`/`editorial_board` reservieren (nur Dokumentation, keine Schemaänderung) | Abschnitt 1.3 |
+| 3 | Registrierungspflicht auf `ai_assistant`/`automation`/`service`/`external_expert`/`editorial_board` erweitert, `human` bleibt optional | Abschnitt 1.3 |
+| 4 | Kein `ai_screening_enabled`-Opt-in-Feld | Abschnitt 1.7 (aufgelöst) |
+| 5 | Adjudikation bleibt zwingend menschlich (bestätigt, hart) | Abschnitt 1.6 (bestätigt) |
+| 6 | `revision_context.reason` um `external_peer_review`/`quality_control`/`data_correction` ergänzt (8 Werte) | Abschnitt 6.2 |
+| 7 | `language_not_supported` nicht ergänzt (bestätigt) | Abschnitt 3 (aufgelöst) |
+| 8 | Validator-Beobachtungsschwellenwert (~5 Minuten) beibehalten (bestätigt) | Abschnitt 10.2 (bestätigt) |
 
 ## 0. Anlass, Geltungsbereich und Lesehinweis
 
@@ -79,7 +97,7 @@ verwarf eine Actor-Registry **nicht aus Prinzip**, sondern wegen des Umfangs zu 
 Phase 4B-1B-3 — echtes Titel-/Abstract-Screening mit realen menschlichen und KI-gestützten Reviewern in
 nennenswertem Umfang — ist genau diese vorgemerkte spätere Phase.
 
-### 1.3 Entwurf: leichtgewichtige Actor-Registry (Option A, empfohlen)
+### 1.3 Entwurf: leichtgewichtige Actor-Registry (Option A, CSO-entschieden)
 
 **Bewusst NICHT** die 2026 in ADR-0041 befürchtete große Migration: `research_actor_id`-Felder bleiben
 überall **unverändert einfache Strings** (kein bestehendes Schema ändert Typ oder Struktur). Die
@@ -117,21 +135,34 @@ Ordner `research/reviewers/`, ID-Muster identisch zu `research_actor_id` selbst 
 `service`) statt einer neuen Erfindung — Kontinuität zu ADR-0041. `system-screening-initializer` wäre
 `automation`; `cso-chatgpt` wäre `ai_assistant`; ein menschlicher Reviewer wäre `human`.
 
-**Bewusst milde referenzielle Kopplung:** die Registrierung ist **verpflichtend nur für Akteure, die als
-`ai_assistant` oder `automation` auftreten** — die Behauptung „diese Entscheidung war KI-gestützt" ist
-eine überprüfbare technische Tatsache und sollte auch überprüfbar sein. Für `human`-Akteure bleibt die
+**CSO-Entscheidung (2026-07-28): Registrierungspflicht erweitert.** Verpflichtend registriert sein
+müssen Akteure der Typen **`ai_assistant`, `automation`, `service`, sowie — sobald eingeführt —
+`external_expert` und `editorial_board`** (siehe unten): die Behauptung „diese Entscheidung war
+KI-gestützt/automatisiert/durch einen externen bzw. institutionellen Akteur getroffen" ist eine
+überprüfbare technische Tatsache und sollte auch überprüfbar sein. Für `human`-Akteure bleibt die
 Registrierung **optional** — dieselbe organisatorische Grenze, die ADR-0041 bereits für menschliche
 Identität akzeptiert hat (Kürzel beweisen keine bestimmte Person), wird hier bewusst **nicht**
 verschärft, um keine neue, technisch nicht einlösbare Garantie vorzutäuschen.
 
-### 1.4 Entwurf: leichtgewichtige Alternative (Option B)
+**CSO-Entscheidung (2026-07-28): zwei weitere `actor_type`-Werte langfristig reserviert, noch nicht
+implementiert.** Über die vier oben skizzierten, bereits im Schema-Entwurf enthaltenen Werte hinaus
+reserviert der CSO **`external_expert`** (externe fachliche Gutachter, nicht Teil des Kernteams) und
+**`editorial_board`** (institutioneller Akteur, z. B. ein Redaktionsgremium als Ganzes statt einer
+Einzelperson) als künftige `actor_type`-Werte. Dies ist **ausdrücklich eine Zukunftsperspektive**: der
+obige `enum`-Entwurf bleibt vorerst bei den vier ursprünglichen Werten
+(`human`/`ai_assistant`/`automation`/`service`) — `external_expert`/`editorial_board` werden erst mit
+einer eigenständigen, künftigen Umsetzung tatsächlich zum Schema hinzugefügt, nicht mit diesem Dokument.
 
-Falls selbst diese kleine Registry als verfrüht gilt: reine **Namenskonvention** statt neuer Objektart —
-KI-/Automatisierungsakteure MÜSSEN mit einem reservierten Präfix beginnen (`ai-*` bzw. bereits etabliert
-`system-*`, siehe `system-screening-initializer`), validator-seitig als Regex-Prüfung erzwungen, aber
-ohne strukturierte Metadaten (kein `display_name`, keine Nachvollziehbarkeit, welches KI-Modell/welche
-Version). Schwächer, aber ohne neue Objektart. **Empfehlung bleibt Option A** — der Zusatzaufwand ist
-gering (eine neue, kleine, optionale Objektart), der Erkenntnisgewinn deutlich höher.
+### 1.4 Entwurf: leichtgewichtige Alternative (Option B) — nicht gewählt
+
+Erwogene Alternative, falls selbst die kleine Registry als verfrüht gälte: reine **Namenskonvention**
+statt neuer Objektart — KI-/Automatisierungsakteure MÜSSEN mit einem reservierten Präfix beginnen
+(`ai-*` bzw. bereits etabliert `system-*`, siehe `system-screening-initializer`), validator-seitig als
+Regex-Prüfung erzwungen, aber ohne strukturierte Metadaten (kein `display_name`, keine
+Nachvollziehbarkeit, welches KI-Modell/welche Version). Schwächer, aber ohne neue Objektart.
+
+**CSO-Entscheidung (2026-07-28): Option A.** Die Actor-Registry als eigenständige Objektart
+(Abschnitt 1.3) wird verwendet, Option B entfällt.
 
 ### 1.5 Entwurf: verpflichtendes Zweitreview für nicht-menschliche Erstentscheidungen
 
@@ -154,21 +185,47 @@ Kernvoraussetzung, um zehntausende Kandidaten überhaupt zeitnah zu sichten — 
 KI-Entscheidung je unbeaufsichtigt terminal wird. Der menschliche Reviewer prüft/bestätigt/widerspricht,
 statt jeden Titel von Grund auf neu zu lesen.
 
-### 1.6 Entwurf: Adjudikation bleibt ausschließlich menschlich
+### 1.6 Adjudikation bleibt ausschließlich menschlich — bestätigt
 
-**Vorschlag (hart, nicht protokollkonfigurierbar):** `second_review.adjudication.resolved_by` muss
-(sofern die Registry existiert, Option A) einen Akteur mit `actor_type: human` referenzieren. Ein
-Widerspruch zwischen zwei Entscheidungen ist der Moment mit der größten fachlichen Tragweite im gesamten
-Screening-Workflow — hier bleibt die Letztentscheidung ausdrücklich beim Menschen, unabhängig davon, wie
-weit KI-Unterstützung an früheren Stellen reicht. Dies **erweitert**, ersetzt aber nicht, die bereits
-bestehende Adjudikator-Unabhängigkeitsregel.
+**CSO-Entscheidung (2026-07-28): bestätigt, hart, nicht protokollkonfigurierbar.**
+`second_review.adjudication.resolved_by` muss (sofern die Registry existiert, Option A) einen Akteur mit
+`actor_type: human` referenzieren. Ein Widerspruch zwischen zwei Entscheidungen ist der Moment mit der
+größten fachlichen Tragweite im gesamten Screening-Workflow — hier bleibt die Letztentscheidung
+ausdrücklich beim Menschen, unabhängig davon, wie weit KI-Unterstützung an früheren Stellen reicht. Dies
+**erweitert**, ersetzt aber nicht, die bereits bestehende Adjudikator-Unabhängigkeitsregel.
 
-### 1.7 Offene Frage: Protokoll-Opt-out
+### 1.7 Protokoll-Opt-out — aufgelöst, nicht ergänzt
 
-Soll `screening_policy` ein Feld erhalten, das KI-gestütztes Erst-Screening pro Protokoll ausdrücklich
-erlaubt/verbietet (`ai_screening_enabled: bool`, Default `false` — explizites Opt-in statt stillschweigend
-erlaubt), oder ist die in 1.5 vorgeschlagene automatische Zweitreview-Pflicht als alleinige Absicherung
-ausreichend? Siehe Abschnitt 11.
+Erwogen war ein Feld, das KI-gestütztes Erst-Screening pro Protokoll ausdrücklich erlaubt/verbietet
+(`ai_screening_enabled: bool`, Default `false` — explizites Opt-in statt stillschweigend erlaubt).
+
+**CSO-Entscheidung (2026-07-28): kein `ai_screening_enabled`.** Die in Abschnitt 1.5 vorgeschlagene
+automatische Zweitreview-Pflicht bei nicht-menschlicher Erstentscheidung ist als alleinige Absicherung
+ausreichend; ein zusätzliches protokollweites Opt-in-Feld wird nicht eingeführt.
+
+### 1.8 Zukunftsperspektive: `research_reviewer` als universelles wissenschaftliches Reviewer-Modell
+
+**Ausdrücklich eine Zukunftsperspektive — keine Implementierung, keine zusätzlichen Felder, keine
+Schemaänderung in diesem Dokument.** Die in Abschnitt 1.3 vorgeschlagene Objektart `research_reviewer`
+ist bewusst **nicht** auf Titel-/Abstract-Screening beschränkt konzipiert: `id`/`actor_type` als rein
+projektweites, protokoll- und stufenunabhängiges Reviewer-Modell (Abschnitt 9.2) ist so allgemein
+gehalten, dass es perspektivisch auch für andere bereits bestehende oder künftige Review-Kontexte
+wiederverwendet werden könnte, ohne dass die Objektart selbst sich ändern müsste:
+
+- **Promotion Review** — `promotion_record.review.reviewers` (ADR-0041) verwendet bereits dieselben
+  `research_actor_id`-Kürzel; genau diese Stelle war der ursprüngliche Anlass, an dem ADR-0041 die
+  Actor-Registry-Idee erstmals diskutierte und vertagte.
+- **Evidence Review** — die Bewertung von Claims/Studien im kanonischen Evidenzmodell (`data/**`)
+  verwendet ebenfalls Akteursfelder, die von einem strukturellen Akteurstyp profitieren könnten.
+- **Editorial Review** — redaktionelle Prüfschritte außerhalb des Screening-Workflows.
+- **Quality Audit** — nachträgliche Stichproben-/Qualitätsprüfungen über bereits getroffene
+  Entscheidungen hinweg.
+
+Diese vier Anwendungsfälle sind **nicht Gegenstand dieses Entwurfs** und werden hier nicht weiter
+spezifiziert — sie werden ausschließlich als langfristige Zielrichtung festgehalten, damit eine künftige
+Umsetzung der Registry bewusst so gestaltet wird, dass sie diese Wiederverwendung nicht versehentlich
+ausschließt (z. B. keine Titel-/Abstract-Screening-spezifischen Annahmen im Schema von
+`research_reviewer` selbst, siehe Abschnitt 1.3).
 
 ## 2. Include-/Exclude-Entscheidungen — bereits vollständig vorhanden
 
@@ -196,11 +253,11 @@ Include-/Exclude-Semantik selbst.
 `superseded_record`, `other`) deckt die für Titel-/Abstract-Screening typischen Ausschlussgründe bereits
 vollständig ab, inkl. `other` als Auffangkategorie.
 
-**Geprüfte, nicht empfohlene Ergänzung:** ein möglicher Wert `language_not_supported` (Abstract in einer
-vom Reviewer-Team nicht abgedeckten Sprache) wurde erwogen, aber **nicht** in diesen Entwurf
-aufgenommen — `other` deckt diesen seltenen Fall bereits ab, ein eigener Wert wäre vermutlich
-Overengineering für einen Randfall. Als offene Frage an den CSO festgehalten (Abschnitt 11), keine
-Festlegung.
+**Geprüfte, nicht empfohlene Ergänzung — CSO-bestätigt, nicht ergänzt:** ein möglicher Wert
+`language_not_supported` (Abstract in einer vom Reviewer-Team nicht abgedeckten Sprache) wurde erwogen,
+aber **nicht** in diesen Entwurf aufgenommen — `other` deckt diesen seltenen Fall bereits ab, ein eigener
+Wert wäre vermutlich Overengineering für einen Randfall. **CSO-Entscheidung (2026-07-28):** `other`
+bleibt ausreichend, `language_not_supported` wird nicht ergänzt.
 
 ## 4. Konfliktauflösung zwischen Reviewern — bereits vollständig vorhanden, eine Ergänzung
 
@@ -275,7 +332,8 @@ derselben oder einer frueheren Stufe>`):
       "type": "string",
       "enum": [
         "protocol_amendment", "new_evidence", "reviewer_error_correction",
-        "periodic_reevaluation", "other"
+        "periodic_reevaluation", "external_peer_review", "quality_control",
+        "data_correction", "other"
       ]
     },
     "reference": {
@@ -290,8 +348,13 @@ derselben oder einer frueheren Stufe>`):
 }
 ```
 
-Neues kontrolliertes Vokabular `research/vocabularies/screening_revision_reasons.yaml` mit den fünf
-Werten oben.
+Neues kontrolliertes Vokabular `research/vocabularies/screening_revision_reasons.yaml` mit den acht
+Werten oben. **CSO-Entscheidung (2026-07-28):** die ursprünglich vorgeschlagenen fünf Werte werden um
+drei weitere ergänzt — `external_peer_review` (Wiederaufnahme durch externes Peer-Review-Feedback,
+abgegrenzt von `new_evidence`, das neue Publikationen/Daten meint), `quality_control` (im Rahmen einer
+gezielten Qualitätsprüfung/eines Audits entdeckt, abgegrenzt von `reviewer_error_correction`, das einen
+konkreten Einzelfehler meint) und `data_correction` (Korrektur fehlerhafter technischer/bibliographischer
+Metadaten am Kandidaten selbst, nicht der wissenschaftlichen Bewertung).
 
 **Verknüpfung zu Protokolländerungen (Abschnitt 31 im Scientific Research Protocol):** eine inhaltliche
 Protokolländerung entsteht bereits heute als neue Version (`research-protocol-<slug>-v2.yaml`), ändert
@@ -385,7 +448,9 @@ Protokolle. Bei linearem Wachstum auf zehntausende Records wird das der dominant
 Fehleranfälligkeit) — stattdessen einen konkreten Beobachtungsschwellenwert festlegen (Vorschlag: falls
 der `validate-and-test`-Job wiederholt über ~5 Minuten läuft, wird eine inkrementelle Validierung
 [nur geänderte Dateien je PR-Diff plus vollständiger Lauf auf `main`] zur eigenständigen Prüfung fällig)
-— eine bewusste, dokumentierte Nicht-Entscheidung statt stillschweigender Ignoranz.
+— eine bewusste, dokumentierte Nicht-Entscheidung statt stillschweigender Ignoranz. **CSO-Entscheidung
+(2026-07-28): bestätigt.** Der ~5-Minuten-Beobachtungsschwellenwert bleibt wie vorgeschlagen, keine
+inkrementelle Validierungsstrategie von Anfang an.
 
 ### 10.3 Bereits skalierende Mechanismen
 
@@ -409,12 +474,12 @@ alles Tooling-/Prozessfragen, keine Datenarchitektur. Siehe Abschnitt 12.
 
 | Datei | Änderung | Additiv? |
 |---|---|---|
-| `schemas/research_reviewer.schema.json` | Neu (Option A, Abschnitt 1.3) — eigenständige, optionale Objektart. | Ja, neue Objektart |
+| `schemas/research_reviewer.schema.json` | Neu (Option A, CSO-entschieden, Abschnitt 1.3) — eigenständige, optionale Objektart. `actor_type`-Enum vorerst weiterhin nur die vier Werte `human`/`ai_assistant`/`automation`/`service`; `external_expert`/`editorial_board` sind CSO-reserviert (Abschnitt 1.3), aber **nicht** Teil dieses Enum-Entwurfs. | Ja, neue Objektart |
 | `schemas/research_screening_record.schema.json` | Neu: `decision_history[].revision_context` (optional, Pflicht nur bei Umkehrung, Abschnitt 6.2). | Ja |
-| `research/vocabularies/screening_revision_reasons.yaml` | Neu, 5 Werte (Abschnitt 6.2). | — |
+| `research/vocabularies/screening_revision_reasons.yaml` | Neu, 8 Werte (Abschnitt 6.2, CSO-erweitert um `external_peer_review`/`quality_control`/`data_correction`). | — |
 | `tools/check_research_immutability.py` | Neu: viertes `ImmutableTarget` für `research/screening/**`, schützt ausschließlich bereits committete `decision_history[]`-Einträge (Abschnitt 5.2). | — |
-| `tools/validate_research.py` | Angepasst: `_check_decision_snapshot` (Dual-Review-Pflicht bei nicht-menschlicher Erstentscheidung, Adjudikator-muss-Mensch-Regel, `revision_context`-Vollständigkeitsprüfung bei Umkehrungen). Neu (falls Option A): `check_research_reviewers` (Registry-Konsistenz, Pflichtregistrierung für `ai_assistant`/`automation`). | — |
-| `research/protocols/*.schema.json` (`research_protocol.schema.json`) | Offene Frage (1.7): optionales `screening_policy.ai_screening_enabled`. | Ja, falls umgesetzt |
+| `tools/validate_research.py` | Angepasst: `_check_decision_snapshot` (Dual-Review-Pflicht bei nicht-menschlicher Erstentscheidung, Adjudikator-muss-Mensch-Regel, `revision_context`-Vollständigkeitsprüfung bei Umkehrungen). Neu (Option A): `check_research_reviewers` (Registry-Konsistenz, Pflichtregistrierung für `ai_assistant`/`automation`/`service`, künftig auch `external_expert`/`editorial_board`). | — |
+| `research/protocols/*.schema.json` (`research_protocol.schema.json`) | **CSO-Entscheidung (1.7): entfällt.** Kein `screening_policy.ai_screening_enabled`. | Nein |
 
 **Kein Schema-Versionsbump nötig** — alle Änderungen additiv-optional. Keine Migration der 197
 bestehenden Records erforderlich (`revision_context` ist nur für künftige, tatsächlich umkehrende
@@ -431,23 +496,34 @@ bestehender Screening Record geändert werden müsste).
 - Keine Änderung an der bereits bestehenden `dual_reviewer_stages`-Grundmechanik — nur eine zusätzliche,
   unabhängige Auslösebedingung (Abschnitt 1.5).
 
-## 13. Offene Fragen für den CSO
+## 13. CSO-Entscheidungen (Review vom 2026-07-28)
 
-1. Actor-Registry: Option A (leichtgewichtige neue Objektart `research_reviewer`, empfohlen) oder
-   Option B (reine Namenskonvention, Abschnitt 1.4)?
-2. Ist die verpflichtende Registrierung für `ai_assistant`/`automation`-Akteure (Abschnitt 1.3)
-   ausreichend, oder soll sie auch für `human` gelten?
-3. Ist die automatische Zweitreview-Pflicht bei nicht-menschlicher Erstentscheidung (Abschnitt 1.5) die
-   richtige Absicherung, oder wird zusätzlich ein protokollweites Opt-in-Feld
-   `ai_screening_enabled` benötigt (Abschnitt 1.7)?
-4. Ist die harte Adjudikator-muss-Mensch-Regel (Abschnitt 1.6) korrekt, oder soll sie
-   protokollkonfigurierbar bleiben?
-5. Ist die vorgeschlagene `revision_context.reason`-Werteliste (Abschnitt 6.2, 5 Werte) vollständig?
-6. Muss `revision_context.triggered_by` zwingend ein `human`-Akteur sein (Abschnitt 6.2), oder reicht
-   die allgemeine Zweitreview-Pflicht aus Abschnitt 1.5 auch hier?
-7. Soll `language_not_supported` doch als eigener Exclude-Grund ergänzt werden (Abschnitt 3), oder bleibt
-   `other` ausreichend?
-8. Ist der vorgeschlagene Beobachtungsschwellenwert für Validator-Laufzeit (Abschnitt 10.2, ~5 Minuten)
-   sinnvoll, oder soll von Anfang an eine inkrementelle Validierungsstrategie entworfen werden?
-9. Freigabe, diesen Entwurf als Grundlage für die konkrete Implementierung in einer eigenständigen
-   Phase-4B-1B-3-PR zu verwenden.
+Die Architektur wurde vollständig freigegeben. Alle neun ursprünglichen offenen Fragen sind entschieden:
+
+1. **Actor-Registry: Option A** (leichtgewichtige neue Objektart `research_reviewer`, Abschnitt 1.3).
+   Option B (Abschnitt 1.4) entfällt.
+2. **Registrierungspflicht erweitert** über `ai_assistant`/`automation` hinaus auf zusätzlich `service`
+   sowie — sobald eingeführt — `external_expert`/`editorial_board` (Abschnitt 1.3). `human` bleibt
+   optional.
+3. **Kein `ai_screening_enabled`-Opt-in-Feld** (Abschnitt 1.7). Die automatische Zweitreview-Pflicht bei
+   nicht-menschlicher Erstentscheidung (Abschnitt 1.5) ist als alleinige Absicherung ausreichend.
+4. **Harte Adjudikator-muss-Mensch-Regel bestätigt**, nicht protokollkonfigurierbar (Abschnitt 1.6).
+5. **`revision_context.reason`-Werteliste um drei Werte erweitert:** `external_peer_review`,
+   `quality_control`, `data_correction` (Abschnitt 6.2, jetzt 8 Werte insgesamt).
+6. Nicht gesondert entschieden — offen für die künftige Implementierungsphase, keine CSO-Vorgabe in
+   dieser Runde, ob `revision_context.triggered_by` zwingend `human` sein muss.
+7. **`language_not_supported` wird nicht ergänzt** — `other` bleibt ausreichend (Abschnitt 3).
+8. **Validator-Beobachtungsschwellenwert (~5 Minuten) beibehalten** (Abschnitt 10.2), keine
+   inkrementelle Validierungsstrategie von Anfang an.
+9. **Freigabe erteilt.** Dieser Entwurf ist Grundlage für die künftige, konkrete Implementierung in
+   einer eigenständigen Phase-4B-1B-3-Implementierungs-PR. Diese Freigabe (inkl. dieses Dokuments als
+   Dokumentation) wird als solche gemerged — **die Implementierung selbst erfolgt nicht mit diesem
+   Dokument, sondern in einer eigenen künftigen Phase.**
+
+Zusätzlich, außerhalb der ursprünglichen neun Fragen: das langfristige Ziel, `research_reviewer` als
+universelles wissenschaftliches Reviewer-Modell auch für Promotion Review, Evidence Review, Editorial
+Review und Quality Audit zu verwenden, wurde als Zukunftsperspektive dokumentiert (Abschnitt 1.8) —
+ebenfalls ohne Implementierung.
+
+**Offen für die künftige Implementierungsphase** (nicht Teil dieser Freigabe, keine CSO-Vorgabe in
+dieser Runde): ob `revision_context.triggered_by` zwingend ein `human`-Akteur sein muss (Punkt 6 oben).
