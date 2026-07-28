@@ -1,0 +1,40 @@
+# Kontrolliertes Vokabular: research_screening_record.related_records[].relationship_metadata.
+# evidence_source[] (ADR-0058, Phase 4B-1B-2). Beschreibt WORAUS die Existenz einer
+# related_records-Beziehung erkannt wurde -- kein Aussagewert ueber die wissenschaftliche Qualitaet
+# der beteiligten Publikationen (siehe schemas/common.schema.json#/$defs/relationship_metadata).
+schema_version: "1.0.0"
+values:
+  - value: title_similarity
+    labels: { de: Titelähnlichkeit, en: Title Similarity }
+    note_de: >
+      Übereinstimmung/erkennbare Ähnlichkeit der Titel (z. B. gemeinsamer Titel plus
+      "... Reply."-Suffix).
+  - value: doi
+    labels: { de: Gemeinsame DOI, en: Shared DOI }
+    note_de: Gemeinsame oder erkennbar verwandte DOI.
+  - value: pmid
+    labels: { de: Benachbarte PMID, en: Adjacent PMID }
+    note_de: Gemeinsamer oder auffällig benachbarter PMID (z. B. sequenzielle Vergabe).
+  - value: pmcid
+    labels: { de: Gemeinsame PMCID, en: Shared PMCID }
+  - value: nct_cross_reference
+    labels: { de: NCT-Querverweis, en: NCT Cross-Reference }
+    note_de: Gemeinsamer Bezug zu derselben NCT-ID (Registereintrag ↔ Publikation).
+  - value: publication_types
+    labels: { de: Publikationstyp-Metadaten, en: Publication Type Metadata }
+    note_de: >
+      Strukturelle publication_types-Metadaten (z. B. ein Comment-Tag bei einem erkennbar
+      zugehörigen Letter).
+  - value: author_list
+    labels: { de: Autorenliste, en: Author List }
+    note_de: Übereinstimmende oder stark überlappende Autorenliste.
+  - value: manual_title_abstract_review
+    labels: { de: Manuelle Titel-/Abstract-Prüfung, en: Manual Title/Abstract Review }
+    note_de: >
+      Manuelle Prüfung von Titel/Abstract durch einen Menschen, ohne dass ein strukturelles Signal
+      allein ausgereicht hätte.
+  - value: manual_full_text_review
+    labels: { de: Manuelle Volltextprüfung, en: Manual Full-Text Review }
+  - value: other
+    labels: { de: Sonstige, en: Other }
+    note_de: Sonstige Evidenz, ausschließlich im Freitext rationale des Eintrags dokumentiert.

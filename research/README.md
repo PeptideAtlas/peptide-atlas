@@ -87,11 +87,8 @@ die kanonische Datenebene (`canonical_source_id` muss unter `data/sources/**`, `
 `data/entities/studies/**`, `canonical_claim_id` unter `data/claims/**` existieren, sofern gesetzt) sowie
 Protokollkonsistenz (Version/ID, Freigabestatus, ein Suchlauf darf nur eine unter
 `planned_information_sources[]` freigegebene Datenbank verwenden, protokollübergreifende Referenzen inkl. der
-gesamten `duplicate_of`-Kette, `dual_reviewer_stages` als Teilmenge von `stages`), echte Identifier-
-Deduplizierung (ADR-0057: eine Kollision, an der noch mindestens ein nie menschlich übernommener,
-system-initialisierter Screening Record beteiligt ist, ist nur eine WARNUNG — „potenzielles Duplikat,
-menschliche Prüfung steht aus" — kein ERROR; sobald ein Mensch **jeden** beteiligten Datensatz übernommen
-hat, wird eine weiterhin ungelöste Kollision zum ERROR), den vollständigen Screening-Workflow (JEDER `decision_history`-Eintrag wird geprüft, nicht nur
+gesamten `duplicate_of`-Kette, `dual_reviewer_stages` als Teilmenge von `stages`), den vollständigen
+Screening-Workflow (JEDER `decision_history`-Eintrag wird geprüft, nicht nur
 der aktuelle Zustand: Stage-/Decision-Matrix gegen alle drei Entscheidungsebenen — `primary_decision`,
 `second_review.reviewer_decision`, effektive `decision` —, strukturell getrennte, verlustfreie Drei-Ebenen-
 Provenienz inkl. eigenständiger Gründe/Duplikatverweise je Ebene, Dual-Reviewer-Pflicht (nicht für
@@ -101,14 +98,40 @@ sowohl objektübergreifend (Screening → Extraktion → Verifikation → Promot
 einem Objekt selbst dokumentierte Ereignisdatum liegt innerhalb von dessen eigenem
 `[created_at, updated_at]`) und die Claim-Promotion-Kette (inkl. `claim_promotion_policy.
 requires_second_review`, symmetrisch für `approved_for_creation`/`promoted`/`rejected`).
+
 Seit ADR-0059 (Phase 4B-1B-3) zusätzlich: `research/reviewers/**`-Registry-Konsistenz und
 Pflichtregistrierung der bereits bekannten nicht-menschlichen Akteure (`system-screening-initializer` als
-`automation`, `cso-chatgpt` als `ai_assistant` — nur wenn ein Datensatz sie tatsächlich verwendet), Zweitreview-
-Pflicht für jede primäre `include`/`exclude`-Entscheidung eines registrierten `ai_assistant`/`automation`-
-Akteurs (unabhängig von `dual_reviewer_stages`), Adjudikation und `decision_history[].revision_context.
-triggered_by` ausschließlich durch registrierte `human`-Akteure (ein unregistriertes Kürzel gilt als
-menschlich), sowie `revision_context` genau dann verpflichtend, wenn ein Eintrag die effektive Entscheidung
-des unmittelbar vorangegangenen Eintrags an derselben Stufe umkehrt.
+`automation`, `cso-chatgpt` als `ai_assistant` — nur wenn ein Datensatz sie tatsächlich verwendet),
+Zweitreview-Pflicht für jede **nicht-administrative primäre wissenschaftliche Entscheidung** eines
+registrierten `ai_assistant`/`automation`-Akteurs (nicht nur `include`/`exclude`, unabhängig von
+`dual_reviewer_stages` — einzige Ausnahme ist der administrative `pending`-Initialisierungseintrag von
+`system-screening-initializer`), sowie `revision_context` genau dann verpflichtend, wenn ein Eintrag die
+effektive Entscheidung des unmittelbar vorangegangenen Eintrags an derselben Stufe umkehrt. Adjudikation
+(`second_review.adjudication.resolved_by`) und `decision_history[].revision_context.triggered_by` erfordern
+einen **registrierten** `human`-Akteur — anders als bei normalen Erst-/Zweitprüfern reicht hier ein
+unregistriertes Kürzel NICHT als implizite Mensch-Annahme (hart, nicht protokollkonfigurierbar).
+
+Echte Identifier-Deduplizierung (seit ADR-0058, Phase 4B-1B-2 — ersetzt die vormals rein paarweise
+ADR-0057-Logik): eine Identifikator-Kollisionsgruppe gilt erst dann als vollständig erklärt, wenn sie —
+über Kanten aus `duplicate_of` (bibliographische Dubletten) UND `related_records` (eigenständige, aber
+inhaltlich verwandte Publikationen, z. B. Letter+Reply) — eine EINZIGE Zusammenhangskomponente bildet
+(Union-Find, erkennt transitive Erklärung korrekt). Eine nicht vollständig verbundene Gruppe ist nur eine
+WARNUNG — „potenzielles Duplikat, menschliche Prüfung steht aus" — solange mindestens ein beteiligter
+Screening Record noch `system_initialized` ist (siehe unten); sobald kein Mitglied mehr `system_initialized`
+ist, wird eine weiterhin ungelöste Kollision zum ERROR. `related_records[]` (`related_candidate_manifest_id`/
+`related_candidate_id`, gerichteter `relationship_type`, Pflicht-`rationale`, `relationship_metadata` mit
+`identified_by`/`identified_at`/`evidence_source`) wird referenziell und gerichtet-symmetrisch geprüft
+(`check_screening_related_records`): Ziel-Kandidat existiert im selben Protokoll, kein Selbstverweis, kein
+technischer Systemakteur als `identified_by`, und — sobald ein Screening Record für den Ziel-Kandidaten
+existiert — dessen eigenes `related_records[]` muss den passenden INVERSEN `relationship_type`
+zurückverweisen (fehlende Gegenrichtung: Warnung; falscher Typ: Fehler). `relationship_metadata` beschreibt
+ausschließlich die Evidenz für die Beziehung selbst, NIE die wissenschaftliche Evidenz der beteiligten
+Studie(n) (siehe [`research/screening/README.md`](screening/README.md)).
+
+Der Bearbeitungszustand eines Screening Records (`system_initialized`/`under_human_review`/`finalized`) ist
+seit ADR-0058 eine reine, NICHT gespeicherte Projektion (`tools/_researchlib.py::derive_workflow_state()`,
+ausschließlich aus `decision_history` berechnet) — kein Schemafeld, keine zweite Wahrheitsquelle, ersetzt die
+vormals redundante `screened_by`-Stringvergleichslogik.
 
 `check_research_immutability.py` prüft zusätzlich, dass bereits committete `search_run`-Dateien nicht
 rückwirkend verändert werden (nur `status`/`updated_at`/`review`/`notes` dürfen sich ändern), dass
@@ -128,10 +151,11 @@ abgesichert (siehe „Bekannte Grenzen" im
 [Scientific Research Protocol](../docs/project/Scientific_Research_Protocol.md), Abschnitt 34). Seit ADR-0059
 (Phase 4B-1B-3) technisch überprüfbar ist dagegen die schwächere, aber eigenständig nützliche Aussage
 „dieses Kürzel ist als KI-gestützt/automatisiert/technischer Dienst **registriert**" — siehe
-[`research/reviewers/README.md`](reviewers/README.md). Ein **unregistriertes** Kürzel wird für die daran
-anknüpfenden Regeln (verpflichtendes Zweitreview bei KI-/Automatisierungs-Erstentscheidung, Adjudikation und
-`revision_context.triggered_by` ausschließlich menschlich) wie ein menschlicher Akteur behandelt — dieselbe
-Grenze wie die für `human` optionale Registrierung.
+[`research/reviewers/README.md`](reviewers/README.md). Für die Zweitreview-Pflicht bei KI-/
+Automatisierungs-Erstentscheidungen löst ein **unregistriertes** Kürzel diese Pflicht nicht aus (dieselbe
+Grenze wie die für `human` optionale Registrierung) — für Adjudikation und `revision_context.triggered_by`
+gilt dagegen die verschärfte Regel: ein registrierter, tatsächlich menschlicher Akteur ist zwingend, ein
+unregistriertes Kürzel ist dort ungültig (siehe oben).
 
 ## Kurzfassung des Workflows
 

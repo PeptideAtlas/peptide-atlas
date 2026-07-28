@@ -40,7 +40,16 @@ Dieses Dokument entwirft ein **universelles, technologieunabhängiges Datenmodel
     (`research/reviewers/**`, ADR-0059) dazu — versieht ein bereits verwendetes `research_actor_id`-Kürzel
     nachträglich mit einem strukturellen Akteurstyp (`human`/`ai_assistant`/`automation`/`service`); ebenso
     **kein** kanonisches Wissensobjekt, sondern Teil derselben Provenienzebene wie die übrigen
-    `research/**`-Objektarten. Details: [Scientific Research Protocol](Scientific_Research_Protocol.md),
+    `research/**`-Objektarten. Seit Phase 4B-1B-2 (ADR-0058) trägt `research_screening_record` zusätzlich ein
+    optionales `related_records[]`-Feld für eigenständige, aber inhaltlich verwandte Kandidaten (z. B.
+    Letter+Reply) — strukturell getrennt von `duplicate_of` (bibliographische Dubletten). Beide bleiben
+    Recherche-Ebenen-Konzepte auf Kandidaten-/Screening-Ebene, keine kanonische Aussage: eine spätere,
+    manuell geprüfte Verknüpfung zwischen kanonischen `study`-/`source`-Objekten unter `data/**` (siehe
+    `study.source_ids[]`) bleibt davon unabhängig. `candidate_source_type` referenziert seit derselben Phase
+    ein eigenständiges, um 18 wissenschaftliche Publikationstyp-Werte erweitertes Vokabular
+    (`research_candidate_source_type`) statt des mit `data/sources/**` geteilten `source_type` — bewusst
+    getrennt, damit eine Erweiterung der Recherche-Ebene keine `data/**`-Änderung erzwingt. Details:
+    [Scientific Research Protocol](Scientific_Research_Protocol.md), Abschnitt 9f,
     [Evidence Curation Workflow](Evidence_Curation_Workflow.md).
 
 ## Leitprinzipien

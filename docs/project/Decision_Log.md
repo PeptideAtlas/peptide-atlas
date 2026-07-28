@@ -1549,6 +1549,102 @@ eine letzte Ergaenzung vor Merge-Freigabe verlangt:
 Weiterhin **keine Implementierung**. Zwei neue offene Fragen (Vollstaendigkeit von `evidence_source`,
 Skala fuer `confidence`) ergaenzen die acht aus Runde 1, siehe Abschnitt 9 des Entwurfsdokuments (v3).
 
+**Nachtrag (Implementierung, Phase 4B-1B-2) -- die in diesem ADR und seinen beiden Nachtraegen (v3)
+freigegebene Architektur ist jetzt real implementiert (Schema, Validator, ein neues explizites
+Migrationswerkzeug, Tests, Dokumentation), auf Anweisung des CSO als Teil der finalen PR-#10-Review-
+Runde direkt im Anschluss an deren Merge. Fuer die tatsaechlich umgesetzten Teile ist dieses ADR
+damit inhaltlich "Entschieden" -- der urspruengliche Status-Text oben bleibt unveraendert
+(append-only-Konvention), diese Einordnung steht bewusst nur hier:**
+
+- **Bearbeitungszustand als reine Projektion:** `tools/_researchlib.py::derive_workflow_state()`
+  wie in Runde 1 freigegeben -- kein Schemafeld, kein Vokabular, keine Migration.
+  `check_screening_system_actor_invariants` und `check_deduplication` rufen diese Funktion direkt
+  auf statt (wie zuvor) `screened_by` gegen `SYSTEM_SCREENING_INITIALIZER_ACTOR` zu vergleichen.
+- **`related_records[]`** auf `research_screening_record` (optional, `default: []`,
+  `related_candidate_manifest_id`/`related_candidate_id`/`relationship_type`/`rationale`/
+  `relationship_metadata`) wie in Runde 1 freigegeben umgesetzt -- candidate-basiert, nicht
+  screening-record-basiert.
+- **`relationship_metadata`** (`identified_by`/`identified_at`/`evidence_source[]`) wie in Runde 2
+  freigegeben umgesetzt, MIT einer bewussten Abweichung vom woertlichen Feldkatalog: **kein
+  `confidence`-Feld.** Die Runde-2-Freigabe verlangte `confidence` ausdruecklich nur als dokumentiertes
+  Konzept, "noch keine Skala implementieren" -- keine der drei Optionen (kategorial-ordinal/numerisch/
+  Freitext) wurde inzwischen final entschieden. Ein Feld ohne festgelegten Typ waere entweder komplett
+  freiform (widerspricht dem Projektprinzip kontrollierter Vokabulare) oder haette faktisch eine Skala
+  durch Implementierungsvorgriff erzwungen. Bleibt additiv nachruestbar, sobald die Skala feststeht --
+  siehe offene Frage 8 im Entwurfsdokument, weiterhin unbeantwortet.
+- **`schemas/common.schema.json#/$defs/screening_relationship_type`** (17 Werte: 9 gerichtete
+  Konzeptpaare + `other_related_to` selbstinvers) und **`$defs/screening_relationship_evidence_source`**
+  (10 Werte) wie in Runde 1/2 freigegeben, inkl. neuer Vokabulardateien
+  `research/vocabularies/screening_relationship_types.yaml` (mit redaktionell gepflegtem `inverse`-Feld
+  je Eintrag, getestet gegen `tools/_researchlib.py::RELATIONSHIP_TYPE_INVERSE` auf Uebereinstimmung)
+  und `screening_relationship_evidence_sources.yaml`.
+- **Strukturelle Abweichung vom woertlichen Arbeitsauftrag bei `candidate_source_type`:** die
+  Freigabe sah eine Erweiterung von `common.schema.json#/$defs/source_type` um die 7+11 neuen Werte vor.
+  Bei der Umsetzung zeigte sich, dass `#/$defs/source_type` NICHT nur von
+  `research_screening_record.candidate_source_type` referenziert wird, sondern auch von
+  `source.schema.json` (kanonische `data/sources/**`-Objekte) -- und `tests/test_vocabulary_consistency.py`
+  verlangt exakte Uebereinstimmung dieses Enums mit `data/vocabularies/source_types.yaml`. Eine
+  Erweiterung des geteilten Enums haette also zwingend eine `data/**`-Aenderung erzwungen, obwohl kein
+  einziges kanonisches Source-Objekt betroffen ist -- ein Verstoss gegen die harte Vorgabe "keine
+  Aenderungen unter `data/**`". Geloest durch ein neues, eigenstaendiges `$defs/
+  research_candidate_source_type` (12 Basiswerte identisch mit `source_type`, plus die 18 neuen Werte),
+  auf das ausschliesslich `research_screening_record.candidate_source_type` umgestellt wurde;
+  `#/$defs/source_type` und `data/vocabularies/source_types.yaml` bleiben unveraendert. Neue,
+  gespiegelte Vokabulardatei `research/vocabularies/research_candidate_source_types.yaml` (analog zu
+  den bereits bestehenden `research/vocabularies/*`-Dateien, gegen das Schema-Enum getestet). Als
+  Implementierungsdetail dokumentiert, keine gesonderte CSO-Vorgabe hierzu eingeholt -- die fachliche
+  Absicht (dieselben 30 Werte fuer Kandidaten nutzbar) bleibt vollstaendig erhalten.
+- **`living_systematic_review` bewusst NICHT aufgenommen:** die zugehoerige, in Runde 1 aufgeworfene
+  offene Frage ("wird dieser Wert ueberhaupt benoetigt?") wurde bis zur Implementierung nicht
+  beantwortet; das Entwurfsdokument selbst empfiehlt bei Unklarheit, `systematic_review` weiter zu
+  verwenden. Alle uebrigen 18 Werte (7 Basiswerte + 11 der 12 Runde-1-Kandidaten) sind aufgenommen,
+  inkl. der drei mit unsicherem Automatisierungsstatus (`consensus_statement`/`technical_report`/
+  `dataset`) und `practice_guideline` trotz ungeklaerten Verhaeltnisses zum bestehenden `guideline` --
+  als Vokabularwerte, aber OHNE automatisierte Ableitung fuer die drei unsicheren Werte.
+- **`check_screening_related_records`** (neu): referenzielle Pruefung (Ziel-Kandidat existiert im
+  selben Protokoll, kein Selbstverweis, `relationship_metadata.identified_by !=
+  system-screening-initializer`) und gerichtete Symmetriepruefung ueber
+  `RELATIONSHIP_TYPE_INVERSE` (fehlende Gegenrichtung: Warnung; falscher, nicht-inverser Typ: Fehler).
+- **`check_deduplication`** vollstaendig auf Zusammenhangskomponenten-Pruefung umgestellt (Union-Find,
+  `_collision_group_components`): eine Identifikator-Kollisionsgruppe wird ueber die GESAMTE Gruppe
+  (nicht nur die aktiven Mitglieder) gegen Kanten aus `duplicate_of` UND `related_records` geprueft.
+  Ausgeloest wird die Pruefung weiterhin nur bei mindestens zwei aktiven Mitgliedern (unveraendert aus
+  ADR-0057), die Konnektivitaetspruefung selbst laeuft aber ueber alle Mitglieder. Verifiziert gegen
+  die drei realen DOI-kollidierenden PMIDs (`37888925`/`37888926`/`37888927`) -- unveraendert weiterhin
+  nur eine Warnung, jetzt aber korrekt als drei nicht miteinander verbundene Komponenten ausgewiesen
+  (keine `related_records`- oder `duplicate_of`-Eintraege fuer diese drei realen Records angelegt,
+  wie in Abschnitt 8 des Entwurfsdokuments als Nicht-Ziel festgehalten).
+- **`tools/refresh_candidate_source_types.py`** (neu, separates Werkzeug wie in der finalen
+  Review-Anweisung verlangt): Dry-Run als Standard, `--apply` fuer tatsaechliche Schreibvorgaenge,
+  deterministisch, netzwerkfrei. Klassifiziert jeden Kandidaten in genau eine von acht Kategorien
+  (`proposed`/`already_matches`/`conflict`/vier `skipped_*`-Gruende) -- ein bereits vom generischen
+  Datenbank-Default abweichender aktueller Wert wird nie automatisch ueberschrieben, sondern als
+  Konflikt gemeldet. Ruehrt ausschliesslich Datensaetze an, deren Bearbeitungszustand noch
+  `system_initialized` ist. Implementiert exakt die im Entwurfsdokument (Abschnitt 4.5) vorgeschlagene
+  Ableitungstabelle (`Meta-Analysis` vor `Systematic Review` bei Doppel-Tag -- die zugehoerige, in
+  Runde 1 aufgeworfene Prioritaetsfrage wurde nicht gesondert CSO-bestaetigt, hier als
+  Implementierungsdetail aus dem bereits freigegebenen Entwurfsvorschlag uebernommen, nicht als neue
+  Grundsatzentscheidung). Gegen die realen 197 Retatrutide-Records testweise per Dry-Run ausgefuehrt
+  (108 von 197 Kandidaten haetten einen Vorschlag) -- KEIN `--apply`-Lauf gegen echte Daten ist Teil
+  dieser Implementierung, `git status` bestaetigt keine Aenderung unter `research/screening/**`.
+- Neue Tests (siehe `tests/test_deduplication_relationships.py`): gueltige/fehlende/falsche inverse
+  Beziehungspaare, fehlender/falscher Kandidat, protokolluebergreifende Beziehung, Selbstverweis,
+  technischer Systemakteur als `identified_by`, fehlende `relationship_metadata` (Schema-Ebene),
+  mehrere `evidence_source`-Werte, vollstaendig aufgeloeste Zweier-/Dreiergruppe (inkl. transitiver
+  Erklaerung ueber `related_records`), teilweise klassifizierte Dreiergruppe (Warnung bei
+  `system_initialized`-Mitglied, Fehler ohne), alle drei `derive_workflow_state()`-Zustaende plus ein
+  expliziter Test, dass die Ableitung NICHT mehr allein auf `screened_by` reagiert,
+  `RELATIONSHIP_TYPE_INVERSE`-Involutivitaet und Uebereinstimmung mit der Vokabulardatei, eindeutige
+  PubMed-`source_type`-Ableitung (inkl. `Meta-Analysis`-vor-`Systematic-Review`-Prioritaet und der
+  `narrative_review`-Ausschlussregel), Beweis dass `reply_or_response` nie automatisiert abgeleitet
+  wird, sowie `tools/refresh_candidate_source_types.py` (Dry-Run schreibt nichts, `--apply` ruehrt nur
+  `system_initialized`-Datensaetze an, Konflikte werden nie automatisch ueberschrieben).
+- Keine Aenderung an den 197 realen Retatrutide-Screening-Records, keine Aenderung unter `data/**`,
+  keine echten Include-/Exclude-Entscheidungen, keine automatische Aufloesung der drei realen
+  DOI-Kollisions-Records. Dokumentation aktualisiert: `research/README.md`,
+  `research/screening/README.md`, `docs/project/Scientific_Research_Protocol.md` (neuer Abschnitt 9f),
+  `docs/project/Evidence_Curation_Workflow.md`, `docs/project/Data_Model.md`.
+
 ### ADR-0059: Title & Abstract Screening Architektur -- Reviewer-Modell, Wiederaufnahme, Historienschutz (Phase 4B-1B-3)
 - **Status:** Vorgeschlagen (Architektur-Entwurf, keine Implementierung)
 - **Datum:** 2026-07-27

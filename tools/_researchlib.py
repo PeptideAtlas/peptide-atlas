@@ -78,6 +78,9 @@ RESEARCH_VOCABULARY_NAMES = [
     "search_interface_profiles",
     "candidate_metadata_statuses",
     "screening_revision_reasons",
+    "research_candidate_source_types",
+    "screening_relationship_types",
+    "screening_relationship_evidence_sources",
 ]
 
 # Kanonische Reihenfolge der Screening-Stufen, fuer Monotonie-Pruefungen in decision_history
@@ -153,6 +156,124 @@ CANDIDATE_SOURCE_TYPE_BY_DATABASE = {
     "pubmed": "peer_reviewed_publication",
     "clinicaltrials_gov": "trial_registry",
 }
+
+# Screening-Bearbeitungszustand als reine, NICHT gespeicherte Projektion (ADR-0058, Phase 4B-1B-2,
+# Nachtrag CSO-Review Runde 1 -- kein Schemafeld, keine zweite Wahrheitsquelle). Ersetzt die
+# vormals redundante screened_by-basierte Herleitung in validate_research.py::
+# check_screening_system_actor_invariants/check_deduplication (siehe Phase_4B_1B_2_Deduplication_
+# and_Workflow_Architecture.md, Abschnitt 1). Drei Werte, ausschliesslich als Rueckgabewerte dieser
+# einen Funktion definiert -- kein eigenes kontrolliertes Vokabular, da nichts Gespeichertes
+# existiert, das dagegen zu validieren waere.
+WORKFLOW_STATE_SYSTEM_INITIALIZED = "system_initialized"
+WORKFLOW_STATE_UNDER_HUMAN_REVIEW = "under_human_review"
+WORKFLOW_STATE_FINALIZED = "finalized"
+
+
+def _has_unresolved_review_conflict(screening_data: dict) -> bool:
+    """True, wenn second_review.reviewer_decision der terminal massgeblichen primary_decision
+    widerspricht und keine Adjudikation vorliegt. Eigenstaendige Kopie der in validate_research.py
+    bereits vorhandenen Kernlogik (_screening_conflict_is_unresolved/_terminal_primary_decision) --
+    bewusst hier dupliziert statt importiert, damit _researchlib.py frei von einer Abhaengigkeit auf
+    validate_research.py bleibt (siehe Moduldokstring oben: nur Low-Level-Hilfsfunktionen, keine
+    Business-Logik-Importe in diese Richtung)."""
+    second_review = screening_data.get("second_review")
+    if not second_review:
+        return False
+    history = screening_data.get("decision_history") or []
+    primary_decision = history[-1].get("primary_decision") if history else screening_data.get("decision")
+    if second_review.get("reviewer_decision") == primary_decision:
+        return False
+    return second_review.get("adjudication") is None
+
+
+def derive_workflow_state(screening_data: dict) -> str:
+    """Berechnet den Bearbeitungszustand eines research_screening_record AUSSCHLIESSLICH aus
+    decision_history (massgeblich) sowie den bereits validierten Top-Level-Projektionen decision/
+    decision_stage (guenstige Abkuerzung fuer die 'finalized'-Bedingung -- decision/decision_stage
+    sind selbst bereits eine vom Validator geprueft Projektion von decision_history[-1], also keine
+    zweite Wahrheitsquelle). Kein Speicherort, kein Cache -- wird bei jedem Bedarf neu berechnet
+    (ADR-0058, Phase 4B-1B-2).
+
+    - system_initialized: noch nie von einem Menschen bearbeitet (genau ein Eintrag, verantwortet
+      vom technischen Akteur SYSTEM_SCREENING_INITIALIZER_ACTOR).
+    - finalized: terminal, widerspruchsfrei abgeschlossen (Stufe 'final', decision include/exclude,
+      kein ungeloester Erst-/Zweitpruefungs-Widerspruch).
+    - under_human_review: alles dazwischen -- mindestens ein Mensch hat uebernommen, Entscheidung
+      noch nicht terminal/widerspruchsfrei."""
+    history = screening_data.get("decision_history") or []
+    if len(history) == 1 and history[0].get("decided_by") == SYSTEM_SCREENING_INITIALIZER_ACTOR:
+        return WORKFLOW_STATE_SYSTEM_INITIALIZED
+    if (
+        screening_data.get("decision_stage") == "final"
+        and screening_data.get("decision") in ("include", "exclude")
+        and not _has_unresolved_review_conflict(screening_data)
+    ):
+        return WORKFLOW_STATE_FINALIZED
+    return WORKFLOW_STATE_UNDER_HUMAN_REVIEW
+
+
+# Gerichtete Beziehungstypen-Inversion (ADR-0058, Phase 4B-1B-2, Abschnitt 2.4/6). 9 Konzeptpaare
+# (16 gerichtete Werte) plus 'other_related_to' als einzige bewusst selbstinverse Ausnahme -- 17
+# Werte insgesamt. Muss inhaltlich mit research/vocabularies/screening_relationship_types.yaml
+# (dessen redaktionell gepflegtes `inverse`-Feld je Eintrag) uebereinstimmen; diese hier ist die vom
+# Validator tatsaechlich genutzte Quelle (siehe tests/test_relationship_type_inverse_matches_vocabulary).
+RELATIONSHIP_TYPE_INVERSE = {
+    "replies_to": "has_reply", "has_reply": "replies_to",
+    "updates": "updated_by", "updated_by": "updates",
+    "is_preprint_of": "has_published_version", "has_published_version": "is_preprint_of",
+    "reports_on_registered_study": "has_publication", "has_publication": "reports_on_registered_study",
+    "corrects": "corrected_by", "corrected_by": "corrects",
+    "retracts": "retracted_by", "retracted_by": "retracts",
+    "raises_concern_about": "has_expression_of_concern",
+    "has_expression_of_concern": "raises_concern_about",
+    "comments_on": "has_editorial_comment", "has_editorial_comment": "comments_on",
+    "other_related_to": "other_related_to",
+}
+
+# Rein technische, PRIORISIERTE Ableitung von candidate_source_type aus einem PubMed-
+# publication_types-Wert (ADR-0058, Phase 4B-1B-2, Abschnitt 4.5) -- NUR fuer PubMed-Publication-
+#-Type-Werte, deren Abbildung im CSO-Review als sicher automatisierbar geprueft wurde. Reihenfolge
+# ist bedeutsam: der erste passende Eintrag gewinnt (z. B. Meta-Analysis vor Systematic Review bei
+# einem doppelt getaggten Artikel -- Vorschlag aus dem Architektur-Entwurf, CSO-Bestaetigung dieser
+# konkreten Prioritaet laut Decision Log noch ausstehend, siehe tools/refresh_candidate_source_types.py).
+# Bewusst NICHT enthalten: 'Review' -> narrative_review (nur als Ausschlussregel abbildbar, siehe
+# Aufrufer), reply_or_response (nie automatisiert, PubMed unterscheidet Letter/Reply strukturell
+# nicht), consensus_statement/technical_report/dataset (Automatisierbarkeit technisch unverifiziert).
+PUBMED_PUBLICATION_TYPE_TO_SOURCE_TYPE = [
+    ("Retraction of Publication", "retraction_notice"),
+    ("Published Erratum", "corrigendum_or_erratum"),
+    ("Expression of Concern", "expression_of_concern_notice"),
+    ("Comment", "letter_or_comment"),
+    ("Letter", "letter_or_comment"),
+    ("Practice Guideline", "practice_guideline"),
+    ("Meta-Analysis", "meta_analysis"),
+    ("Systematic Review", "systematic_review"),
+    ("Editorial", "editorial"),
+    ("Case Reports", "case_report"),
+]
+
+# 'Review' -> narrative_review ist bewusst NICHT Teil der Liste oben (anders als die uebrigen
+# Eintraege ist es keine direkte 1:1-Tag-Abbildung, sondern nur als AUSSCHLUSSREGEL abbildbar:
+# publication_types enthaelt 'Review', aber weder 'Systematic Review' noch 'Meta-Analysis'). Eigene
+# Konstante, damit der Aufrufer (tools/refresh_candidate_source_types.py) diesen Sonderfall separat
+# und explizit auswerten muss, statt ihn in der linearen Prioritaetsliste zu verstecken.
+NARRATIVE_REVIEW_PUBMED_TAG = "Review"
+NARRATIVE_REVIEW_EXCLUDED_TAGS = ("Systematic Review", "Meta-Analysis")
+
+
+def derive_source_type_from_pubmed_publication_types(publication_types: list[str] | None) -> str | None:
+    """Rein technische, deterministische Ableitung eines research_candidate_source_type-Werts aus
+    den publication_types-Metadaten eines PubMed-Kandidaten (ADR-0058, Abschnitt 4.5). Liefert None,
+    wenn keine der geprueft-automatisierbaren Zuordnungen zutrifft (Aufrufer muss das als
+    'keine Aenderung vorschlagen' behandeln, NIEMALS als peer_reviewed_publication erzwingen -- das
+    bliebe wie bisher der bestehende Default aus ADR-0057, hier nicht ueberschrieben)."""
+    types = publication_types or []
+    for pubmed_type, source_type in PUBMED_PUBLICATION_TYPE_TO_SOURCE_TYPE:
+        if pubmed_type in types:
+            return source_type
+    if NARRATIVE_REVIEW_PUBMED_TAG in types and not any(t in types for t in NARRATIVE_REVIEW_EXCLUDED_TAGS):
+        return "narrative_review"
+    return None
 
 
 def derive_candidate_title(database: str, metadata: dict) -> str | None:
