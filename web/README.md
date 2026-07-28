@@ -159,6 +159,29 @@ im Build-Output. `npm audit fix --force` würde `next` auf 9.x und `eslint` auf 
 beschädigen würde. Kein Blocker für diese Vorschau; wird bei künftigen `next`/`eslint`-Minor-
 Updates automatisch mit aufgelöst, sobald die Upstream-Pakete selbst aktualisieren.
 
+## Sicherheitsgrenze
+
+- **Developer Preview v0.1 ist ausschließlich für lokale/interne Nutzung bestimmt** — gestartet per
+  `npm run dev` auf dem eigenen Rechner bzw. in einer internen, nicht öffentlich erreichbaren
+  Umgebung.
+- **Es gibt noch kein öffentliches Produktions-Deployment.** Diese Vorschau wurde nicht auf einer
+  öffentlich erreichbaren URL bereitgestellt und ist dafür in diesem Zustand nicht vorgesehen (siehe
+  „`next build` prerendert aktuell statisch" oben — vor jedem öffentlichen Deployment ist ohnehin
+  eine explizite Live-Daten-/Revalidierungsentscheidung fällig).
+- **Die bekannten `npm audit`-Funde (siehe oben) werden vor einem öffentlichen Deployment erneut
+  geprüft** — unabhängig davon, ob sie bis dahin durch reguläre `next`/`eslint`-Updates bereits
+  aufgelöst sind. Ein interner/lokaler Vorschau-Status ist kein Freibrief, offene
+  Sicherheitsbefunde dauerhaft zu ignorieren.
+- **Wichtig für die Einordnung:** dass `next/image`/`sharp` im Code nicht aufgerufen wird und der
+  next-interne `postcss`-Pfad nicht der tatsächliche Build-Pfad ist, **reduziert das praktische
+  Risiko dieser Vorschau, beseitigt aber nicht den formalen `npm audit`-Befund selbst.** Die
+  verwundbaren Paketversionen sind weiterhin in `node_modules` vorhanden, solange `next` sie
+  bündelt — „aktuell inaktiv genutzt" ist kein Ersatz für eine tatsächliche Behebung und wird
+  entsprechend nicht als erledigt behandelt.
+- **Keine erzwungenen Downgrades:** `npm audit fix --force` wurde bewusst **nicht** ausgeführt (es
+  würde `next` auf 9.x und `eslint` auf eine deutlich ältere Major-Version zurückstufen und die App
+  aktiv beschädigen). Die Funde bleiben offen dokumentiert statt scheinbar per Downgrade "gelöst".
+
 ## Offene Punkte
 
 - **Screenshots konnten in dieser Session nicht automatisiert erzeugt werden** — das Browser-Pane-
