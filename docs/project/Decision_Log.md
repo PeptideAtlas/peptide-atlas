@@ -1645,6 +1645,56 @@ damit inhaltlich "Entschieden" -- der urspruengliche Status-Text oben bleibt unv
   `research/screening/README.md`, `docs/project/Scientific_Research_Protocol.md` (neuer Abschnitt 9f),
   `docs/project/Evidence_Curation_Workflow.md`, `docs/project/Data_Model.md`.
 
+**Nachtrag (CSO-Review Runde 3, Korrektur vor Merge von PR #11) -- ein struktureller Blocker in der
+Runde-1-Implementierung geschlossen:**
+
+Die referenzielle Pruefung (`check_screening_related_records`) und die Kollisionsgruppen-
+Konnektivitaetspruefung (`check_deduplication`/`_collision_group_components`) verwendeten
+unabhaengig voneinander unterschiedlich strenge Vorstellungen von "gueltige Beziehung": eine
+fehlende inverse `related_records`-Gegenrichtung war IMMER nur eine Warnung (auch wenn fuer den
+Ziel-Kandidaten bereits ein Screening Record existierte), waehrend die Union-Find-Kollisionslogik
+bereits die rein einseitige Beziehung als gueltige Kante akzeptierte. Damit konnte eine
+Kollisionsgruppe als vollstaendig erklaert gelten, obwohl die gerichtete Beziehung nur einseitig
+dokumentiert war -- ein struktureller Widerspruch zwischen den beiden Regeln.
+
+**Korrektur:**
+
+1. **Verschaerfte Regel:** Existiert fuer den Ziel-Kandidaten bereits ein Screening Record, ist die
+   Gegenrichtung PFLICHT -- eine fehlende Gegenrichtung ist jetzt ein FEHLER (vorher: Warnung), ein
+   falscher, nicht-inverser Typ bleibt ein FEHLER (unveraendert). Eine Warnung gilt ausschliesslich,
+   solange fuer den Ziel-Kandidaten noch KEIN Screening Record existiert.
+2. **Zentrale, einmalige Helperfunktion** `tools/validate_research.py::
+   _validated_inverse_relationship_target(obj, rel, candidate_index, screening_by_id)`: liefert die
+   Ziel-`screening_record.id` NUR, wenn Ziel-Kandidat aufgeloest, Ziel-Screening-Record existiert,
+   UND dessen eigenes `related_records[]` einen Gegeneintrag mit dem korrekten inversen
+   `relationship_type` traegt -- sonst `None`. Sowohl `check_screening_related_records`
+   (Schweregrad-Entscheidung) als auch `_collision_group_components` (Kantenzulassung) rufen
+   ausschliesslich diese eine Funktion auf -- keine zweite, potenziell divergierende Implementierung.
+3. `_collision_group_components` erweitert um einen `screening_by_id`-Parameter (id -> ResearchObject,
+   im Protokoll-Scope von `check_deduplication` gebildet) fuer die Gegenrichtungspruefung.
+   `duplicate_of`-Kanten bleiben unveraendert (bereits durch bestehende Referenzpruefungen
+   abgesichert).
+4. 7 neue Tests (488 -> 495, siehe `tests/test_deduplication_relationships.py`): vollstaendiges
+   inverses Paar loest eine Zweiergruppe ausschliesslich ueber `related_records` auf; einseitige
+   Beziehung bei existierendem Ziel-Screening-Record ist Fehler; dieselbe einseitige Beziehung loest
+   die Kollisionsgruppe nicht auf; falscher inverser Typ ist Fehler und loest die Gruppe ebenfalls
+   nicht auf; Ziel-Kandidat ohne Screening Record bleibt Warnung und verbindet nichts; eine
+   Dreiergruppe mit einer vollstaendigen (`duplicate_of`) und einer einseitigen (`related_records`)
+   Kante bleibt ungeloest; eine Dreiergruppe mit zwei vollstaendigen `related_records`-Paaren (ohne
+   jedes `duplicate_of`) ist vollstaendig aufgeloest. Ein bestehender Test
+   (`test_missing_inverse_is_warning_not_error`) wurde in zwei praezisere Tests aufgeteilt
+   (`test_missing_inverse_is_error_when_target_record_exists`/
+   `test_missing_inverse_is_warning_when_target_has_no_screening_record`), da sein urspruenglicher
+   Name/Anspruch genau den jetzt behobenen Fehler beschrieb.
+5. Reale Daten unveraendert: die drei realen DOI-kollidierenden PMIDs tragen weiterhin keine
+   `related_records`-Eintraege (Nicht-Ziel dieser Phase, siehe oben) -- `validate_research.py`
+   bleibt bei 0 Fehlern/3 Warnungen, identisch zu vor der Korrektur.
+6. Keine Aenderung an den 197 realen Retatrutide-Screening-Records, keine Aenderung unter `data/**`,
+   kein `--apply`-Lauf von `tools/refresh_candidate_source_types.py`. Dokumentation aktualisiert:
+   `research/README.md`, `research/screening/README.md`,
+   `docs/project/Scientific_Research_Protocol.md` (Abschnitt 9f und Regelzusammenfassung),
+   `docs/project/Evidence_Curation_Workflow.md`.
+
 ### ADR-0059: Title & Abstract Screening Architektur -- Reviewer-Modell, Wiederaufnahme, Historienschutz (Phase 4B-1B-3)
 - **Status:** Vorgeschlagen (Architektur-Entwurf, keine Implementierung)
 - **Datum:** 2026-07-27

@@ -549,14 +549,53 @@ def _candidate_to_screening_record_index(records: list[ResearchObject]) -> dict[
     return index
 
 
+def _validated_inverse_relationship_target(
+    obj: ResearchObject,
+    rel: dict,
+    candidate_index: dict[tuple[str, str], str],
+    screening_by_id: dict[str, ResearchObject],
+) -> str | None:
+    """Liefert die screening_record.id des Ziel-Kandidaten NUR, wenn die gerichtete
+    related_records-Beziehung VOLLSTAENDIG validiert ist: Ziel-Kandidat aufgeloest, Ziel-Screening-
+    Record existiert bereits, UND dessen eigenes related_records[] traegt einen Gegeneintrag auf
+    `obj` mit dem korrekten inversen relationship_type (RELATIONSHIP_TYPE_INVERSE). Liefert sonst
+    None -- eine einseitige oder falsch-inverse Beziehung zaehlt NICHT als validiert (CSO-Review
+    Runde 3, ADR-0058): weder als Kollisionskante nutzbar (siehe _collision_group_components) noch
+    als 'bereits dokumentierte Gegenrichtung' (siehe check_screening_related_records). Zentrale,
+    einmalige Implementierung dieser Regel -- beide Aufrufer teilen sich dieselbe Logik, um
+    divergierendes Verhalten strukturell auszuschliessen."""
+    target_key = (rel.get("related_candidate_manifest_id"), rel.get("related_candidate_id"))
+    target_id = candidate_index.get(target_key)
+    if target_id is None:
+        return None
+    target_obj = screening_by_id.get(target_id)
+    if target_obj is None:
+        return None
+    expected_inverse = RELATIONSHIP_TYPE_INVERSE.get(rel.get("relationship_type"))
+    back_reference = next(
+        (
+            r for r in (target_obj.data.get("related_records") or [])
+            if r.get("related_candidate_manifest_id") == obj.data.get("candidate_manifest_id")
+            and r.get("related_candidate_id") == obj.data.get("candidate_id")
+        ),
+        None,
+    )
+    if back_reference is None or back_reference.get("relationship_type") != expected_inverse:
+        return None
+    return target_id
+
+
 def _collision_group_components(
-    group: list[ResearchObject], candidate_index: dict[tuple[str, str], str]
+    group: list[ResearchObject],
+    candidate_index: dict[tuple[str, str], str],
+    screening_by_id: dict[str, ResearchObject],
 ) -> list[set[str]]:
-    """Union-Find ueber eine Identifikator-Kollisionsgruppe (ADR-0058, Phase 4B-1B-2, Abschnitt 2.5):
-    Kanten aus duplicate_of UND related_records (ueber candidate_index auf die jeweilige
-    screening_record.id aufgeloest) zwischen zwei Mitgliedern DERSELBEN Gruppe. Liefert die
-    Zusammenhangskomponenten als Liste von ID-Mengen -- die Gruppe gilt als vollstaendig erklaert,
-    wenn genau eine Komponente alle Mitglieder umfasst."""
+    """Union-Find ueber eine Identifikator-Kollisionsgruppe (ADR-0058, Phase 4B-1B-2, Abschnitt 2.5,
+    verschaerft in CSO-Review Runde 3): Kanten aus duplicate_of UND VOLLSTAENDIG VALIDIERTEN
+    related_records-Beziehungen (siehe _validated_inverse_relationship_target -- eine einseitige oder
+    falsch-inverse Beziehung verbindet die Kollisionsgruppe NICHT) zwischen zwei Mitgliedern DERSELBEN
+    Gruppe. Liefert die Zusammenhangskomponenten als Liste von ID-Mengen -- die Gruppe gilt als
+    vollstaendig erklaert, wenn genau eine Komponente alle Mitglieder umfasst."""
     ids_in_group = {o.id for o in group}
     parent = {o.id: o.id for o in group}
 
@@ -576,8 +615,7 @@ def _collision_group_components(
         if duplicate_of in ids_in_group:
             union(obj.id, duplicate_of)
         for rel in obj.data.get("related_records") or []:
-            target_key = (rel.get("related_candidate_manifest_id"), rel.get("related_candidate_id"))
-            target_id = candidate_index.get(target_key)
+            target_id = _validated_inverse_relationship_target(obj, rel, candidate_index, screening_by_id)
             if target_id in ids_in_group:
                 union(obj.id, target_id)
 
@@ -632,13 +670,14 @@ def check_deduplication(report: Report, objects: dict[str, dict[str, ResearchObj
                 url_map.setdefault(normalize_url(url), []).append(obj)
 
         candidate_index = _candidate_to_screening_record_index(records)
+        screening_by_id = {o.id: o for o in records}
 
         for (field, normalized), group in identifier_map.items():
             active = [o for o in group if o.data.get("decision") in ACTIVE_SCREENING_DECISIONS]
             if len(active) < 2:
                 continue
 
-            components = _collision_group_components(group, candidate_index)
+            components = _collision_group_components(group, candidate_index, screening_by_id)
             if len(components) <= 1:
                 continue  # fully explained as one connected component -- no error, no warning
 
@@ -2147,12 +2186,18 @@ def check_screening_related_records(report: Report, objects: dict[str, dict[str,
     technische Initialisierungsakteur sein -- eine Beziehungsklassifikation ist eine inhaltliche,
     keine technische Entscheidung.
 
-    Gerichtete Symmetrie (Abschnitt 2.4/6 des Architektur-Entwurfs): existiert bereits ein Screening
-    Record fuer den Ziel-Kandidaten, muss dessen eigenes related_records[] einen Eintrag tragen, der
-    auf den referenzierenden Kandidaten mit dem in RELATIONSHIP_TYPE_INVERSE hinterlegten INVERSEN Typ
-    verweist -- ein Eintrag, der stattdessen wieder denselben Typ traegt, ist ein Fehler. Existiert fuer
-    den Ziel-Kandidaten noch kein Screening Record, ist die fehlende Gegenrichtung (noch) kein Fehler,
-    sondern eine Warnung (wird erneut geprueft, sobald der Ziel-Datensatz angelegt wird)."""
+    Gerichtete Symmetrie (Abschnitt 2.4/6 des Architektur-Entwurfs, verschaerft in CSO-Review Runde 3):
+    existiert bereits ein Screening Record fuer den Ziel-Kandidaten, muss dessen eigenes
+    related_records[] einen Eintrag tragen, der auf den referenzierenden Kandidaten mit dem in
+    RELATIONSHIP_TYPE_INVERSE hinterlegten INVERSEN Typ verweist -- eine FEHLENDE Gegenrichtung ist in
+    diesem Fall ein FEHLER (nicht mehr nur eine Warnung), ein Eintrag, der stattdessen wieder denselben
+    Typ traegt, bleibt ebenfalls ein Fehler. NUR wenn fuer den Ziel-Kandidaten noch KEIN Screening
+    Record existiert, ist die fehlende Gegenrichtung (noch) kein Fehler, sondern eine Warnung (wird
+    erneut geprueft, sobald der Ziel-Datensatz angelegt wird) -- die Warnung ist damit ausschliesslich
+    diesem einen Fall vorbehalten. Dieselbe Vollstaendigkeitsregel (_validated_inverse_relationship_
+    target) entscheidet auch, welche related_records-Kanten die Kollisionsgruppen-Konnektivitaetspruefung
+    in check_deduplication nutzen darf -- eine einseitige oder falsch-inverse Beziehung verbindet dort
+    KEINE Kollisionskomponente."""
     candidate_manifests = objects["candidate_manifest"]
     screening = objects["screening_record"]
 
@@ -2229,6 +2274,15 @@ def check_screening_related_records(report: Report, objects: dict[str, dict[str,
                     )
                     continue
 
+                # CSO-Review Runde 3: sobald der Ziel-Screening-Record existiert, ist die Gegenrichtung
+                # PFLICHT (ERROR), nicht mehr nur eine Warnung -- Warnung bleibt ausschliesslich dem Fall
+                # "Ziel-Kandidat hat noch keinen Screening Record" oben vorbehalten. Die Entscheidung
+                # "vollstaendig validiert?" laeuft ueber denselben Helper wie die Kollisionsgruppenbildung
+                # (_validated_inverse_relationship_target), um eine divergierende Zweitimplementierung
+                # auszuschliessen; die konkrete Fehlermeldung unterscheidet weiterhin fehlend vs. falscher Typ.
+                if _validated_inverse_relationship_target(obj, rel, candidate_index, screening) is not None:
+                    continue
+
                 target_obj = screening[target_screening_id]
                 back_reference = next(
                     (
@@ -2239,11 +2293,11 @@ def check_screening_related_records(report: Report, objects: dict[str, dict[str,
                     None,
                 )
                 if back_reference is None:
-                    report.warning(
+                    report.error(
                         relative(target_obj.path), "$.related_records",
                         f"screening record '{obj.id}' documents a '{relationship_type}' relationship to this "
-                        f"candidate, but this record does not yet document the inverse relationship "
-                        f"('{expected_inverse}') back -- will be re-checked once added (see ADR-0058)",
+                        f"candidate, and a screening record already exists for this target -- this record must "
+                        f"document the inverse relationship ('{expected_inverse}') back (see ADR-0058)",
                     )
                 elif back_reference.get("relationship_type") != expected_inverse:
                     report.error(

@@ -57,9 +57,15 @@ Zwei bewusste Abweichungen vom Vokabular, das man naiv erwarten würde (siehe AD
   sie — über Kanten aus `duplicate_of` (bibliographische Dubletten) UND `related_records`
   (eigenständige, aber inhaltlich verwandte Publikationen, siehe unten) — eine EINZIGE
   Zusammenhangskomponente bildet (Union-Find über die gesamte Gruppe, nicht nur die aktuell
-  „aktiven" Mitglieder). Das erkennt transitive Erklärung korrekt: eine Dreiergruppe braucht nur 2
-  Kanten (statt aller 3 Paare), um vollständig verbunden zu sein — z. B. A `duplicate_of` B, C
-  `replies_to` B, ohne dass A↔C zusätzlich direkt dokumentiert werden müsste. Eine nicht
+  „aktiven" Mitglieder). **Nur vollständig validierte `related_records`-Beziehungspaare zählen als
+  Kante (verschärft in CSO-Review Runde 3):** eine nur einseitig dokumentierte oder falsch-inverse
+  Beziehung verbindet die Kollisionsgruppe NICHT — dieselbe zentrale Helperfunktion
+  (`_validated_inverse_relationship_target`) entscheidet das wie bei `check_screening_related_records`
+  oben, keine zweite, potenziell divergierende Regel. `duplicate_of`-Kanten sind davon unberührt
+  (bereits durch die bestehenden Referenzprüfungen abgesichert). Das erkennt transitive Erklärung
+  korrekt: eine Dreiergruppe braucht nur 2 Kanten (statt aller 3 Paare), um vollständig verbunden zu
+  sein — z. B. A `duplicate_of` B, C `replies_to` B UND B `has_reply` C (beide Richtungen!), ohne
+  dass A↔C zusätzlich direkt dokumentiert werden müsste. Eine nicht
   vollständig verbundene Gruppe ist nur eine **Warnung** („potenzielles Duplikat, menschliche
   Prüfung steht aus") — kein Fehler —, solange mindestens ein Mitglied der Gruppe
   Bearbeitungszustand `system_initialized` hat (siehe unten). Sobald kein Mitglied mehr
@@ -83,10 +89,16 @@ Zwei bewusste Abweichungen vom Vokabular, das man naiv erwarten würde (siehe AD
   `check_screening_related_records` prüft: Ziel-Kandidat existiert als `candidates[]`-Eintrag im
   selben Protokoll, kein Selbstverweis, `relationship_metadata.identified_by` ist nie
   `system-screening-initializer` (eine Beziehungsklassifikation ist eine inhaltliche, keine
-  technische Entscheidung). Gerichtete Symmetrie: existiert bereits ein Screening Record für den
-  Ziel-Kandidaten, muss dessen eigenes `related_records[]` den passenden INVERSEN
-  `relationship_type` zurückverweisen (fehlende Gegenrichtung: Warnung, wird erneut geprüft sobald
-  der Ziel-Datensatz angelegt wird; falscher, nicht-inverser Typ: Fehler).
+  technische Entscheidung). **Gerichtete Symmetrie (verschärft in CSO-Review Runde 3):** existiert
+  bereits ein Screening Record für den Ziel-Kandidaten, ist dessen eigenes `related_records[]`-
+  Gegenstück PFLICHT — eine fehlende Gegenrichtung ist in diesem Fall ein **Fehler**, ein falscher,
+  nicht-inverser Typ bleibt ebenfalls ein Fehler. Eine **Warnung** ist ausschließlich dem Fall
+  vorbehalten, dass für den Ziel-Kandidaten noch **gar kein** Screening Record existiert (wird erneut
+  geprüft, sobald der Ziel-Datensatz angelegt wird). Eine zentrale Helperfunktion
+  (`_validated_inverse_relationship_target`) trifft diese Vollständigkeitsentscheidung — dieselbe
+  Funktion entscheidet auch, welche `related_records`-Kanten die Kollisionsgruppen-
+  Konnektivitätsprüfung unten nutzen darf, um eine divergierende Zweitimplementierung strukturell
+  auszuschließen.
 - **Bearbeitungszustand als reine Projektion (ADR-0058, Phase 4B-1B-2):**
   `tools/_researchlib.py::derive_workflow_state()` berechnet `system_initialized`/
   `under_human_review`/`finalized` AUSSCHLIESSLICH aus `decision_history` — **kein Schemafeld, kein

@@ -538,21 +538,29 @@ additive Ergänzung bleibt möglich, ohne bestehende `relationship_metadata`-Ein
 `tools/validate_research.py::check_screening_related_records` prüft: Ziel-Kandidat existiert als
 `candidates[]`-Eintrag eines `research_candidate_manifest` mit demselben `protocol_id`, kein Selbstverweis,
 `relationship_metadata.identified_by` ist nie `system-screening-initializer` (eine
-Beziehungsklassifikation ist eine inhaltliche, keine technische Entscheidung). **Gerichtete Symmetrie:**
-existiert bereits ein Screening Record für den Ziel-Kandidaten, muss dessen eigenes `related_records[]`
-einen Eintrag mit dem in `RELATIONSHIP_TYPE_INVERSE` hinterlegten INVERSEN Typ zurücktragen — ein Eintrag,
-der stattdessen wieder denselben Typ trägt, ist ein Fehler. Existiert für den Ziel-Kandidaten noch kein
-Screening Record, ist die fehlende Gegenrichtung (noch) kein Fehler, sondern eine Warnung.
+Beziehungsklassifikation ist eine inhaltliche, keine technische Entscheidung). **Gerichtete Symmetrie
+(verschärft in CSO-Review Runde 3):** existiert bereits ein Screening Record für den Ziel-Kandidaten, ist
+dessen eigenes `related_records[]`-Gegenstück mit dem in `RELATIONSHIP_TYPE_INVERSE` hinterlegten INVERSEN
+Typ **Pflicht** — sowohl eine fehlende Gegenrichtung als auch ein Eintrag, der stattdessen wieder denselben
+Typ trägt, sind ein **Fehler**. Eine **Warnung** gilt ausschließlich, solange für den Ziel-Kandidaten noch
+**gar kein** Screening Record existiert (wird erneut geprüft, sobald der Ziel-Datensatz angelegt wird).
+Eine zentrale Helperfunktion (`_validated_inverse_relationship_target`) trifft diese
+Vollständigkeitsentscheidung einmalig — dieselbe Funktion entscheidet auch, welche `related_records`-Kanten
+die Kollisionsgruppen-Konnektivitätsprüfung unten nutzen darf.
 
 **Kollisionsgruppen als Zusammenhangskomponenten, nicht mehr rein paarweise.** `check_deduplication`
 bildet für jede Identifikator-Kollisionsgruppe einen ungerichteten Graphen (Knoten: die Datensätze der
-Gruppe; Kanten: `duplicate_of`- UND `related_records`-Beziehungen zwischen zwei Gruppenmitgliedern) und
+Gruppe; Kanten: `duplicate_of`- UND **vollständig validierten** `related_records`-Beziehungspaaren
+zwischen zwei Gruppenmitgliedern — eine nur einseitig dokumentierte oder falsch-inverse Beziehung zählt
+NICHT als Kante, verschärft in CSO-Review Runde 3) und
 verlangt genau **eine** Zusammenhangskomponente (Union-Find, `O(n·α(n))`, keine quadratische Explosion bei
 größeren Correspondence-Ketten). Das erkennt transitive Erklärung korrekt: eine Dreiergruppe braucht nur 2
 Kanten (statt aller 3 Paare), um vollständig verbunden zu sein — z. B. wird `37888926` als `duplicate_of
-37888925` markiert und `37888927` trägt eine `replies_to`-Beziehung zu `37888925` **oder** `37888926`, ist
-die gesamte Dreiergruppe bereits eine Komponente, ohne dass zusätzlich eine direkte Beziehung zwischen
-`37888925` und `37888927` dokumentiert werden müsste. Eine nicht vollständig verbundene Gruppe bleibt
+37888925` markiert, UND `37888927` trägt eine `replies_to`-Beziehung zu `37888925` **oder** `37888926`,
+**deren Ziel-Datensatz umgekehrt eine `has_reply`-Beziehung zu `37888927` zurückträgt** (nur diese
+vollständig validierte, gegenseitige Dokumentation zählt als Kante), ist die gesamte Dreiergruppe bereits
+eine Komponente, ohne dass zusätzlich eine direkte Beziehung zwischen `37888925` und `37888927`
+dokumentiert werden müsste. Eine nicht vollständig verbundene Gruppe bleibt
 Warnung, solange mindestens ein Mitglied `system_initialized` ist, und wird zum Fehler, sobald kein
 Mitglied mehr `system_initialized` ist — unverändert gegenüber der ADR-0057-Grundregel, jetzt aber auf die
 gesamte Zusammenhangskomponente statt auf einen einfachen Mitgliederzähler angewendet.
@@ -954,12 +962,15 @@ maschinenlesbar sicherstellt:
   Kürzel ist fuer diese beiden Rollen ebenfalls ungültig (verschärft in CSO-Review Runde 2; anders als bei
   normalen Erst-/Zweitprüfern, wo unregistriert weiterhin als Mensch behandelt wird) —, sowie
   `revision_context` genau dann verpflichtend, wenn ein Eintrag die effektive Entscheidung des unmittelbar
-  vorangegangenen Eintrags an derselben Stufe tatsächlich umkehrt; seit ADR-0058 (Abschnitt 9f) zusätzlich:
-  `related_records[]` referenziell und gerichtet-symmetrisch geprüft (Ziel-Kandidat existiert im selben
-  Protokoll, kein Selbstverweis, kein technischer Systemakteur als `relationship_metadata.identified_by`,
-  Gegenrichtung trägt den korrekten inversen `relationship_type`), Identifikator-Kollisionsgruppen als
-  Zusammenhangskomponente statt rein paarweise geprüft (Union-Find über `duplicate_of`- und
-  `related_records`-Kanten).
+  vorangegangenen Eintrags an derselben Stufe tatsächlich umkehrt; seit ADR-0058 (Abschnitt 9f, verschärft
+  in CSO-Review Runde 3) zusätzlich: `related_records[]` referenziell und gerichtet-symmetrisch geprüft
+  (Ziel-Kandidat existiert im selben Protokoll, kein Selbstverweis, kein technischer Systemakteur als
+  `relationship_metadata.identified_by`; sobald der Ziel-Screening-Record existiert, ist dessen
+  Gegenrichtung mit dem korrekten inversen `relationship_type` Pflicht — fehlend oder falsch typisiert ist
+  ein Fehler, Warnung nur solange kein Ziel-Screening-Record existiert), Identifikator-Kollisionsgruppen als
+  Zusammenhangskomponente statt rein paarweise geprüft (Union-Find über `duplicate_of`- und NUR
+  vollständig validierten `related_records`-Kanten — eine einseitige oder falsch-inverse Beziehung
+  verbindet keine Kollisionskomponente).
 - **CI-seitig geprüft, mit dokumentierter Lücke**: `tools/check_research_immutability.py` (ADR-0038/ADR-0042,
   seit ADR-0055 zusätzlich auf `research/search_results/**` erweitert, dort **vollständig** unveränderlich statt
   nur `status`/`updated_at`/`review`/`notes` mutable wie bei `research_search_run`; `interface_profile` zählt

@@ -113,20 +113,24 @@ unregistriertes Kürzel NICHT als implizite Mensch-Annahme (hart, nicht protokol
 
 Echte Identifier-Deduplizierung (seit ADR-0058, Phase 4B-1B-2 — ersetzt die vormals rein paarweise
 ADR-0057-Logik): eine Identifikator-Kollisionsgruppe gilt erst dann als vollständig erklärt, wenn sie —
-über Kanten aus `duplicate_of` (bibliographische Dubletten) UND `related_records` (eigenständige, aber
-inhaltlich verwandte Publikationen, z. B. Letter+Reply) — eine EINZIGE Zusammenhangskomponente bildet
-(Union-Find, erkennt transitive Erklärung korrekt). Eine nicht vollständig verbundene Gruppe ist nur eine
+über Kanten aus `duplicate_of` (bibliographische Dubletten) UND **vollständig validierten**
+`related_records`-Beziehungspaaren (eigenständige, aber inhaltlich verwandte Publikationen, z. B.
+Letter+Reply) — eine EINZIGE Zusammenhangskomponente bildet (Union-Find, erkennt transitive Erklärung
+korrekt). **Nur ein Beziehungspaar, dessen Gegenrichtung bereits existiert und den korrekten inversen
+Typ trägt, zählt als Kante (verschärft in CSO-Review Runde 3)** — eine nur einseitig dokumentierte
+oder falsch-inverse Beziehung verbindet die Gruppe NICHT, geprüft über dieselbe zentrale
+Helperfunktion wie unten. Eine nicht vollständig verbundene Gruppe ist nur eine
 WARNUNG — „potenzielles Duplikat, menschliche Prüfung steht aus" — solange mindestens ein beteiligter
 Screening Record noch `system_initialized` ist (siehe unten); sobald kein Mitglied mehr `system_initialized`
 ist, wird eine weiterhin ungelöste Kollision zum ERROR. `related_records[]` (`related_candidate_manifest_id`/
 `related_candidate_id`, gerichteter `relationship_type`, Pflicht-`rationale`, `relationship_metadata` mit
 `identified_by`/`identified_at`/`evidence_source`) wird referenziell und gerichtet-symmetrisch geprüft
 (`check_screening_related_records`): Ziel-Kandidat existiert im selben Protokoll, kein Selbstverweis, kein
-technischer Systemakteur als `identified_by`, und — sobald ein Screening Record für den Ziel-Kandidaten
-existiert — dessen eigenes `related_records[]` muss den passenden INVERSEN `relationship_type`
-zurückverweisen (fehlende Gegenrichtung: Warnung; falscher Typ: Fehler). `relationship_metadata` beschreibt
-ausschließlich die Evidenz für die Beziehung selbst, NIE die wissenschaftliche Evidenz der beteiligten
-Studie(n) (siehe [`research/screening/README.md`](screening/README.md)).
+technischer Systemakteur als `identified_by`. **Sobald ein Screening Record für den Ziel-Kandidaten
+existiert, ist dessen Gegenrichtung PFLICHT** — fehlende Gegenrichtung: FEHLER; falscher, nicht-inverser
+Typ: FEHLER. Eine WARNUNG gilt ausschließlich, solange für den Ziel-Kandidaten noch kein Screening Record
+existiert. `relationship_metadata` beschreibt ausschließlich die Evidenz für die Beziehung selbst, NIE die
+wissenschaftliche Evidenz der beteiligten Studie(n) (siehe [`research/screening/README.md`](screening/README.md)).
 
 Der Bearbeitungszustand eines Screening Records (`system_initialized`/`under_human_review`/`finalized`) ist
 seit ADR-0058 eine reine, NICHT gespeicherte Projektion (`tools/_researchlib.py::derive_workflow_state()`,

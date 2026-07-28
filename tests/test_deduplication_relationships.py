@@ -272,7 +272,9 @@ def test_valid_inverse_relationship_pair(tmp_path: Path):
     assert report.error_count == 0, _errors(report) + _warnings(report)
 
 
-def test_missing_inverse_is_warning_not_error(tmp_path: Path):
+def test_missing_inverse_is_error_when_target_record_exists(tmp_path: Path):
+    """CSO-Review Runde 3: sobald fuer den Ziel-Kandidaten bereits ein Screening Record existiert,
+    ist eine fehlende Gegenrichtung ein FEHLER, nicht mehr nur eine Warnung."""
     tree = base_tree()
     tree[f"research/screening/{SCREENING_A}.yaml"] = _screening_record(
         SCREENING_A, candidate_manifest_id=CANDIDATE_MANIFEST_ID, candidate_id=CAND_A, doi="10.1000/shared",
@@ -282,8 +284,25 @@ def test_missing_inverse_is_warning_not_error(tmp_path: Path):
         SCREENING_B, candidate_manifest_id=CANDIDATE_MANIFEST_ID, candidate_id=CAND_B, doi="10.1000/shared",
     )
     report = _run(tmp_path, tree)
-    assert report.error_count == 0
-    assert any("does not yet document the inverse relationship" in m for m in _warnings(report)), _warnings(report)
+    assert any(
+        "this record must document the inverse relationship" in m and "'has_reply'" in m
+        for m in _errors(report)
+    ), _errors(report)
+
+
+def test_missing_inverse_is_warning_when_target_has_no_screening_record(tmp_path: Path):
+    """Warnung bleibt ausschliesslich dem Fall vorbehalten, dass fuer den Ziel-Kandidaten noch KEIN
+    Screening Record existiert -- hier wird bewusst KEIN Screening Record fuer CAND_B angelegt."""
+    tree = base_tree()
+    tree[f"research/screening/{SCREENING_A}.yaml"] = _screening_record(
+        SCREENING_A, candidate_manifest_id=CANDIDATE_MANIFEST_ID, candidate_id=CAND_A, doi="10.1000/shared",
+        related_records=[_relationship(CANDIDATE_MANIFEST_ID, CAND_B, "replies_to")],
+    )
+    report = _run(tmp_path, tree)
+    assert report.error_count == 0, _errors(report)
+    assert any(
+        "does not have a screening record yet" in m for m in _warnings(report)
+    ), _warnings(report)
 
 
 def test_wrong_inverse_type_is_error(tmp_path: Path):
@@ -423,6 +442,141 @@ def test_fully_resolved_three_group_transitively_via_related_records(tmp_path: P
         related_records=[_relationship(CANDIDATE_MANIFEST_ID, CAND_B, "replies_to")],
     )
     report = _run(tmp_path, tree)
+    assert not any("candidate_identifiers.doi" in i.path for i in report.issues), report.issues
+
+
+def test_fully_resolved_two_group_via_related_records_only(tmp_path: Path):
+    """Ein vollstaendiges inverses Beziehungspaar (ohne jedes duplicate_of) verbindet die
+    Kollisionsgruppe -- CSO-Review Runde 3, Punkt 3, erster Fall."""
+    tree = base_tree()
+    tree[f"research/screening/{SCREENING_A}.yaml"] = _screening_record(
+        SCREENING_A, candidate_manifest_id=CANDIDATE_MANIFEST_ID, candidate_id=CAND_A, doi="10.1000/shared",
+        decision="include", decision_stage="deduplication",
+        related_records=[_relationship(CANDIDATE_MANIFEST_ID, CAND_B, "replies_to")],
+    )
+    tree[f"research/screening/{SCREENING_B}.yaml"] = _screening_record(
+        SCREENING_B, candidate_manifest_id=CANDIDATE_MANIFEST_ID, candidate_id=CAND_B, doi="10.1000/shared",
+        decision="include", decision_stage="deduplication",
+        related_records=[_relationship(CANDIDATE_MANIFEST_ID, CAND_A, "has_reply")],
+    )
+    report = _run(tmp_path, tree)
+    assert report.error_count == 0, _errors(report)
+    assert not any("candidate_identifiers.doi" in i.path for i in report.issues), report.issues
+
+
+def test_one_sided_relationship_does_not_resolve_collision_group(tmp_path: Path):
+    """Eine nur einseitig dokumentierte Beziehung darf die Kollisionsgruppe NICHT verbinden -- der
+    urspruengliche Blocker, den CSO-Review Runde 3 identifiziert hat."""
+    tree = base_tree()
+    tree[f"research/screening/{SCREENING_A}.yaml"] = _screening_record(
+        SCREENING_A, candidate_manifest_id=CANDIDATE_MANIFEST_ID, candidate_id=CAND_A, doi="10.1000/shared",
+        decision="include", decision_stage="deduplication",
+        related_records=[_relationship(CANDIDATE_MANIFEST_ID, CAND_B, "replies_to")],
+    )
+    tree[f"research/screening/{SCREENING_B}.yaml"] = _screening_record(
+        SCREENING_B, candidate_manifest_id=CANDIDATE_MANIFEST_ID, candidate_id=CAND_B, doi="10.1000/shared",
+        decision="include", decision_stage="deduplication",
+    )
+    report = _run(tmp_path, tree)
+    # Referenzielle Pruefung meldet die fehlende Gegenrichtung als Fehler (siehe
+    # test_missing_inverse_is_error_when_target_record_exists) UND die Kollisionsgruppe bleibt
+    # zusaetzlich als nicht verbunden gemeldet -- die einseitige Kante loest sie nicht auf.
+    assert any(
+        "not fully connected via duplicate_of/related_records" in m and "10.1000/shared" in m
+        for m in _errors(report)
+    ), _errors(report)
+
+
+def test_wrong_inverse_type_does_not_resolve_collision_group(tmp_path: Path):
+    tree = base_tree()
+    tree[f"research/screening/{SCREENING_A}.yaml"] = _screening_record(
+        SCREENING_A, candidate_manifest_id=CANDIDATE_MANIFEST_ID, candidate_id=CAND_A, doi="10.1000/shared",
+        decision="include", decision_stage="deduplication",
+        related_records=[_relationship(CANDIDATE_MANIFEST_ID, CAND_B, "replies_to")],
+    )
+    tree[f"research/screening/{SCREENING_B}.yaml"] = _screening_record(
+        SCREENING_B, candidate_manifest_id=CANDIDATE_MANIFEST_ID, candidate_id=CAND_B, doi="10.1000/shared",
+        decision="include", decision_stage="deduplication",
+        related_records=[_relationship(CANDIDATE_MANIFEST_ID, CAND_A, "replies_to")],
+    )
+    report = _run(tmp_path, tree)
+    errors = _errors(report)
+    assert any("the inverse entry here must use relationship_type" in m for m in errors), errors
+    assert any(
+        "not fully connected via duplicate_of/related_records" in m and "10.1000/shared" in m for m in errors
+    ), errors
+
+
+def test_target_without_screening_record_does_not_resolve_collision_group(tmp_path: Path):
+    """Eine related_records-Kante zu einem Kandidaten ohne eigenen Screening Record kann die
+    Kollisionsgruppe strukturell nicht verbinden (es gibt keinen Zielknoten in der Gruppe) --
+    bleibt bei den vorhandenen Mitgliedern (A, B) unresolved, ohne Fehler durch die
+    Ziel-ohne-Screening-Record-Kante selbst (nur eine Warnung dafuer, siehe oben)."""
+    tree = base_tree()
+    tree[f"research/screening/{SCREENING_A}.yaml"] = _screening_record(
+        SCREENING_A, candidate_manifest_id=CANDIDATE_MANIFEST_ID, candidate_id=CAND_A, doi="10.1000/shared",
+        decision="include", decision_stage="deduplication",
+        related_records=[_relationship(CANDIDATE_MANIFEST_ID, CAND_C, "other_related_to")],
+    )
+    tree[f"research/screening/{SCREENING_B}.yaml"] = _screening_record(
+        SCREENING_B, candidate_manifest_id=CANDIDATE_MANIFEST_ID, candidate_id=CAND_B, doi="10.1000/shared",
+        decision="include", decision_stage="deduplication",
+    )
+    report = _run(tmp_path, tree)
+    assert any(
+        "not fully connected via duplicate_of/related_records" in m and "10.1000/shared" in m
+        for m in _errors(report)
+    ), _errors(report)
+    assert any("does not have a screening record yet" in m for m in _warnings(report)), _warnings(report)
+
+
+def test_three_group_with_one_full_and_one_one_sided_pair_stays_unresolved(tmp_path: Path):
+    tree = base_tree()
+    tree[f"research/screening/{SCREENING_A}.yaml"] = _screening_record(
+        SCREENING_A, candidate_manifest_id=CANDIDATE_MANIFEST_ID, candidate_id=CAND_A, doi="10.1000/shared",
+        decision="duplicate", decision_stage="deduplication", duplicate_of=SCREENING_B,
+    )
+    tree[f"research/screening/{SCREENING_B}.yaml"] = _screening_record(
+        SCREENING_B, candidate_manifest_id=CANDIDATE_MANIFEST_ID, candidate_id=CAND_B, doi="10.1000/shared",
+        decision="include", decision_stage="deduplication",
+    )
+    # C -> B one-sided (B does not reference C back) -- must not connect C into the component.
+    tree[f"research/screening/{SCREENING_C}.yaml"] = _screening_record(
+        SCREENING_C, candidate_manifest_id=CANDIDATE_MANIFEST_ID, candidate_id=CAND_C, doi="10.1000/shared",
+        decision="include", decision_stage="deduplication",
+        related_records=[_relationship(CANDIDATE_MANIFEST_ID, CAND_B, "replies_to")],
+    )
+    report = _run(tmp_path, tree)
+    assert any(
+        "not fully connected via duplicate_of/related_records" in m and "10.1000/shared" in m
+        for m in _errors(report)
+    ), _errors(report)
+
+
+def test_three_group_with_two_full_related_records_pairs_is_resolved(tmp_path: Path):
+    """Zwei vollstaendige inverse Beziehungspaare (A<->B, B<->C), ohne jedes duplicate_of --
+    CSO-Review Runde 3, Punkt 3, letzter Fall."""
+    tree = base_tree()
+    tree[f"research/screening/{SCREENING_A}.yaml"] = _screening_record(
+        SCREENING_A, candidate_manifest_id=CANDIDATE_MANIFEST_ID, candidate_id=CAND_A, doi="10.1000/shared",
+        decision="include", decision_stage="deduplication",
+        related_records=[_relationship(CANDIDATE_MANIFEST_ID, CAND_B, "replies_to")],
+    )
+    tree[f"research/screening/{SCREENING_B}.yaml"] = _screening_record(
+        SCREENING_B, candidate_manifest_id=CANDIDATE_MANIFEST_ID, candidate_id=CAND_B, doi="10.1000/shared",
+        decision="include", decision_stage="deduplication",
+        related_records=[
+            _relationship(CANDIDATE_MANIFEST_ID, CAND_A, "has_reply"),
+            _relationship(CANDIDATE_MANIFEST_ID, CAND_C, "has_reply"),
+        ],
+    )
+    tree[f"research/screening/{SCREENING_C}.yaml"] = _screening_record(
+        SCREENING_C, candidate_manifest_id=CANDIDATE_MANIFEST_ID, candidate_id=CAND_C, doi="10.1000/shared",
+        decision="include", decision_stage="deduplication",
+        related_records=[_relationship(CANDIDATE_MANIFEST_ID, CAND_B, "replies_to")],
+    )
+    report = _run(tmp_path, tree)
+    assert report.error_count == 0, _errors(report)
     assert not any("candidate_identifiers.doi" in i.path for i in report.issues), report.issues
 
 
